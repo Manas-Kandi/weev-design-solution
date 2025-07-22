@@ -1,6 +1,11 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Input } from "@/components/ui/input"
 import { 
   Plus, 
   Hand, 
@@ -26,7 +31,18 @@ import {
   ChevronRight,
   ChevronDown,
   Eye,
-  Lock
+  Lock,
+  Sparkles,
+  TrendingUp,
+  Zap,
+  FolderOpen,
+  File,
+  MoreHorizontal,
+  GitBranch,
+  Palette,
+  ExternalLink,
+  Link,
+  Minimize2
 } from 'lucide-react'
 
 interface CanvasNode {
@@ -39,7 +55,27 @@ interface CanvasNode {
     description: string
     color: string
     icon: any
+    content?: string
   }
+  inputs: { id: string; label: string }[]
+  outputs: { id: string; label: string }[]
+}
+
+interface Connection {
+  id: string
+  sourceNode: string
+  sourceOutput: string
+  targetNode: string
+  targetInput: string
+}
+
+interface Project {
+  id: string
+  name: string
+  description: string
+  lastModified: Date
+  nodeCount: number
+  status: 'draft' | 'testing' | 'deployed'
 }
 
 interface Tool {
@@ -50,37 +86,100 @@ interface Tool {
 }
 
 export default function AgentFlowDesigner() {
+  const [currentView, setCurrentView] = useState<'projects' | 'designer'>('projects')
   const [currentTool, setCurrentTool] = useState('select')
   const [nodes, setNodes] = useState<CanvasNode[]>([])
+  const [connections, setConnections] = useState<Connection[]>([])
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [viewportTransform, setViewportTransform] = useState({ x: 0, y: 0, scale: 1 })
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [isPanning, setIsPanning] = useState(false)
+  const [isDragging, setIsDragging] = useState<string | null>(null)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [isConnecting, setIsConnecting] = useState<{
+    sourceNode: string
+    sourceOutput: string
+  } | null>(null)
   const [expandedSections, setExpandedSections] = useState({
-    agents: true,
+    core: true,
+    advanced: false,
     templates: false
   })
+  const [projects] = useState<Project[]>([
+    {
+      id: '1',
+      name: 'Customer Support Agent',
+      description: 'Handles customer inquiries and escalations',
+      lastModified: new Date('2024-01-15'),
+      nodeCount: 12,
+      status: 'testing'
+    },
+    {
+      id: '2', 
+      name: 'Sales Qualification Bot',
+      description: 'Qualifies leads and schedules demos',
+      lastModified: new Date('2024-01-12'),
+      nodeCount: 8,
+      status: 'draft'
+    },
+    {
+      id: '3',
+      name: 'Onboarding Assistant',
+      description: 'Guides new users through setup',
+      lastModified: new Date('2024-01-10'),
+      nodeCount: 15,
+      status: 'deployed'
+    }
+  ])
   
   const canvasRef = useRef<HTMLDivElement>(null)
   const lastPanPoint = useRef({ x: 0, y: 0 })
 
-  // Agent types with Figma-like styling
-  const agentTypes = [
-    { id: 'writer', name: 'Writer Agent', icon: FileText, color: '#10B981' },
-    { id: 'searcher', name: 'Search Agent', icon: Search, color: '#3B82F6' },
-    { id: 'email', name: 'Email Agent', icon: Mail, color: '#EF4444' },
-    { id: 'calculator', name: 'Calculator Agent', icon: Calculator, color: '#F59E0B' },
-    { id: 'image', name: 'Image Agent', icon: ImageIcon, color: '#8B5CF6' },
-    { id: 'database', name: 'Database Agent', icon: Database, color: '#F97316' },
-    { id: 'chat', name: 'Chat Agent', icon: MessageSquare, color: '#6366F1' },
+  // VS Code inspired color scheme
+  const colors = {
+    background: '#1e1e1e',
+    sidebar: '#252526',
+    panel: '#2d2d30',
+    border: '#3e3e42',
+    text: '#cccccc',
+    textSecondary: '#969696',
+    accent: '#007acc',
+    success: '#4ec9b0',
+    warning: '#dcdcaa',
+    error: '#f48771',
+    purple: '#c586c0',
+    orange: '#ce9178',
+    blue: '#9cdcfe',
+    green: '#6a9955'
+  }
+
+  // Node types organized by category with VS Code colors
+  const nodeCategories = [
+    {
+      id: 'core',
+      name: 'Core Nodes',
+      nodes: [
+        { id: 'user-intent', name: 'User Intent', icon: MessageSquare, color: colors.blue, description: 'Captures user purpose and goals' },
+        { id: 'agent-response', name: 'Agent Response', icon: Bot, color: colors.success, description: 'Defines agent reply logic' },
+        { id: 'branch-condition', name: 'Branch/Condition', icon: GitBranch, color: colors.purple, description: 'Controls flow logic' },
+        { id: 'memory', name: 'Memory Object', icon: Database, color: colors.orange, description: 'Stores context' },
+      ]
+    },
+    {
+      id: 'advanced',
+      name: 'Advanced',
+      nodes: [
+        { id: 'personality', name: 'Personality Modifier', icon: Palette, color: colors.warning, description: 'Adjusts agent behavior' },
+        { id: 'external-action', name: 'External Action', icon: ExternalLink, color: colors.error, description: 'API calls & escalations' },
+      ]
+    }
   ]
 
   const tools: Tool[] = [
-    { id: 'select', name: 'Move', icon: MousePointer, shortcut: 'V' },
+    { id: 'select', name: 'Select', icon: MousePointer, shortcut: 'V' },
     { id: 'hand', name: 'Hand', icon: Hand, shortcut: 'H' },
-    { id: 'agent', name: 'Agent', icon: Bot, shortcut: 'A' },
-    { id: 'text', name: 'Text', icon: FileText, shortcut: 'T' },
-    { id: 'shape', name: 'Shape', icon: Square, shortcut: 'R' },
+    { id: 'connect', name: 'Connect', icon: Link, shortcut: 'C' },
+    { id: 'text', name: 'Comment', icon: FileText, shortcut: 'T' },
   ]
 
   // Keyboard shortcuts
@@ -92,8 +191,11 @@ export default function AgentFlowDesigner() {
       }
       if (e.key.toLowerCase() === 'v') setCurrentTool('select')
       if (e.key.toLowerCase() === 'h') setCurrentTool('hand')
-      if (e.key.toLowerCase() === 'a') setCurrentTool('agent')
-      if (e.key === 'Escape') setSelectedNode(null)
+      if (e.key.toLowerCase() === 'c') setCurrentTool('connect')
+      if (e.key === 'Escape') {
+        setSelectedNode(null)
+        setIsConnecting(null)
+      }
     }
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -102,43 +204,22 @@ export default function AgentFlowDesigner() {
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
+    if (currentView === 'designer') {
+      window.addEventListener('keydown', handleKeyDown)
+      window.addEventListener('keyup', handleKeyUp)
+    }
+    
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [])
+  }, [currentView])
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
     if (e.target !== e.currentTarget) return
-    
-    const rect = canvasRef.current?.getBoundingClientRect()
-    if (!rect) return
-
-    const x = (e.clientX - rect.left - viewportTransform.x) / viewportTransform.scale
-    const y = (e.clientY - rect.top - viewportTransform.y) / viewportTransform.scale
-
-    if (currentTool === 'agent') {
-      const agentType = agentTypes[0] // Default to first agent type
-      const newNode: CanvasNode = {
-        id: `agent-${Date.now()}`,
-        type: agentType.id,
-        position: { x: x - 75, y: y - 50 },
-        size: { width: 150, height: 100 },
-        data: {
-          title: agentType.name,
-          description: 'New agent',
-          color: agentType.color,
-          icon: agentType.icon
-        }
-      }
-      setNodes(prev => [...prev, newNode])
-      setSelectedNode(newNode.id)
-    } else {
-      setSelectedNode(null)
-    }
-  }, [currentTool, viewportTransform])
+    setSelectedNode(null)
+    setIsConnecting(null)
+  }, [])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (currentTool === 'hand' || isSpacePressed) {
@@ -160,10 +241,25 @@ export default function AgentFlowDesigner() {
       
       lastPanPoint.current = { x: e.clientX, y: e.clientY }
     }
-  }, [isPanning])
+
+    if (isDragging) {
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      const x = (e.clientX - rect.left - dragOffset.x - viewportTransform.x) / viewportTransform.scale
+      const y = (e.clientY - rect.top - dragOffset.y - viewportTransform.y) / viewportTransform.scale
+
+      setNodes(prev => prev.map(node => 
+        node.id === isDragging 
+          ? { ...node, position: { x, y } }
+          : node
+      ))
+    }
+  }, [isPanning, isDragging, dragOffset, viewportTransform])
 
   const handleMouseUp = useCallback(() => {
     setIsPanning(false)
+    setIsDragging(null)
   }, [])
 
   const handleZoom = (delta: number) => {
@@ -173,9 +269,42 @@ export default function AgentFlowDesigner() {
     }))
   }
 
-  const handleNodeClick = (nodeId: string, e: React.MouseEvent) => {
+  const handleNodeMouseDown = (nodeId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    setSelectedNode(nodeId)
+    if (currentTool === 'select') {
+      setSelectedNode(nodeId)
+      setIsDragging(nodeId)
+      
+      const node = nodes.find(n => n.id === nodeId)
+      if (node) {
+        setDragOffset({
+          x: e.clientX - node.position.x * viewportTransform.scale - viewportTransform.x,
+          y: e.clientY - node.position.y * viewportTransform.scale - viewportTransform.y
+        })
+      }
+    }
+  }
+
+  const handleOutputClick = (nodeId: string, outputId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (currentTool === 'connect') {
+      setIsConnecting({ sourceNode: nodeId, sourceOutput: outputId })
+    }
+  }
+
+  const handleInputClick = (nodeId: string, inputId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (isConnecting && currentTool === 'connect') {
+      const newConnection: Connection = {
+        id: `conn-${Date.now()}`,
+        sourceNode: isConnecting.sourceNode,
+        sourceOutput: isConnecting.sourceOutput,
+        targetNode: nodeId,
+        targetInput: inputId
+      }
+      setConnections(prev => [...prev, newConnection])
+      setIsConnecting(null)
+    }
   }
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -185,115 +314,253 @@ export default function AgentFlowDesigner() {
     }))
   }
 
-  return (
-    <div className="h-screen w-full bg-gray-900 flex overflow-hidden">
-      {/* Left Sidebar - Figma Style */}
-      <div className="w-60 bg-gray-800 border-r border-gray-700 flex flex-col">
-        {/* File Tab */}
-        <div className="h-12 border-b border-gray-700 flex items-center px-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded flex items-center justify-center">
-              <Bot className="w-4 h-4 text-white" />
+  const addNode = (nodeType: any) => {
+    const newNode: CanvasNode = {
+      id: `node-${Date.now()}`,
+      type: nodeType.id,
+      position: { x: 300, y: 200 },
+      size: { width: 220, height: 140 },
+      data: {
+        title: nodeType.name,
+        description: nodeType.description,
+        color: nodeType.color,
+        icon: nodeType.icon,
+        content: ''
+      },
+      inputs: [{ id: 'input-1', label: 'Input' }],
+      outputs: [{ id: 'output-1', label: 'Output' }]
+    }
+    setNodes(prev => [...prev, newNode])
+    setSelectedNode(newNode.id)
+  }
+
+  const createNewProject = () => {
+    setCurrentView('designer')
+    setNodes([])
+    setConnections([])
+    setSelectedNode(null)
+  }
+
+  const openProject = (project: Project) => {
+    setCurrentView('designer')
+    setNodes([])
+    setConnections([])
+  }
+
+  const getStatusColor = (status: Project['status']) => {
+    switch (status) {
+      case 'deployed': return `bg-green-500/20 text-green-400 border-green-500/30`
+      case 'testing': return `bg-yellow-500/20 text-yellow-400 border-yellow-500/30`
+      case 'draft': return `bg-gray-500/20 text-gray-400 border-gray-500/30`
+      default: return `bg-gray-500/20 text-gray-400 border-gray-500/30`
+    }
+  }
+
+  // Calculate connection path
+  const getConnectionPath = (conn: Connection) => {
+    const sourceNode = nodes.find(n => n.id === conn.sourceNode)
+    const targetNode = nodes.find(n => n.id === conn.targetNode)
+    
+    if (!sourceNode || !targetNode) return ''
+
+    const sourceX = sourceNode.position.x + sourceNode.size.width
+    const sourceY = sourceNode.position.y + sourceNode.size.height / 2
+    const targetX = targetNode.position.x
+    const targetY = targetNode.position.y + targetNode.size.height / 2
+
+    const controlX1 = sourceX + 100
+    const controlX2 = targetX - 100
+
+    return `M ${sourceX} ${sourceY} C ${controlX1} ${sourceY} ${controlX2} ${targetY} ${targetX} ${targetY}`
+  }
+
+  // Projects View
+  if (currentView === 'projects') {
+    return (
+      <div className="h-screen" style={{ backgroundColor: colors.background }}>
+        {/* Header */}
+        <div className="border-b" style={{ borderColor: colors.border, backgroundColor: colors.sidebar }}>
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-sm flex items-center justify-center" style={{ backgroundColor: colors.accent }}>
+                <Bot className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-medium" style={{ color: colors.text }}>AgentFlow</h1>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>Design intelligent agent systems</p>
+              </div>
             </div>
-            <span className="text-white text-sm font-medium">AgentFlow</span>
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2" style={{ color: colors.textSecondary }} />
+                <Input 
+                  placeholder="Search projects..." 
+                  className="pl-10 w-64 border-0"
+                  style={{ 
+                    backgroundColor: colors.panel, 
+                    color: colors.text,
+                    borderColor: colors.border
+                  }}
+                />
+              </div>
+              <Button 
+                onClick={createNewProject} 
+                className="gap-2"
+                style={{ 
+                  backgroundColor: colors.accent,
+                  color: 'white'
+                }}
+              >
+                <Plus className="w-4 h-4" />
+                New Project
+              </Button>
+            </div>
           </div>
         </div>
+        {/* Projects Grid */}
+        <div className="p-6">
+          <div className="mb-6">
+            <h2 className="text-lg font-medium mb-2" style={{ color: colors.text }}>Recent Projects</h2>
+            <p className="text-sm" style={{ color: colors.textSecondary }}>Continue working on your agent designs</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {projects.map(project => (
+              <Card 
+                key={project.id} 
+                className="p-4 cursor-pointer hover:shadow-lg transition-all duration-200 border"
+                style={{ 
+                  backgroundColor: colors.panel,
+                  borderColor: colors.border
+                }}
+                onClick={() => openProject(project)}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <File className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                    <h3 className="font-medium" style={{ color: colors.text }}>{project.name}</h3>
+                  </div>
+                  <button className="p-1 rounded hover:bg-black/20">
+                    <MoreHorizontal className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                  </button>
+                </div>
+                <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{project.description}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Badge variant="outline" className={`border ${getStatusColor(project.status)}`}>
+                      {project.status}
+                    </Badge>
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>
+                      {project.nodeCount} nodes
+                    </span>
+                  </div>
+                  <span className="text-xs" style={{ color: colors.textSecondary }}>
+                    {project.lastModified.toLocaleDateString()}
+                  </span>
+                </div>
+              </Card>
+            ))}
+            {/* Create New Card */}
+            <Card 
+              className="p-4 cursor-pointer hover:shadow-lg transition-all duration-200 border-dashed border-2 flex items-center justify-center min-h-[200px]"
+              style={{ 
+                backgroundColor: colors.panel,
+                borderColor: colors.border
+              }}
+              onClick={createNewProject}
+            >
+              <div className="text-center">
+                <Plus className="w-8 h-8 mx-auto mb-2" style={{ color: colors.textSecondary }} />
+                <p className="text-sm font-medium" style={{ color: colors.text }}>Create New Project</p>
+                <p className="text-xs" style={{ color: colors.textSecondary }}>Start designing an agent system</p>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-        {/* Layers Panel */}
-        <div className="flex-1 overflow-hidden">
+  // Designer View  
+  return (
+    <div className="h-screen w-full flex overflow-hidden" style={{ backgroundColor: colors.background }}>
+      {/* Left Sidebar */}
+      <div className="w-64 border-r flex flex-col" style={{ backgroundColor: colors.sidebar, borderColor: colors.border }}>
+        {/* Header */}
+        <div className="h-12 border-b flex items-center px-4" style={{ borderColor: colors.border }}>
+          <button 
+            onClick={() => setCurrentView('projects')}
+            className="flex items-center space-x-2 hover:bg-white/5 px-2 py-1 rounded transition-colors"
+          >
+            <div className="w-6 h-6 rounded-sm flex items-center justify-center" style={{ backgroundColor: colors.accent }}>
+              <Bot className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-medium" style={{ color: colors.text }}>AgentFlow</span>
+          </button>
+        </div>
+
+        {/* Node Library */}
+        <div className="flex-1 overflow-auto">
           <div className="p-3">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-white text-sm font-medium">Layers</span>
-              <button className="p-1 hover:bg-gray-700 rounded">
-                <Plus className="w-4 h-4 text-gray-400" />
-              </button>
+              <span className="text-sm font-medium" style={{ color: colors.text }}>Components</span>
             </div>
             
-            <div className="space-y-1">
-              {/* Agent Section */}
-              <div>
-                <button
-                  onClick={() => toggleSection('agents')}
-                  className="w-full flex items-center space-x-2 p-2 hover:bg-gray-700 rounded text-left"
-                >
-                  {expandedSections.agents ? 
-                    <ChevronDown className="w-4 h-4 text-gray-400" /> : 
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                  }
-                  <Folder className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-300 text-sm">Agents</span>
-                </button>
-                
-                {expandedSections.agents && (
-                  <div className="ml-6 space-y-1">
-                    {agentTypes.map(agent => (
-                      <div
-                        key={agent.id}
-                        className="flex items-center space-x-2 p-2 hover:bg-gray-700 rounded cursor-pointer"
-                        onClick={() => {
-                          const newNode: CanvasNode = {
-                            id: `agent-${Date.now()}`,
-                            type: agent.id,
-                            position: { x: 200, y: 200 },
-                            size: { width: 150, height: 100 },
-                            data: {
-                              title: agent.name,
-                              description: 'New agent',
-                              color: agent.color,
-                              icon: agent.icon
-                            }
-                          }
-                          setNodes(prev => [...prev, newNode])
-                        }}
-                      >
-                        <div 
-                          className="w-3 h-3 rounded-sm"
-                          style={{ backgroundColor: agent.color }}
-                        />
-                        <agent.icon className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-300 text-sm">{agent.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Current Nodes */}
-              {nodes.map(node => (
-                <div
-                  key={node.id}
-                  className={`flex items-center space-x-2 p-2 hover:bg-gray-700 rounded cursor-pointer ${
-                    selectedNode === node.id ? 'bg-blue-600' : ''
-                  }`}
-                  onClick={() => setSelectedNode(node.id)}
-                >
-                  <Eye className="w-4 h-4 text-gray-400" />
-                  <div 
-                    className="w-3 h-3 rounded-sm"
-                    style={{ backgroundColor: node.data.color }}
-                  />
-                  <span className="text-gray-300 text-sm">{node.data.title}</span>
+            <div className="space-y-3">
+              {nodeCategories.map(category => (
+                <div key={category.id}>
+                  <button
+                    onClick={() => toggleSection(category.id as keyof typeof expandedSections)}
+                    className="w-full flex items-center space-x-2 p-2 hover:bg-white/5 rounded text-left transition-colors"
+                  >
+                    {expandedSections[category.id as keyof typeof expandedSections] ? 
+                      <ChevronDown className="w-4 h-4" style={{ color: colors.textSecondary }} /> : 
+                      <ChevronRight className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                    }
+                    <span className="text-sm" style={{ color: colors.text }}>{category.name}</span>
+                  </button>
+                  
+                  {expandedSections[category.id as keyof typeof expandedSections] && (
+                    <div className="ml-6 space-y-1">
+                      {category.nodes.map(node => (
+                        <div
+                          key={node.id}
+                          className="flex items-center space-x-2 p-2 hover:bg-white/5 rounded cursor-pointer transition-colors"
+                          onClick={() => addNode(node)}
+                        >
+                          <div 
+                            className="w-3 h-3 rounded-sm"
+                            style={{ backgroundColor: node.color }}
+                          />
+                          <node.icon className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                          <span className="text-sm" style={{ color: colors.text }}>{node.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Top Toolbar */}
-        <div className="h-12 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4">
+        {/* Toolbar */}
+        <div className="h-12 border-b flex items-center justify-between px-4" style={{ backgroundColor: colors.sidebar, borderColor: colors.border }}>
           <div className="flex items-center space-x-1">
             {tools.map(tool => (
               <button
                 key={tool.id}
                 onClick={() => setCurrentTool(tool.id)}
-                className={`w-9 h-9 rounded flex items-center justify-center transition-colors ${
+                className={`w-8 h-8 rounded flex items-center justify-center transition-colors ${
                   currentTool === tool.id 
-                    ? 'bg-blue-600 text-white' 
-                    : 'hover:bg-gray-700 text-gray-400'
+                    ? 'text-white' 
+                    : 'hover:bg-white/10'
                 }`}
+                style={{ 
+                  backgroundColor: currentTool === tool.id ? colors.accent : 'transparent',
+                  color: currentTool === tool.id ? 'white' : colors.textSecondary
+                }}
                 title={`${tool.name} (${tool.shortcut})`}
               >
                 <tool.icon className="w-4 h-4" />
@@ -301,46 +568,70 @@ export default function AgentFlowDesigner() {
             ))}
           </div>
 
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-400 text-sm">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm" style={{ color: colors.textSecondary }}>
               {Math.round(viewportTransform.scale * 100)}%
             </span>
-            <button
-              onClick={() => handleZoom(-0.1)}
-              className="w-8 h-8 rounded flex items-center justify-center hover:bg-gray-700 text-gray-400"
-            >
-              <ZoomOut className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => handleZoom(0.1)}
-              className="w-8 h-8 rounded flex items-center justify-center hover:bg-gray-700 text-gray-400"
-            >
-              <ZoomIn className="w-4 h-4" />
-            </button>
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => handleZoom(-0.1)}
+                className="w-7 h-7 rounded flex items-center justify-center hover:bg-white/10 transition-colors"
+                style={{ color: colors.textSecondary }}
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => handleZoom(0.1)}
+                className="w-7 h-7 rounded flex items-center justify-center hover:bg-white/10 transition-colors"
+                style={{ color: colors.textSecondary }}
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            <button className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 border-0"
+              style={{ 
+                backgroundColor: colors.panel,
+                color: colors.text,
+                borderColor: colors.border
+              }}
+            >
               <Play className="w-4 h-4" />
               Test
-            </button>
-            <button className="px-3 py-1.5 bg-gray-700 text-gray-300 text-sm rounded hover:bg-gray-600 transition-colors flex items-center gap-2">
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 border-0"
+              style={{ 
+                backgroundColor: colors.panel,
+                color: colors.text,
+                borderColor: colors.border
+              }}
+            >
               <Share className="w-4 h-4" />
               Share
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden">
           <div
             ref={canvasRef}
-            className="absolute inset-0 bg-gray-900"
+            className="absolute inset-0"
             style={{ 
-              cursor: currentTool === 'hand' || isSpacePressed ? 'grab' : 'default',
+              backgroundColor: colors.background,
+              cursor: currentTool === 'hand' || isSpacePressed ? 'grab' : 
+                     currentTool === 'connect' ? 'crosshair' : 'default',
               backgroundImage: `
-                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
               `,
               backgroundSize: `${20 * viewportTransform.scale}px ${20 * viewportTransform.scale}px`,
               backgroundPosition: `${viewportTransform.x}px ${viewportTransform.y}px`
@@ -350,7 +641,27 @@ export default function AgentFlowDesigner() {
             onMouseUp={handleMouseUp}
             onClick={handleCanvasClick}
           >
-            {/* Agent Nodes */}
+            {/* SVG for connections */}
+            <svg 
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                transform: `translate(${viewportTransform.x}px, ${viewportTransform.y}px) scale(${viewportTransform.scale})`,
+                transformOrigin: '0 0'
+              }}
+            >
+              {connections.map(conn => (
+                <path
+                  key={conn.id}
+                  d={getConnectionPath(conn)}
+                  stroke={colors.accent}
+                  strokeWidth="2"
+                  fill="none"
+                  opacity="0.8"
+                />
+              ))}
+            </svg>
+
+            {/* Nodes */}
             <div
               style={{
                 transform: `translate(${viewportTransform.x}px, ${viewportTransform.y}px) scale(${viewportTransform.scale})`,
@@ -364,28 +675,71 @@ export default function AgentFlowDesigner() {
                 return (
                   <div
                     key={node.id}
-                    className={`absolute bg-gray-800 border-2 cursor-pointer transition-all ${
-                      isSelected ? 'border-blue-500' : 'border-gray-600 hover:border-gray-500'
+                    className={`absolute border-2 cursor-pointer transition-all ${
+                      isSelected ? 'shadow-lg' : 'hover:shadow-md'
                     }`}
                     style={{
                       left: node.position.x,
                       top: node.position.y,
                       width: node.size.width,
                       height: node.size.height,
-                      userSelect: 'none'
+                      userSelect: 'none',
+                      borderRadius: '4px',
+                      backgroundColor: colors.panel,
+                      borderColor: isSelected ? colors.accent : colors.border
                     }}
-                    onClick={(e) => handleNodeClick(node.id, e)}
+                    onMouseDown={(e) => handleNodeMouseDown(node.id, e)}
                   >
+                    {/* Header */}
                     <div 
                       className="h-8 flex items-center justify-center"
-                      style={{ backgroundColor: node.data.color }}
+                      style={{ 
+                        backgroundColor: node.data.color,
+                        borderTopLeftRadius: '2px',
+                        borderTopRightRadius: '2px'
+                      }}
                     >
-                      <IconComponent className="w-5 h-5 text-white" />
+                      <IconComponent className="w-4 h-4 text-white" />
                     </div>
+                    
+                    {/* Content */}
                     <div className="p-3">
-                      <h4 className="font-medium text-sm text-white">{node.data.title}</h4>
-                      <p className="text-xs text-gray-400 mt-1">{node.data.description}</p>
+                      <h4 className="font-medium text-sm mb-1" style={{ color: colors.text }}>
+                        {node.data.title}
+                      </h4>
+                      <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        {node.data.description}
+                      </p>
                     </div>
+
+                    {/* Input/Output Ports */}
+                    {node.inputs.map((input, idx) => (
+                      <div
+                        key={input.id}
+                        className="absolute w-3 h-3 rounded-full border-2 cursor-pointer hover:scale-110 transition-transform"
+                        style={{
+                          left: -6,
+                          top: 40 + idx * 20,
+                          backgroundColor: colors.background,
+                          borderColor: colors.accent
+                        }}
+                        onClick={(e) => handleInputClick(node.id, input.id, e)}
+                      />
+                    ))}
+                    
+                    {node.outputs.map((output, idx) => (
+                      <div
+                        key={output.id}
+                        className="absolute w-3 h-3 rounded-full border-2 cursor-pointer hover:scale-110 transition-transform"
+                        style={{
+                          right: -6,
+                          top: 40 + idx * 20,
+                          backgroundColor: colors.accent,
+                          borderColor: colors.accent
+                        }}
+                        onClick={(e) => handleOutputClick(node.id, output.id, e)}
+                      />
+                    ))}
                   </div>
                 )
               })}
@@ -395,75 +749,27 @@ export default function AgentFlowDesigner() {
             {nodes.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-gray-800 border border-gray-600 flex items-center justify-center mx-auto mb-4">
-                    <Bot className="w-8 h-8 text-gray-400" />
+                  <div 
+                    className="w-16 h-16 border rounded-lg flex items-center justify-center mx-auto mb-4"
+                    style={{ 
+                      backgroundColor: colors.panel,
+                      borderColor: colors.border
+                    }}
+                  >
+                    <Bot className="w-8 h-8" style={{ color: colors.textSecondary }} />
                   </div>
-                  <h2 className="text-lg font-medium text-gray-300 mb-2">Start designing agents</h2>
-                  <p className="text-gray-500 text-sm">Add agents from the sidebar or press A to create</p>
+                  <h2 className="text-lg font-medium mb-2" style={{ color: colors.text }}>
+                    Start designing your agent
+                  </h2>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    Add nodes from the sidebar or press <kbd className="px-2 py-1 bg-white/10 rounded text-xs">C</kbd> to connect
+                  </p>
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* Right Sidebar - Properties */}
-      {selectedNode && (
-        <div className="w-72 bg-gray-800 border-l border-gray-700 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-medium">Properties</h3>
-            <button
-              onClick={() => setSelectedNode(null)}
-              className="p-1 hover:bg-gray-700 rounded text-gray-400"
-            >
-              ✕
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-gray-400 text-sm mb-2">Name</label>
-              <input
-                type="text"
-                className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-                defaultValue="Writer Agent"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-gray-400 text-sm mb-2">Type</label>
-              <select className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                {agentTypes.map(type => (
-                  <option key={type.id} value={type.id}>{type.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-gray-400 text-sm mb-2">Personality</label>
-              <select className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
-                <option>Professional</option>
-                <option>Friendly</option>
-                <option>Technical</option>
-                <option>Creative</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-gray-400 text-sm mb-2">Instructions</label>
-              <textarea
-                className="w-full bg-gray-700 border border-gray-600 text-white px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
-                rows={4}
-                placeholder="Define how this agent should behave..."
-              />
-            </div>
-            
-            <button className="w-full py-2 bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
-              Test Agent
-            </button>
-          </div>
-        </div>
-      )}
     </div>
-  )
+  );
 }
