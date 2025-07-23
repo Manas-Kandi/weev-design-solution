@@ -78,10 +78,13 @@ export default function CanvasEngine(props: Props) {
       {/* Grid */}
       <defs>
         <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke={theme.border} strokeWidth="1"/>
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#333333" strokeWidth="0.5"/>
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#grid)" />
+      <rect width="100%" height="100%" fill="#1a1a1a" />
+      <g patternUnits="userSpaceOnUse">
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </g>
 
       {/* Connections */}
       {connections.map(c => {
@@ -120,9 +123,8 @@ export default function CanvasEngine(props: Props) {
             width={node.size.width}
             height={node.size.height}
             fill={theme.bgElevate}
-            stroke={rest.selectedNodeId === node.id ? theme.active : theme.border}
+            stroke="#333333"
             strokeWidth="1"
-            className="transition"
           />
           <foreignObject
             x={node.position.x}

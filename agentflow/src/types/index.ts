@@ -56,6 +56,7 @@ export interface NodeType {
   color: string
   description: string
   type: 'agent' | 'gui' | 'logic'
+  subtype?: string
   defaultInputs?: { id: string; label: string; type?: string }[]
   defaultOutputs?: { id: string; label: string; type?: string }[]
 }
