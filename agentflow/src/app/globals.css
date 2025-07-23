@@ -112,6 +112,19 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0d0d0d;
+    --foreground: #e6e6e6;
+  }
+  * { border-radius: 0 !important; }
+  body { @apply bg-[var(--background)] text-[var(--foreground)]; }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

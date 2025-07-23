@@ -1,23 +1,8 @@
 // Node definitions and color palette for AgentFlow
 import { NodeCategory, NodeType, Colors } from '@/types';
 import { User, Wrench, Database, Settings, Terminal, LayoutDashboard, MessageSquare } from 'lucide-react';
-
-export const colors: Colors = {
-  background: '#f8fafc',
-  sidebar: '#f1f5f9',
-  panel: '#f3f4f6',
-  border: '#e5e7eb',
-  text: '#1e293b',
-  textSecondary: '#64748b',
-  accent: '#6366f1',
-  success: '#10b981',
-  warning: '#f59e42',
-  error: '#f43f5e',
-  purple: '#a78bfa',
-  orange: '#fb923c',
-  blue: '#3b82f6',
-  green: '#22c55e',
-};
+import { theme } from './theme';
+export const colors = theme;          // drop-in for legacy refs
 
 export const nodeCategories: NodeCategory[] = [
   {
@@ -44,7 +29,7 @@ export const nodeCategories: NodeCategory[] = [
         id: 'dashboard',
         name: 'Dashboard',
         icon: LayoutDashboard,
-        color: colors.blue,
+        color: colors.bgElevate,
         description: 'A dashboard UI component',
         type: 'gui',
       },
@@ -52,7 +37,7 @@ export const nodeCategories: NodeCategory[] = [
         id: 'message',
         name: 'Message',
         icon: MessageSquare,
-        color: colors.purple,
+        color: colors.accent,
         description: 'A message UI component',
         type: 'gui',
       },
@@ -67,7 +52,7 @@ export const nodeCategories: NodeCategory[] = [
         id: 'if-else',
         name: 'If/Else',
         icon: Settings,
-        color: colors.orange,
+        color: colors.danger,
         description: 'Conditional logic node',
         type: 'logic',
       },
@@ -75,7 +60,7 @@ export const nodeCategories: NodeCategory[] = [
         id: 'output',
         name: 'Output',
         icon: Terminal,
-        color: colors.green,
+        color: colors.active,
         description: 'Output node',
         type: 'logic',
       },

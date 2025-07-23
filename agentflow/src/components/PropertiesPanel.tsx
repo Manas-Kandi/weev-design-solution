@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { colors } from "@/data/nodeDefinitions";
+import { theme } from "@/data/theme";
 import { CanvasNode } from "@/types";
 import { Minimize2, Play, Settings } from "lucide-react";
 
@@ -18,11 +18,11 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
       <div
         className="w-80 border-l flex flex-col items-center justify-center"
         style={{
-          backgroundColor: colors.sidebar,
-          borderColor: colors.border,
+          backgroundColor: theme.sidebar,
+          borderColor: theme.border,
         }}
       >
-        <p className="text-sm" style={{ color: colors.textSecondary }}>
+        <p className="text-sm" style={{ color: theme.textMute }}>
           Select a node to edit its properties.
         </p>
       </div>
@@ -33,18 +33,18 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
     <div
       className="w-80 border-l flex flex-col"
       style={{
-        backgroundColor: colors.sidebar,
-        borderColor: colors.border,
+        backgroundColor: theme.sidebar,
+        borderColor: theme.border,
       }}
     >
       {/* Panel Header */}
-      <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: colors.border }}>
-        <h3 className="font-medium" style={{ color: colors.text }}>
+      <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: theme.border }}>
+        <h3 className="font-medium" style={{ color: theme.text }}>
           Properties
         </h3>
         <button
           className="p-1 hover:bg-white/10 rounded transition-colors"
-          style={{ color: colors.textSecondary }}
+          style={{ color: theme.textMute }}
         >
           <Minimize2 className="w-4 h-4" />
         </button>
@@ -54,17 +54,17 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {/* Node Type Display */}
         <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
             Node Type
           </label>
-          <div className="flex items-center space-x-2 p-2 rounded" style={{ backgroundColor: colors.panel }}>
+          <div className="flex items-center space-x-2 p-2 rounded" style={{ backgroundColor: theme.bgElevate }}>
             <div
               className="w-4 h-4 rounded-sm flex items-center justify-center"
               style={{ backgroundColor: selectedNode.data.color }}
             >
               <selectedNode.data.icon className="w-3 h-3 text-white" />
             </div>
-            <span className="text-sm" style={{ color: colors.text }}>
+            <span className="text-sm" style={{ color: theme.text }}>
               {selectedNode.data.title}
             </span>
           </div>
@@ -72,14 +72,14 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
 
         {/* Node Name */}
         <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
             Name
           </label>
           <Input
             className="border-0"
             style={{
-              backgroundColor: colors.panel,
-              color: colors.text,
+              backgroundColor: theme.bgElevate,
+              color: theme.text,
             }}
             defaultValue={selectedNode.data.title}
             placeholder="Enter node name..."
@@ -88,14 +88,14 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
             Description
           </label>
           <textarea
             className="w-full px-3 py-2 text-sm rounded resize-none border-0"
             style={{
-              backgroundColor: colors.panel,
-              color: colors.text,
+              backgroundColor: theme.bgElevate,
+              color: theme.text,
             }}
             rows={3}
             placeholder="Describe what this node does..."
@@ -106,19 +106,19 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
         {/* Configuration based on node type */}
         {selectedNode.subtype === "desktop-screen" && (
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+            <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
               Screen Dimensions
             </label>
             <div className="grid grid-cols-2 gap-2">
               <Input
                 placeholder="Width"
                 className="border-0"
-                style={{ backgroundColor: colors.panel, color: colors.text }}
+                style={{ backgroundColor: theme.bgElevate, color: theme.text }}
               />
               <Input
                 placeholder="Height"
                 className="border-0"
-                style={{ backgroundColor: colors.panel, color: colors.text }}
+                style={{ backgroundColor: theme.bgElevate, color: theme.text }}
               />
             </div>
           </div>
@@ -127,14 +127,14 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
         {selectedNode.type === "agent" && (
           <>
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
                 AI Model
               </label>
               <select
                 className="w-full px-3 py-2 text-sm rounded border-0"
                 style={{
-                  backgroundColor: colors.panel,
-                  color: colors.text,
+                  backgroundColor: theme.bgElevate,
+                  color: theme.text,
                 }}
               >
                 <option>GPT-4</option>
@@ -144,14 +144,14 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: colors.textSecondary }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
                 System Prompt
               </label>
               <textarea
                 className="w-full px-3 py-2 text-sm rounded resize-none border-0"
                 style={{
-                  backgroundColor: colors.panel,
-                  color: colors.text,
+                  backgroundColor: theme.bgElevate,
+                  color: theme.text,
                 }}
                 rows={4}
                 placeholder="Enter the system prompt for this agent..."
@@ -160,14 +160,14 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
           </>
         )}
 
-        <Separator style={{ backgroundColor: colors.border }} />
+        <Separator style={{ backgroundColor: theme.border }} />
 
         {/* Actions */}
         <div className="space-y-2">
           <Button
             className="w-full gap-2"
             style={{
-              backgroundColor: colors.accent,
+              backgroundColor: theme.accent,
               color: "white",
             }}
           >
@@ -179,9 +179,9 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
             variant="outline"
             className="w-full gap-2 border-0"
             style={{
-              backgroundColor: colors.panel,
-              color: colors.text,
-              borderColor: colors.border,
+              backgroundColor: theme.bgElevate,
+              color: theme.text,
+              borderColor: theme.border,
             }}
           >
             <Settings className="w-4 h-4" />

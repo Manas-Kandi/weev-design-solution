@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { colors } from "@/data/nodeDefinitions";
+import { theme as colors } from "@/data/theme";
 import { Button } from "@/components/ui/button";
 import {
   MousePointer,
@@ -28,7 +28,7 @@ export default function DesignerLayout({
   return (
     <div
       className="h-screen w-full flex overflow-hidden"
-      style={{ backgroundColor: colors.background }}
+      style={{ backgroundColor: colors.bg }}
     >
       {/* Left Sidebar */}
       {left}

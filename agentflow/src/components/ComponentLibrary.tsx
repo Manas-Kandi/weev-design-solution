@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, Bot } from 'lucide-react';
-import { nodeCategories, colors } from '@/data/nodeDefinitions';
+import { nodeCategories } from '@/data/nodeDefinitions';
+import { theme as colors } from '@/data/theme';
 import { NodeType } from '@/types';
 
 interface ComponentLibraryProps {
@@ -30,7 +31,8 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
       <div className="h-12 border-b flex items-center px-4" style={{ borderColor: colors.border }}>
         <button 
           onClick={onBackToProjects}
-          className="flex items-center space-x-2 hover:bg-white/5 px-2 py-1 rounded transition-colors"
+          className="flex items-center space-x-2 hover:bg-white/5 px-2 py-1 transition-colors border-0 rounded-none shadow-none focus:ring-0 focus:outline-none"
+          style={{ borderRadius: 0, boxShadow: 'none' }}
         >
           <div className="w-6 h-6 rounded-sm flex items-center justify-center" style={{ backgroundColor: colors.accent }}>
             <Bot className="w-4 h-4 text-white" />
@@ -51,7 +53,8 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
               <div key={category.id}>
                 <button
                   onClick={() => toggleSection(category.id as keyof typeof expandedSections)}
-                  className="w-full flex items-center space-x-2 p-2 hover:bg-white/5 rounded text-left transition-colors"
+                  className="w-full flex items-center space-x-2 p-2 hover:bg-white/5 text-left transition-colors border-0 rounded-none shadow-none focus:ring-0 focus:outline-none"
+                  style={{ borderRadius: 0, boxShadow: 'none' }}
                 >
                   {expandedSections[category.id as keyof typeof expandedSections] ? 
                     <ChevronDown className="w-4 h-4" style={{ color: colors.textSecondary }} /> : 
@@ -65,7 +68,8 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
                     {category.nodes.map(node => (
                       <div
                         key={node.id}
-                        className="flex items-center space-x-2 p-2 hover:bg-white/5 rounded cursor-pointer transition-colors"
+                        className="flex items-center space-x-2 p-2 hover:bg-white/5 cursor-pointer transition-colors border-0 rounded-none shadow-none focus:ring-0 focus:outline-none"
+                        style={{ borderRadius: 0, boxShadow: 'none' }}
                         onClick={() => onAddNode(node)}
                       >
                         <div 

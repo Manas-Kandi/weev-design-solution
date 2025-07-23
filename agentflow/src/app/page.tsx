@@ -106,6 +106,8 @@ export default function AgentFlowPage() {
           connections={connections}
           onNodeSelect={handleNodeSelect}
           selectedNodeId={selectedNode?.id || null}
+          onNodeUpdate={handleNodeChange}
+          onConnectionsChange={setConnections}
         />
       }
       right={

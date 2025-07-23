@@ -33,7 +33,7 @@ export default function ProjectDashboard({
   };
 
   return (
-    <div className="h-screen" style={{ backgroundColor: colors.background }}>
+    <div className="h-screen" style={{ backgroundColor: colors.bg }}>
       {/* Header */}
       <div
         className="border-b"
@@ -64,20 +64,24 @@ export default function ProjectDashboard({
               />
               <Input
                 placeholder="Search projects..."
-                className="pl-10 w-64 border-0"
+                className="pl-10 w-64 border-0 shadow-none focus:ring-0 focus:border-0"
                 style={{
                   backgroundColor: colors.panel,
                   color: colors.text,
                   borderColor: colors.border,
+                  borderRadius: 0,
+                  boxShadow: 'none',
                 }}
               />
             </div>
             <Button
               onClick={onCreateProject}
-              className="gap-2"
+              className="gap-2 shadow-none border-0 focus:ring-0"
               style={{
                 backgroundColor: colors.accent,
-                color: "white",
+                color: 'white',
+                borderRadius: 0,
+                boxShadow: 'none',
               }}
             >
               <Plus className="w-4 h-4" />
