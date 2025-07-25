@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { nodeCategories, colors } from "@/data/nodeDefinitions";
+import { useState, useEffect } from "react";
 import { Project, CanvasNode, Connection, NodeType } from "@/types";
+import { supabase } from '@/lib/supabaseClient';
 import ProjectDashboard from "@/components/ProjectDashboard";
 import DesignerLayout from "@/components/DesignerLayout";
 import { ComponentLibrary } from "@/components/ComponentLibrary";
@@ -11,74 +11,106 @@ import PropertiesPanel from "@/components/PropertiesPanel";
 
 export default function AgentFlowPage() {
   const [currentView, setCurrentView] = useState<'projects' | 'designer'>("projects");
-  const [projects] = useState<Project[]>([
-    {
-      id: "1",
-      name: "Customer Support Agent",
-      description: "Handles customer inquiries and escalations",
-      lastModified: new Date("2024-01-15"),
-      nodeCount: 12,
-      status: "testing",
-    },
-    {
-      id: "2",
-      name: "Sales Qualification Bot",
-      description: "Qualifies leads and schedules demos",
-      lastModified: new Date("2024-01-12"),
-      nodeCount: 8,
-      status: "draft",
-    },
-    {
-      id: "3",
-      name: "Onboarding Assistant",
-      description: "Guides new users through setup",
-      lastModified: new Date("2024-01-10"),
-      nodeCount: 15,
-      status: "deployed",
-    },
-  ]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [nodes, setNodes] = useState<CanvasNode[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [selectedNode, setSelectedNode] = useState<CanvasNode | null>(null);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
-  // Project dashboard handlers
-  const handleCreateProject = () => {
-    setCurrentView("designer");
-    setNodes([]);
-    setConnections([]);
-    setSelectedNode(null);
-  };
-  const handleOpenProject = (id: string) => {
-    setCurrentView("designer");
-    setNodes([]);
-    setConnections([]);
-    setSelectedNode(null);
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  const fetchProjects = async () => {
+    const { data, error } = await supabase
+      .from('projects')
+      .select();
+
+    if (error) console.error('Error fetching projects:', error);
+    setProjects(data || []);
   };
 
-  // Designer handlers
-  const handleAddNode = (nodeType: NodeType) => {
-    const newNode: CanvasNode = {
-      id: `node-${Date.now()}`,
-      type: nodeType.type,
-      subtype: nodeType.id,
-      position: { x: 300, y: 200 },
-      size: { width: 220, height: 140 },
-      data: {
-        title: nodeType.name,
-        description: nodeType.description,
-        color: nodeType.color,
-        icon: nodeType.icon,
-      },
-      inputs: nodeType.defaultInputs || [{ id: "input-1", label: "Input" }],
-      outputs: nodeType.defaultOutputs || [{ id: "output-1", label: "Output" }],
-    };
-    setNodes((prev) => [...prev, newNode]);
-    setSelectedNode(newNode);
+  const fetchNodes = async (projectId: string) => {
+    const { data, error } = await supabase
+      .from('nodes')
+      .select()
+      .eq('project_id', projectId);
+
+    if (error) console.error('Error fetching nodes:', error);
+    setNodes(data || []);
   };
-  const handleNodeSelect = (node: CanvasNode | null) => setSelectedNode(node);
-  const handleNodeChange = (updatedNode: CanvasNode) => {
-    setNodes((prev) => prev.map((n) => (n.id === updatedNode.id ? updatedNode : n)));
-    setSelectedNode(updatedNode);
+
+  const fetchConnections = async (projectId: string) => {
+    const { data, error } = await supabase
+      .from('connections')
+      .select()
+      .eq('project_id', projectId);
+
+    if (error) console.error('Error fetching connections:', error);
+    setConnections(data || []);
+  };
+
+  const handleCreateProject = async (projectData: Omit<Project, 'id' | 'lastModified' | 'nodeCount'>) => {
+    const { data, error } = await supabase
+      .from('projects')
+      .insert([projectData])
+      .select();
+
+    if (error) {
+      console.error('Error creating project:', error);
+      return;
+    }
+
+    setProjects(prev => [...prev, data[0]]);
+    setCurrentProject(data[0]);
+    setCurrentView('designer');
+  };
+
+  const handleOpenProject = async (projectId: string) => {
+    const project = projects.find(p => p.id === projectId) || null;
+    setCurrentProject(project);
+    setCurrentView('designer');
+    if (project) {
+      await fetchNodes(projectId);
+      await fetchConnections(projectId);
+    }
+  };
+
+  const handleAddNode = async (nodeData: NodeType) => {
+    if (!currentProject) return;
+    const { data, error } = await supabase
+      .from('nodes')
+      .insert([{
+        ...nodeData,
+        project_id: currentProject.id
+      }])
+      .select();
+
+    if (error) {
+      console.error('Error adding node:', error);
+      return;
+    }
+
+    setNodes(prev => [...prev, data[0]]);
+    setSelectedNode(data[0]);
+  };
+
+  const handleCreateConnection = async (connectionData: Connection) => {
+    if (!currentProject) return;
+    const { data, error } = await supabase
+      .from('connections')
+      .insert([{
+        ...connectionData,
+        project_id: currentProject.id
+      }])
+      .select();
+
+    if (error) {
+      console.error('Error creating connection:', error);
+      return;
+    }
+
+    setConnections(prev => [...prev, data[0]]);
   };
 
   // Render
@@ -86,7 +118,7 @@ export default function AgentFlowPage() {
     return (
       <ProjectDashboard
         projects={projects}
-        onCreateProject={handleCreateProject}
+        onCreateProject={() => handleCreateProject({ name: '', description: '', status: 'draft' })}
         onOpenProject={handleOpenProject}
       />
     );
@@ -104,16 +136,26 @@ export default function AgentFlowPage() {
         <DesignerCanvas
           nodes={nodes}
           connections={connections}
-          onNodeSelect={handleNodeSelect}
-          selectedNodeId={selectedNode?.id || null}
-          onNodeUpdate={handleNodeChange}
-          onConnectionsChange={setConnections}
+          onNodeSelect={(n: CanvasNode | null) => setSelectedNode(n)}
+          selectedNodeId={selectedNode ? selectedNode.id : null}
+          onConnectionsChange={(updatedConnections: Connection[]) => setConnections(updatedConnections)}
+          onCreateConnection={handleCreateConnection}
+          onNodeUpdate={(updatedNode: CanvasNode) => {
+            setNodes(prevNodes =>
+              prevNodes.map(node => node.id === updatedNode.id ? updatedNode : node)
+            );
+            if (selectedNode && selectedNode.id === updatedNode.id) {
+              setSelectedNode(updatedNode);
+            }
+          }}
         />
       }
       right={
         <PropertiesPanel
           selectedNode={selectedNode}
-          onChange={handleNodeChange}
+          onChange={(updatedNode: CanvasNode) => {
+            // Handle node update logic here
+          }}
         />
       }
     />

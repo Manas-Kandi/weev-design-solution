@@ -1,8 +1,8 @@
 // Node definitions and color palette for AgentFlow
 import { NodeCategory, NodeType, Colors } from '@/types';
-import { User, Wrench, Database, Settings, Terminal, LayoutDashboard, MessageSquare, FileText, GitBranch } from 'lucide-react';
-import { theme } from './theme';
-export const colors = theme;          // drop-in for legacy refs
+import { User, Wrench, Database, Settings, Terminal, LayoutDashboard, MessageSquare } from 'lucide-react';
+import { theme } from '@/data/theme';
+export const colors = theme;   // ← now has everything
 
 export const nodeCategories: NodeCategory[] = [
   {
@@ -66,59 +66,4 @@ export const nodeCategories: NodeCategory[] = [
       },
     ],
   },
-  {
-    id: 'core',
-    name: 'Core Nodes',
-    type: 'agent', // Add a valid type to match NodeCategory
-    nodes: [
-      {
-        id: 'user_intent',
-        name: 'User Intent',
-        type: 'agent',
-        subtype: 'intent',
-        color: '#4285F4',
-        icon: MessageSquare,
-        description: 'Represents user input and intent detection',
-        defaultInputs: [{ id: 'input-1', label: 'Trigger' }],
-        defaultOutputs: [{ id: 'output-1', label: 'Detected Intent' }],
-      },
-      {
-        id: 'agent_response',
-        name: 'Agent Response',
-        type: 'agent',
-        subtype: 'response',
-        color: '#34A853',
-        icon: FileText,
-        description: 'Generates agent responses',
-        defaultInputs: [{ id: 'input-1', label: 'Context' }],
-        defaultOutputs: [{ id: 'output-1', label: 'Response' }],
-      },
-      {
-        id: 'branch',
-        name: 'Branch/Condition',
-        type: 'logic',
-        subtype: 'branch',
-        color: '#9C27B0',
-        icon: GitBranch,
-        description: 'Branch based on conditions',
-        defaultInputs: [{ id: 'input-1', label: 'Input' }],
-        defaultOutputs: [
-          { id: 'output-1', label: 'True' },
-          { id: 'output-2', label: 'False' },
-        ],
-      },
-      {
-        id: 'memory',
-        name: 'Memory Object',
-        type: 'agent',
-        subtype: 'memory',
-        color: '#FF9800',
-        icon: Database,
-        description: 'Stores and manages memory',
-        defaultInputs: [{ id: 'input-1', label: 'Data' }],
-        defaultOutputs: [{ id: 'output-1', label: 'Stored' }],
-      },
-    ],
-  },
-  // ...add other categories as needed...
 ];

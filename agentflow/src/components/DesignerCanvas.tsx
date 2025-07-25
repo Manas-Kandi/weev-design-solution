@@ -9,6 +9,7 @@ interface Props {
   selectedNodeId: string | null;
   onNodeUpdate: (updated: CanvasNode) => void;
   onConnectionsChange: (c: Connection[]) => void;
+  onCreateConnection: (connectionData: Connection) => Promise<void>; // Added prop
 }
 
 export default function DesignerCanvas(props: Props) {

@@ -8,9 +8,9 @@ export interface CanvasNode {
     title: string
     description: string
     color: string
-    icon: any
+    icon: string
     content?: string
-    config?: any
+    config?: Record<string, unknown>
   }
   inputs: { id: string; label: string; type?: string }[]
   outputs: { id: string; label: string; type?: string }[]
@@ -38,7 +38,7 @@ export interface Project {
 export interface Tool {
   id: string
   name: string
-  icon: any
+  icon: string
   shortcut: string
 }
 
@@ -52,7 +52,7 @@ export interface NodeCategory {
 export interface NodeType {
   id: string
   name: string
-  icon: any
+  icon: string
   color: string
   description: string
   type: 'agent' | 'gui' | 'logic'

@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { theme } from "@/data/theme";
 import { CanvasNode } from "@/types";
 import { Minimize2, Play, Settings } from "lucide-react";
+import React from "react";
 
 interface PropertiesPanelProps {
   selectedNode: CanvasNode | null;
@@ -62,7 +63,7 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
               className="w-4 h-4 rounded-sm flex items-center justify-center"
               style={{ backgroundColor: selectedNode.data.color }}
             >
-              <selectedNode.data.icon className="w-3 h-3 text-white" />
+              {selectedNode.data.icon && React.createElement(selectedNode.data.icon, { className: "w-3 h-3 text-white" })}
             </div>
             <span className="text-sm" style={{ color: theme.text }}>
               {selectedNode.data.title}

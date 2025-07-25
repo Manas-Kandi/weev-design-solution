@@ -1,0 +1,17 @@
+[
+  {
+    "key": "ctrl+shift+f",
+    "command": "workbench.action.tasks.build",
+    "when": "isInSourceControl"
+  },
+  {
+    "key": "ctrl+shift+r",
+    "command": "workbench.action.tasks.rebuild",
+    "when": "isInSourceControl"
+  },
+  {
+    "key": "ctrl+shift+t",
+    "command": "workbench.action.tasks.test",
+    "when": "isInSourceControl"
+  }
+]

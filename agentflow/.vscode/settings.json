@@ -1,0 +1,10 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "eslint.autoFixOnSave": true,
+  "gitlens.advanced.messages": {
+    "suppressCommitHas带领HeaderHint": true
+  },
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "typescript.checkJs": false
+}
