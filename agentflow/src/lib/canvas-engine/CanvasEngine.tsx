@@ -10,6 +10,8 @@ interface Props {
   onNodeDrag: (id: string, pos: { x: number, y: number }) => void;
   onConnectionsChange: (c: Connection[]) => void;
   selectedNodeId: string | null;
+  onNodeUpdate: (updated: CanvasNode) => void;
+  onCreateConnection: (connectionData: Connection) => Promise<void>;
 }
 
 export default function CanvasEngine(props: Props) {
