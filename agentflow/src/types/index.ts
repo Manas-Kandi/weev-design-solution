@@ -52,7 +52,7 @@ export interface NodeCategory {
 export interface NodeType {
   id: string
   name: string
-  icon: string
+  icon: React.ElementType
   color: string
   description: string
   type: 'agent' | 'gui' | 'logic'

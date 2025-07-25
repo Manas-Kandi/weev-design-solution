@@ -12,13 +12,11 @@ interface ComponentLibraryProps {
 }
 
 export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibraryProps) {
-  const [expandedSections, setExpandedSections] = useState({
-    screens: true,
-    agents: true,
-    logic: false
-  });
+  // Dynamically create expandedSections based on nodeCategories
+  const initialSections = Object.fromEntries(nodeCategories.map(cat => [cat.id, true]));
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(initialSections);
 
-  const toggleSection = (section: keyof typeof expandedSections) => {
+  const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
@@ -52,18 +50,18 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
             {nodeCategories.map(category => (
               <div key={category.id}>
                 <button
-                  onClick={() => toggleSection(category.id as keyof typeof expandedSections)}
+                  onClick={() => toggleSection(category.id)}
                   className="w-full flex items-center space-x-2 p-2 hover:bg-white/5 text-left transition-colors border-0 rounded-none shadow-none focus:ring-0 focus:outline-none"
                   style={{ borderRadius: 0, boxShadow: 'none' }}
                 >
-                  {expandedSections[category.id as keyof typeof expandedSections] ? 
+                  {expandedSections[category.id] ? 
                     <ChevronDown className="w-4 h-4" style={{ color: colors.textSecondary }} /> : 
                     <ChevronRight className="w-4 h-4" style={{ color: colors.textSecondary }} />
                   }
                   <span className="text-sm" style={{ color: colors.text }}>{category.name}</span>
                 </button>
                 
-                {expandedSections[category.id as keyof typeof expandedSections] && (
+                {expandedSections[category.id] && (
                   <div className="ml-6 space-y-1">
                     {category.nodes.map(node => (
                       <div
@@ -76,7 +74,7 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
                           className="w-3 h-3 rounded-sm"
                           style={{ backgroundColor: node.color }}
                         />
-                        <node.icon className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                        {React.createElement(node.icon, { className: "w-4 h-4", style: { color: colors.textSecondary } })}
                         <span className="text-sm" style={{ color: colors.text }}>{node.name}</span>
                       </div>
                     ))}

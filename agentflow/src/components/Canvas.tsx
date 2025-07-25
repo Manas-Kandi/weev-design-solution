@@ -45,7 +45,7 @@ export function Canvas({ onNodeSelect, selectedNode }: CanvasProps) {
 
     const newNode: CanvasNode = {
       id: `node-${Date.now()}`,
-      type: nodeType as any,
+      type: nodeType as CanvasNode['type'],
       position: { x, y },
       title: `${nodeType} Agent`,
       description: `A ${nodeType} micro-agent`
@@ -134,7 +134,7 @@ export function Canvas({ onNodeSelect, selectedNode }: CanvasProps) {
             >
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-                  <IconComponent className="w-4 h-4" />
+                  {IconComponent && <IconComponent className="w-4 h-4" />}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-medium text-sm text-gray-900">{node.title}</h3>
