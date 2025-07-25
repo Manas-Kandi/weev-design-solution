@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, Bot } from 'lucide-react';
 import { nodeCategories } from '@/data/nodeDefinitions';
 import { theme as colors } from '@/data/theme';
-import { NodeType } from '@/types';
+import { NodeType, NodeCategory } from '@/types';
 
 interface ComponentLibraryProps {
   onAddNode: (nodeType: NodeType) => void;
@@ -13,8 +13,9 @@ interface ComponentLibraryProps {
 
 export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibraryProps) {
   // Dynamically create expandedSections based on nodeCategories
-  const initialSections = Object.fromEntries(nodeCategories.map(cat => [cat.id, true]));
+  const initialSections: Record<string, boolean> = Object.fromEntries(nodeCategories.map((cat: NodeCategory) => [cat.id, true]));
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(initialSections);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
@@ -22,6 +23,15 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
       [section]: !prev[section]
     }));
   };
+
+  // Filter nodes based on search term
+  const filteredCategories: NodeCategory[] = nodeCategories.map((category: NodeCategory) => ({
+    ...category,
+    nodes: category.nodes.filter((node: NodeType) => 
+      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      node.description.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  })).filter((category: NodeCategory) => category.nodes.length > 0);
 
   return (
     <div className="w-64 border-r flex flex-col" style={{ backgroundColor: colors.sidebar, borderColor: colors.border }}>
@@ -47,7 +57,7 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
           </div>
           
           <div className="space-y-3">
-            {nodeCategories.map(category => (
+            {filteredCategories.map(category => (
               <div key={category.id}>
                 <button
                   onClick={() => toggleSection(category.id)}

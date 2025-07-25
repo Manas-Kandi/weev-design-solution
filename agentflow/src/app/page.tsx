@@ -8,6 +8,7 @@ import DesignerLayout from "@/components/DesignerLayout";
 import { ComponentLibrary } from "@/components/ComponentLibrary";
 import DesignerCanvas from "@/components/DesignerCanvas";
 import PropertiesPanel from "@/components/PropertiesPanel";
+import { nodeCategories } from "@/data/nodeDefinitions";
 
 export default function AgentFlowPage() {
   const [currentView, setCurrentView] = useState<'projects' | 'designer'>("projects");
@@ -189,18 +190,36 @@ export default function AgentFlowPage() {
       const baseX = 100 + (nodes.length * 50);
       const baseY = 100 + (nodes.length * 50);
 
+      // Find the node definition from nodeCategories
+      const nodeDef = nodeCategories
+        .flatMap(cat => cat.nodes)
+        .find(n => n.id === nodeData.id);
+
+      if (!nodeDef) {
+        console.warn('Node definition not found for id:', nodeData.id);
+      }
+
+      // Use nodeDef for inputs/outputs, color, icon, etc. Fallback to nodeData if missing
+      const defaultInputs = nodeDef?.defaultInputs || nodeData.defaultInputs || [{ id: 'input-1', label: 'Input', type: 'text' }];
+      const defaultOutputs = nodeDef?.defaultOutputs || nodeData.defaultOutputs || [{ id: 'output-1', label: 'Output', type: 'text' }];
+      const color = nodeDef?.color || nodeData.color || '#0066cc';
+      const icon = nodeDef?.id || nodeData.id;
+      const description = nodeDef?.description || nodeData.description || '';
+      const title = nodeDef?.name || nodeData.name || 'Untitled Node';
+      const subtype = nodeDef?.subtype || nodeData.subtype || nodeDef?.id || nodeData.id;
+
       // Create payload that matches your existing schema
       const nodePayload = {
         project_id: currentProject.id,
-        type: nodeData.type,
-        subtype: nodeData.subtype || nodeData.id,
+        type: nodeDef?.type || nodeData.type,
+        subtype,
         position: { x: baseX, y: baseY }, // JSON field
         size: { width: 200, height: 100 }, // JSON field
         data: { // JSON field
-          title: nodeData.name,
-          description: nodeData.description,
-          color: nodeData.color,
-          icon: nodeData.id // Changed from nodeData.icon.name to nodeData.id
+          title,
+          description,
+          color,
+          icon
         }
         // Note: No user_id - you might need to add this if your RLS requires it
       };
@@ -237,15 +256,16 @@ export default function AgentFlowPage() {
         position: data.position || { x: baseX, y: baseY },
         size: data.size || { width: 200, height: 100 },
         data: data.data || {
-          title: nodeData.name,
-          description: nodeData.description,
-          color: nodeData.color,
-          icon: nodeData.id // Changed from nodeData.icon.name to nodeData.id
+          title,
+          description,
+          color,
+          icon
         },
-        inputs: [{ id: 'input-1', label: 'Input' }],
-        outputs: [{ id: 'output-1', label: 'Output' }]
+        inputs: defaultInputs,
+        outputs: defaultOutputs
       };
 
+      console.log('Node created and added to canvas:', newNode);
       setNodes(prev => [...prev, newNode]);
       setSelectedNode(newNode);
     } catch (err) {
@@ -354,7 +374,12 @@ export default function AgentFlowPage() {
         <PropertiesPanel
           selectedNode={selectedNode}
           onChange={(updatedNode: CanvasNode) => {
-            // Handle node update logic here
+            setNodes(prevNodes =>
+              prevNodes.map(node => node.id === updatedNode.id ? updatedNode : node)
+            );
+            if (selectedNode && selectedNode.id === updatedNode.id) {
+              setSelectedNode(updatedNode);
+            }
           }}
         />
       }

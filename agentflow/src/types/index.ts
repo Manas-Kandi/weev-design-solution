@@ -45,7 +45,7 @@ export interface Tool {
 export interface NodeCategory {
   id: string
   name: string
-  type: 'agent' | 'gui' | 'logic'
+  type: 'agent' | 'conversation' | 'logic' | 'testing' | 'ui'
   nodes: NodeType[]
 }
 
@@ -55,7 +55,7 @@ export interface NodeType {
   icon: React.ElementType
   color: string
   description: string
-  type: 'agent' | 'gui' | 'logic'
+  type: 'agent' | 'conversation' | 'logic' | 'testing' | 'ui'
   subtype?: string
   defaultInputs?: { id: string; label: string; type?: string }[]
   defaultOutputs?: { id: string; label: string; type?: string }[]
