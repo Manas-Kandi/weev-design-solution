@@ -83,16 +83,18 @@ export default function CanvasEngine(props: Props) {
     return null;
   }, []);
 
-  // Event handlers
+  // --- Mouse Down on Canvas ---
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only start panning if not dragging a node or connection
+    if (isDragging || dragConnection) return;
     if (e.button === 1 || (e.button === 0 && e.metaKey)) {
-      // Middle mouse or Cmd+click for panning
       setIsPanning(true);
       setPanStart({ x: e.clientX - viewportTransform.x, y: e.clientY - viewportTransform.y });
       e.preventDefault();
     }
-  }, [viewportTransform]);
+  }, [viewportTransform, isDragging, dragConnection]);
 
+  // --- Mouse Move on Canvas ---
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isPanning) {
       setViewportTransform(prev => ({
@@ -100,15 +102,13 @@ export default function CanvasEngine(props: Props) {
         x: e.clientX - panStart.x,
         y: e.clientY - panStart.y
       }));
-    } else if (isDragging && draggedNode) {
-      const canvasPos = screenToCanvas(e.clientX - dragOffset.x, e.clientY - dragOffset.y);
-      onNodeDrag(draggedNode, canvasPos);
     } else if (dragConnection) {
       const canvasPos = screenToCanvas(e.clientX, e.clientY);
       setDragConnection(prev => prev ? { ...prev, currentPos: canvasPos } : null);
     }
-  }, [isPanning, isDragging, draggedNode, dragConnection, panStart, dragOffset, screenToCanvas, onNodeDrag]);
+  }, [isPanning, panStart, dragConnection, screenToCanvas]);
 
+  // --- Mouse Up on Canvas ---
   const handleMouseUp = useCallback(() => {
     setIsPanning(false);
     setIsDragging(false);
@@ -116,38 +116,36 @@ export default function CanvasEngine(props: Props) {
     setDragConnection(null);
   }, []);
 
+  // --- Node Dragging ---
   const handleNodeMouseDown = useCallback((e: React.MouseEvent, nodeId: string) => {
     e.stopPropagation();
-    
+    if (isPanning) return; // Don't drag node while panning
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
-
     onNodeSelect(node);
     setIsDragging(true);
     setDraggedNode(nodeId);
-
     const canvasPos = screenToCanvas(e.clientX, e.clientY);
     setDragOffset({
       x: canvasPos.x - node.position.x,
       y: canvasPos.y - node.position.y
     });
-  }, [nodes, onNodeSelect, screenToCanvas]);
+  }, [nodes, onNodeSelect, screenToCanvas, isPanning]);
 
+  // --- Connection Dragging ---
   const handlePortMouseDown = useCallback((e: React.MouseEvent, nodeId: string, outputId: string, portIndex: number) => {
     e.stopPropagation();
-    
+    if (isPanning) return; // Don't start connection while panning
     const portPos = getPortPosition(nodeId, 'output', portIndex);
     const canvasPos = screenToCanvas(e.clientX, e.clientY);
-    
     setDragConnection({
       from: { nodeId, outputId, pos: portPos },
       currentPos: canvasPos
     });
-  }, [getPortPosition, screenToCanvas]);
+  }, [getPortPosition, screenToCanvas, isPanning]);
 
   const handlePortMouseUp = useCallback(async (e: React.MouseEvent, nodeId: string, inputId: string) => {
     e.stopPropagation();
-    
     if (dragConnection) {
       try {
         const connectionData: Connection = {
@@ -157,7 +155,6 @@ export default function CanvasEngine(props: Props) {
           targetNode: nodeId,
           targetInput: inputId
         };
-        
         await onCreateConnection(connectionData);
       } catch (error) {
         console.error('Failed to create connection:', error);
@@ -172,31 +169,62 @@ export default function CanvasEngine(props: Props) {
     }
   }, [onNodeSelect]);
 
+  // --- Wheel Zoom ---
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    
     const scaleFactor = 1.1;
     const mousePos = screenToCanvas(e.clientX, e.clientY);
-    
     const newScale = e.deltaY > 0 
       ? Math.max(0.1, viewportTransform.scale / scaleFactor)
       : Math.min(3, viewportTransform.scale * scaleFactor);
-    
-    const scaleRatio = newScale / viewportTransform.scale;
-    
+    // Keep mouse position fixed during zoom
     setViewportTransform(prev => ({
-      x: e.clientX - (e.clientX - prev.x) * scaleRatio,
-      y: e.clientY - (e.clientY - prev.y) * scaleRatio,
+      x: mousePos.x * newScale - (mousePos.x * prev.scale - prev.x),
+      y: mousePos.y * newScale - (mousePos.y * prev.scale - prev.y),
       scale: newScale
     }));
   }, [viewportTransform, screenToCanvas]);
 
-  // Add global mouse up listener
+  // --- Node Dragging: Attach listeners to window for smooth drag ---
   useEffect(() => {
-    const handleGlobalMouseUp = () => handleMouseUp();
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, [handleMouseUp]);
+    if (!isDragging || !draggedNode) return;
+    const handleMove = (e: MouseEvent) => {
+      const canvasPos = screenToCanvas(e.clientX, e.clientY);
+      onNodeDrag(draggedNode, {
+        x: canvasPos.x - dragOffset.x,
+        y: canvasPos.y - dragOffset.y
+      });
+    };
+    const handleUp = () => {
+      setIsDragging(false);
+      setDraggedNode(null);
+    };
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [isDragging, draggedNode, dragOffset, screenToCanvas, onNodeDrag]);
+
+  // --- Canvas Panning: Attach listeners to window for smooth pan ---
+  useEffect(() => {
+    if (!isPanning) return;
+    const handleMove = (e: MouseEvent) => {
+      setViewportTransform(prev => ({
+        ...prev,
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y
+      }));
+    };
+    const handleUp = () => setIsPanning(false);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [isPanning, panStart]);
 
   // Render bezier curve for connections
   const renderConnection = useCallback((connection: Connection) => {
@@ -219,11 +247,18 @@ export default function CanvasEngine(props: Props) {
     );
   }, [getPortPosition]);
 
+  // --- Cursor logic ---
+  const getCursor = () => {
+    if (isDragging) return 'grabbing';
+    if (isPanning) return 'grabbing';
+    return 'grab';
+  };
+
   return (
     <div
       ref={canvasRef}
-      className="relative w-full h-full overflow-hidden cursor-grab active:cursor-grabbing"
-      style={{ backgroundColor: theme.bg }}
+      className="relative w-full h-full overflow-hidden"
+      style={{ backgroundColor: theme.bg, cursor: getCursor() }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -267,8 +302,9 @@ export default function CanvasEngine(props: Props) {
 
       {/* Nodes Layer */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0"
         style={{
+          zIndex: 2,
           transform: `translate(${viewportTransform.x}px, ${viewportTransform.y}px) scale(${viewportTransform.scale})`,
           transformOrigin: '0 0'
         }}
@@ -276,11 +312,10 @@ export default function CanvasEngine(props: Props) {
         {nodes.map(node => {
           const IconComponent = getNodeIcon(node);
           const isSelected = selectedNodeId === node.id;
-          
           return (
             <div
               key={node.id}
-              className="absolute pointer-events-auto cursor-pointer"
+              className="absolute cursor-pointer pointer-events-auto"
               style={{
                 left: node.position.x,
                 top: node.position.y,
@@ -289,7 +324,8 @@ export default function CanvasEngine(props: Props) {
                 backgroundColor: theme.bgElevate,
                 border: `2px solid ${isSelected ? theme.accent : theme.border}`,
                 borderRadius: '8px',
-                boxShadow: isSelected ? `0 0 0 2px ${theme.accent}33` : '0 2px 8px rgba(0,0,0,0.3)'
+                boxShadow: isSelected ? `0 0 0 2px ${theme.accent}33` : '0 2px 8px rgba(0,0,0,0.3)',
+                zIndex: 3
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
             >

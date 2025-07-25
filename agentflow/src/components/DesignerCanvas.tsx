@@ -1,5 +1,5 @@
 import React from 'react';
-import CanvasEngine from '@/lib/canvas-engine/CanvasEngine';
+import CanvasEngine from '@/components/Canvas';
 import { CanvasNode, Connection } from '@/types';
 
 interface DesignerCanvasProps {
@@ -27,12 +27,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     const node = nodes.find(n => n.id === id);
     if (!node) return;
     
-    const updatedNode: CanvasNode = {
-      ...node,
-      position: pos
-    };
-    
-    onNodeUpdate(updatedNode);
+    onNodeUpdate({ ...node, position: { x: pos.x, y: pos.y } });
   };
 
   return (

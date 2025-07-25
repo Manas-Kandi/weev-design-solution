@@ -361,12 +361,7 @@ export default function AgentFlowPage() {
           onConnectionsChange={(updatedConnections: Connection[]) => setConnections(updatedConnections)}
           onCreateConnection={handleCreateConnection}
           onNodeUpdate={(updatedNode: CanvasNode) => {
-            setNodes(prevNodes =>
-              prevNodes.map(node => node.id === updatedNode.id ? updatedNode : node)
-            );
-            if (selectedNode && selectedNode.id === updatedNode.id) {
-              setSelectedNode(updatedNode);
-            }
+            setNodes(prev => prev.map(node => node.id === updatedNode.id ? { ...node, position: { ...updatedNode.position } } : node));
           }}
         />
       }
