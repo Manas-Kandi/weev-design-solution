@@ -11,6 +11,12 @@ interface ChatBoxNodeProps {
   nodes: CanvasNode[];
   connections: Connection[];
   theme: Colors;
+  onOutputPortMouseDown: (
+    e: React.MouseEvent,
+    nodeId: string,
+    outputId: string,
+    index: number
+  ) => void;
 }
 
 export default function ChatBoxNode(props: ChatBoxNodeProps) {
@@ -23,7 +29,8 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
     onNodeUpdate,
     nodes,
     connections,
-    theme
+    theme,
+    onOutputPortMouseDown
   } = props;
 
   const chatData = node.data as ChatNodeData;
@@ -114,12 +121,7 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
           }}
           onMouseDown={e => {
             e.stopPropagation();
-            if (props.onNodeMouseDown) props.onNodeMouseDown(e, node.id);
-            // Call canvas connection drag logic if available
-            const win = window as Window & { handlePortMouseDown?: (e: React.MouseEvent, nodeId: string, outputId: string, index: number) => void };
-            if (typeof win.handlePortMouseDown === 'function') {
-              win.handlePortMouseDown(e, node.id, output.id, index);
-            }
+            onOutputPortMouseDown(e, node.id, output.id, index);
           }}
           title={output.label}
         />
