@@ -64,12 +64,27 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
         const result = await runWorkflow(updatedNodes, connections);
         let responseText = 'No response';
         const output = result[agentNode.id];
+
+        type GeminiOutput = {
+          gemini?: {
+            candidates?: {
+              content?: {
+                parts?: {
+                  text?: string;
+                }[];
+              };
+            }[];
+          };
+          error?: string;
+        };
+
         if (output && typeof output === 'object') {
-          if ('gemini' in output) {
-            const gem = (output as any).gemini;
+          const typedOutput = output as GeminiOutput;
+          if ('gemini' in typedOutput) {
+            const gem = typedOutput.gemini;
             responseText = gem?.candidates?.[0]?.content?.parts?.[0]?.text || responseText;
-          } else if ('error' in output) {
-            responseText = `Error: ${(output as any).error}`;
+          } else if ('error' in typedOutput) {
+            responseText = `Error: ${typedOutput.error}`;
           }
         } else if (typeof output === 'string') {
           responseText = output;

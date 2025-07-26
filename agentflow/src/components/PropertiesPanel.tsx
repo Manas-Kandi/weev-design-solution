@@ -59,6 +59,13 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
   });
   const [testResult, setTestResult] = useState<string | null>(null);
 
+  // Reset localData when selectedNode changes
+  useEffect(() => {
+    if (selectedNode) {
+      setLocalData(selectedNode.data);
+    }
+  }, [selectedNode]);
+
   // Controlled input handlers
   const handleFieldChange = (field: keyof AgentNodeData, value: string | number) => {
     const updatedData = { ...localData, [field]: value };
