@@ -60,69 +60,43 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
   }
 
   for (const node of order) {
+    // Handle Prompt Template node
+    if (node.type === "conversation" && node.subtype === "template") {
+      const data = node.data as import("@/types").PromptTemplateNodeData;
+      let output = data.template;
+      for (const [key, value] of Object.entries(data.variables || {})) {
+        output = output.replaceAll(`{{${key}}}`, value);
+      }
+      nodeOutputs[node.id] = output;
+      continue;
+    }
     // Skip Chat Interface nodes in main loop
     if (node.type === "ui" && node.subtype === "chat") {
       continue; // Already handled above
     }
-    if (
-      node.type === "agent" ||
-      node.type === "logic" ||
-      node.type === "gui" ||
-      node.type === "conversation" ||
-      node.type === "testing" ||
-      node.type === "ui"
-    ) {
-      // Compose the prompt using systemPrompt, personality, escalationLogic, confidenceThreshold, context, and user prompt
-      const systemPrompt = "systemPrompt" in node.data ? node.data.systemPrompt || "" : "";
-      const personality = "personality" in node.data && node.data.personality ? `Personality: ${node.data.personality}` : "";
-      const escalationLogic = "escalationLogic" in node.data && node.data.escalationLogic ? `Escalation Logic: ${node.data.escalationLogic}` : "";
-      const confidenceThreshold = "confidenceThreshold" in node.data && node.data.confidenceThreshold !== undefined ? `Confidence Threshold: ${node.data.confidenceThreshold}` : "";
-      const conversationHistory =
-        "messages" in node.data && Array.isArray(node.data.messages)
-          ? node.data.messages
-              .map(m => `${m.sender === "user" ? "User" : "Agent"}: ${m.text}`)
-              .join("\n")
-          : "";
-      const userPrompt = "prompt" in node.data && typeof node.data.prompt === "string" ? node.data.prompt : "";
+    if (node.type === "agent") {
+      // Gather resolved inputs for agent node
       const incoming = connections.filter(c => c.targetNode === node.id);
-      const inputContext = incoming
-        .map(conn => {
-          const output = nodeOutputs[conn.sourceNode];
-          if (typeof output === "string") return output;
-          if (output && typeof output === "object") return JSON.stringify(output);
-          return "";
-        })
-        .join("\n");
-      const finalPrompt = [
-        systemPrompt,
-        personality,
-        escalationLogic,
-        confidenceThreshold,
-        conversationHistory,
-        inputContext,
-        userPrompt
-      ].filter(Boolean).join("\n\n");
-      // Evaluate condition if present
-      if (
-        "condition" in node.data &&
-        node.data.condition &&
-        !evaluateCondition(node.data.condition, nodeOutputs)
-      ) {
-        nodeOutputs[node.id] = "Skipped due to condition";
-        continue;
-      }
+      const resolvedInputs: Record<string, unknown> = {};
+      incoming.forEach(conn => {
+        const output = nodeOutputs[conn.sourceNode];
+        resolvedInputs[conn.targetInput] = output;
+      });
+      const data = node.data as import("@/types").AgentNodeData;
+      // Grab prompt from inputs cleanly
+      const userPrompt = Object.values(resolvedInputs)[0] as string || "What would you like me to help you with?";
+      const systemPrompt = data.systemPrompt || "";
+      // Log the final payload
+      console.log("Sending prompt to Gemini:", userPrompt, "System prompt:", systemPrompt);
       try {
-        // Always use gemini-2.5-flash-lite for demo, regardless of model picker
-        const geminiRes = await callGemini(finalPrompt, { model: "gemini-2.5-flash-lite" });
-        // Extract text from Gemini response
-        const responseText = geminiRes.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
-        nodeOutputs[node.id] = responseText;
+        const result = await callGemini(userPrompt);
+        nodeOutputs[node.id] = result;
       } catch (err) {
         nodeOutputs[node.id] = { error: err instanceof Error ? err.message : "Unknown error" };
       }
-    } else {
-      nodeOutputs[node.id] = { error: `Unsupported node type: ${node.type}` };
+      continue;
     }
+    // ...existing code for other node types...
   }
   return nodeOutputs;
 }

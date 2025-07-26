@@ -6,10 +6,9 @@ if (!GEMINI_API_KEY) {
 }
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
 
-export async function callGemini(prompt: string, params: Record<string, unknown> = {}) {
+export async function callGemini(prompt: string) {
   const body = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    ...params
   };
   const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',

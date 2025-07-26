@@ -13,6 +13,7 @@ export interface AgentNodeData {
   escalationLogic?: string // Escalation logic instructions
   confidenceThreshold?: number // Confidence threshold for escalation
   preset?: string // Agent preset selection
+  temperature?: number // Temperature for model sampling
 }
 
 export interface ChatNodeData {
@@ -23,13 +24,22 @@ export interface ChatNodeData {
   messages: { sender: 'user' | 'agent'; text: string }[]
 }
 
+export interface PromptTemplateNodeData {
+  title: string
+  description: string
+  color: string
+  icon: string
+  template: string
+  variables: Record<string, string> // e.g. { topic: "inflation" }
+}
+
 export interface CanvasNode {
   id: string
   type: 'agent' | 'gui' | 'logic' | 'conversation' | 'testing' | 'ui'
   subtype: string
   position: { x: number; y: number }
   size: { width: number; height: number }
-  data: AgentNodeData | ChatNodeData
+  data: AgentNodeData | ChatNodeData | PromptTemplateNodeData
   inputs: { id: string; label: string; type?: string }[]
   outputs: { id: string; label: string; type?: string }[]
 }

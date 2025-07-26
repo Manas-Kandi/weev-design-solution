@@ -37,6 +37,7 @@ export const nodeCategories: NodeCategory[] = [
         escalationLogic: 'If confidence < 0.7, escalate to human-handoff node.',
         confidenceThreshold: 0.7,
         defaultInputs: [
+          { id: 'prompt', label: 'Prompt', type: 'text' }, // <-- Add prompt input
           { id: 'input-1', label: 'Input', type: 'text' },
           { id: 'context', label: 'Context', type: 'data' }
         ],
@@ -95,18 +96,12 @@ export const nodeCategories: NodeCategory[] = [
         id: 'prompt-template',
         name: 'Prompt Template',
         icon: FileText,
-        color: '#5856d6',
-        description: 'Structure agent instructions and prompts',
+        color: '#6d28d9',
+        description: 'Inject variables into a text template',
         type: 'conversation',
-        subtype: 'prompt-template',
-        systemPrompt: 'You are a prompt template node. Structure and format instructions for agents.',
-        defaultInputs: [
-          { id: 'variables', label: 'Variables', type: 'data' },
-          { id: 'context', label: 'Context', type: 'text' }
-        ],
-        defaultOutputs: [
-          { id: 'formatted-prompt', label: 'Formatted Prompt', type: 'text' }
-        ],
+        subtype: 'template',
+        defaultInputs: [],
+        defaultOutputs: [{ id: 'result', label: 'Generated Prompt' }],
       },
       {
         id: 'knowledge-base',

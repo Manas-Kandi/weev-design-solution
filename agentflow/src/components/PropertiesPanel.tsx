@@ -64,6 +64,9 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
     if (selectedNode) {
       setLocalData(selectedNode.data);
     }
+    // Inject Prompt Template Node for testing if not present
+    // Only run on initial load of nodes (not every node selection)
+    // This should be done in the main app/page.tsx, but for demo, we show how to inject here
   }, [selectedNode]);
 
   // Controlled input handlers
@@ -88,7 +91,7 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
       try {
         const { callGemini } = await import('@/lib/geminiClient');
         // For demo, always route to Gemini, but pass model for future extensibility
-        const res = await callGemini(localData.prompt, { model: localData.model });
+        const res = await callGemini(localData.prompt);
         setTestResult(res.candidates?.[0]?.content?.parts?.[0]?.text || 'No response');
       } catch (err) {
         setTestResult('Error: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -317,6 +320,49 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
                   </div>
                 </div>
               </>
+            )}
+            {/* Prompt Template Node Editing */}
+            {selectedNode.type === "conversation" && selectedNode.subtype === "template" && (
+              (() => {
+                const data = localData as import("@/types").PromptTemplateNodeData;
+                return (
+                  <>
+                    <label className="block text-sm font-medium mb-2" style={{ color: theme.textSecondary }}>
+                      Template
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 text-sm rounded resize-none border-0"
+                      style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                      value={data.template}
+                      placeholder="Enter prompt template..."
+                      onChange={e => {
+                        const updated = { ...data, template: e.target.value };
+                        setLocalData(updated);
+                        onChange({ ...selectedNode, data: updated });
+                      }}
+                    />
+                    <label className="block text-sm font-medium mb-2 mt-4" style={{ color: theme.textSecondary }}>
+                      Variables (JSON)
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 text-sm rounded resize-none border-0"
+                      style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                      value={JSON.stringify(data.variables, null, 2)}
+                      placeholder={`{
+  "topic": "inflation"
+}`}
+                      onChange={e => {
+                        try {
+                          const parsed = JSON.parse(e.target.value);
+                          const updated = { ...data, variables: parsed };
+                          setLocalData(updated);
+                          onChange({ ...selectedNode, data: updated });
+                        } catch {}
+                      }}
+                    />
+                  </>
+                );
+              })()
             )}
           </>
         )}

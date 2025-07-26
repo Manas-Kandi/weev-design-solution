@@ -15,7 +15,25 @@ const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 export default function AgentFlowPage() {
   const [currentView, setCurrentView] = useState<'projects' | 'designer'>("projects");
   const [projects, setProjects] = useState<Project[]>([]);
-  const [nodes, setNodes] = useState<CanvasNode[]>([]);
+  const [nodes, setNodes] = useState<CanvasNode[]>([
+    {
+      id: "prompt-node-1",
+      type: "conversation",
+      subtype: "template",
+      position: { x: 100, y: 100 },
+      size: { width: 300, height: 200 },
+      data: {
+        title: "Email Template",
+        description: "Insert a topic into a predefined email",
+        icon: "📄",
+        color: "#6d28d9",
+        template: "Dear students, today we will discuss {{topic}}.",
+        variables: { topic: "inflation" }
+      },
+      inputs: [],
+      outputs: [{ id: "result", label: "Generated Prompt" }]
+    }
+  ]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [selectedNode, setSelectedNode] = useState<CanvasNode | null>(null);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
