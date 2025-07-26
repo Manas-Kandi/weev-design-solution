@@ -1,7 +1,9 @@
 // Gemini API utility for workflow execution
-// Replace 'YOUR_GEMINI_API_KEY' with your actual key in production
-
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || 'YOUR_GEMINI_API_KEY';
+// Throw an explicit error if the API key is missing
+const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+  throw new Error('NEXT_PUBLIC_GEMINI_API_KEY environment variable is required');
+}
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
 
 export async function callGemini(prompt: string, params: Record<string, unknown> = {}) {
