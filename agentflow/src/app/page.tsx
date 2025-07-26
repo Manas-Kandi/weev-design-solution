@@ -75,8 +75,8 @@ export default function AgentFlowPage() {
           color: '#0066cc',
           icon: 'User'
         },
-        inputs: [{ id: 'input-1', label: 'Input' }], // Default inputs
-        outputs: [{ id: 'output-1', label: 'Output' }] // Default outputs
+        inputs: node.inputs || [{ id: 'input-1', label: 'Input' }],
+        outputs: node.outputs || [{ id: 'output-1', label: 'Output' }]
       }));
 
       setNodes(transformedNodes);
@@ -220,7 +220,9 @@ export default function AgentFlowPage() {
           description,
           color,
           icon
-        }
+        },
+        inputs: defaultInputs,
+        outputs: defaultOutputs
         // Note: No user_id - you might need to add this if your RLS requires it
       };
 
@@ -261,8 +263,8 @@ export default function AgentFlowPage() {
           color,
           icon
         },
-        inputs: defaultInputs,
-        outputs: defaultOutputs
+        inputs: data.inputs || defaultInputs,
+        outputs: data.outputs || defaultOutputs
       };
 
       console.log('Node created and added to canvas:', newNode);
