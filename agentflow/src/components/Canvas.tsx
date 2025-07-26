@@ -564,6 +564,7 @@ export default function CanvasEngine(props: Props) {
                 nodes={nodes}
                 connections={connections}
                 theme={theme}
+                onOutputPortMouseDown={handlePortMouseDown}
               />
             );
           }
