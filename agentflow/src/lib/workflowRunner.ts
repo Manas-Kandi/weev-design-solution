@@ -38,13 +38,22 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
     if (
       node.type === "agent" ||
       node.type === "logic" ||
-      node.type === "gui"
+      node.type === "gui" ||
+      node.type === "conversation" ||
+      node.type === "testing" ||
+      node.type === "ui"
     ) {
       // Compose the prompt using systemPrompt, personality, escalationLogic, confidenceThreshold, context, and user prompt
       const systemPrompt = "systemPrompt" in node.data ? node.data.systemPrompt || "" : "";
       const personality = "personality" in node.data && node.data.personality ? `Personality: ${node.data.personality}` : "";
       const escalationLogic = "escalationLogic" in node.data && node.data.escalationLogic ? `Escalation Logic: ${node.data.escalationLogic}` : "";
       const confidenceThreshold = "confidenceThreshold" in node.data && node.data.confidenceThreshold !== undefined ? `Confidence Threshold: ${node.data.confidenceThreshold}` : "";
+      const conversationHistory =
+        "messages" in node.data && Array.isArray(node.data.messages)
+          ? node.data.messages
+              .map(m => `${m.sender === "user" ? "User" : "Agent"}: ${m.text}`)
+              .join("\n")
+          : "";
       const userPrompt = "prompt" in node.data && typeof node.data.prompt === "string" ? node.data.prompt : "";
       const inputContext = node.inputs.map(i => nodeOutputs[i.id]).join("\n");
       const finalPrompt = [
@@ -52,6 +61,7 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
         personality,
         escalationLogic,
         confidenceThreshold,
+        conversationHistory,
         inputContext,
         userPrompt
       ].filter(Boolean).join("\n\n");
@@ -72,7 +82,7 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
         nodeOutputs[node.id] = { error: err instanceof Error ? err.message : "Unknown error" };
       }
     } else {
-      nodeOutputs[node.id] = "Not implemented";
+      nodeOutputs[node.id] = { error: `Unsupported node type: ${node.type}` };
     }
   }
   return nodeOutputs;
