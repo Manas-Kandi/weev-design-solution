@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { CanvasNode, ChatNodeData, Connection, Colors } from '@/types';
+import { runWorkflow } from '@/lib/workflowRunner';
+import { supabase } from '@/lib/supabaseClient';
 
 interface ChatBoxNodeProps {
   node: CanvasNode;
@@ -34,21 +36,55 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
   const agentConnection = connections.find(c => c.sourceNode === node.id);
   const agentNode = agentConnection ? nodes.find(n => n.id === agentConnection.targetNode && n.type === 'agent') : null;
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
-    const newMessages = [...messages, { sender: 'user' as const, text: input }];
-    setMessages(newMessages);
+
+    const userMsg = { sender: 'user' as const, text: input };
+    const userMessages = [...messages, userMsg];
+    setMessages(userMessages);
     setInput('');
-    // Stub: Pass message to agent node (integration point)
+    onNodeUpdate({ ...node, data: { ...chatData, messages: userMessages } });
+    await supabase
+      .from('nodes')
+      .update({ data: { ...chatData, messages: userMessages } })
+      .eq('id', node.id);
+
     if (agentNode) {
-      // Here you would trigger the agent workflow, e.g. via props or context
-      // For now, just append a stub response
-      setTimeout(() => {
-        setMessages(msgs => [...msgs, { sender: 'agent' as const, text: `Researching: ${input}` }]);
-      }, 800);
+      try {
+        const updatedNodes = nodes.map(n =>
+          n.id === agentNode.id ? { ...n, data: { ...n.data, prompt: input } } : n
+        );
+        const result = await runWorkflow(updatedNodes, connections);
+        let responseText = 'No response';
+        const output = result[agentNode.id];
+        if (output && typeof output === 'object') {
+          if ('gemini' in output) {
+            const gem = (output as any).gemini;
+            responseText = gem?.candidates?.[0]?.content?.parts?.[0]?.text || responseText;
+          } else if ('error' in output) {
+            responseText = `Error: ${(output as any).error}`;
+          }
+        } else if (typeof output === 'string') {
+          responseText = output;
+        }
+        const finalMessages = [...userMessages, { sender: 'agent' as const, text: responseText }];
+        setMessages(finalMessages);
+        onNodeUpdate({ ...node, data: { ...chatData, messages: finalMessages } });
+        await supabase
+          .from('nodes')
+          .update({ data: { ...chatData, messages: finalMessages } })
+          .eq('id', node.id);
+      } catch (err) {
+        const errorMsg = `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
+        const finalMessages = [...userMessages, { sender: 'agent' as const, text: errorMsg }];
+        setMessages(finalMessages);
+        onNodeUpdate({ ...node, data: { ...chatData, messages: finalMessages } });
+        await supabase
+          .from('nodes')
+          .update({ data: { ...chatData, messages: finalMessages } })
+          .eq('id', node.id);
+      }
     }
-    // Update node data
-    onNodeUpdate({ ...node, data: { ...chatData, messages: newMessages } });
   };
 
   return (
