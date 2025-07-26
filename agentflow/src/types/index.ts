@@ -9,15 +9,27 @@ export interface AgentNodeData {
   model?: string // Added model property for agent nodes
   condition?: string // Optional: conditional logic for agent nodes
   systemPrompt?: string // Guardrail/system prompt for agent nodes
+  personality?: string // Agent personality traits
+  escalationLogic?: string // Escalation logic instructions
+  confidenceThreshold?: number // Confidence threshold for escalation
+  preset?: string // Agent preset selection
+}
+
+export interface ChatNodeData {
+  title: string
+  description: string
+  color: string
+  icon: string
+  messages: { sender: 'user' | 'agent'; text: string }[]
 }
 
 export interface CanvasNode {
   id: string
-  type: 'agent' | 'gui' | 'logic'
+  type: 'agent' | 'gui' | 'logic' | 'conversation' | 'testing' | 'ui'
   subtype: string
   position: { x: number; y: number }
   size: { width: number; height: number }
-  data: AgentNodeData
+  data: AgentNodeData | ChatNodeData
   inputs: { id: string; label: string; type?: string }[]
   outputs: { id: string; label: string; type?: string }[]
 }
@@ -66,6 +78,9 @@ export interface NodeType {
   defaultInputs?: { id: string; label: string; type?: string }[]
   defaultOutputs?: { id: string; label: string; type?: string }[]
   systemPrompt?: string // Guardrail/system prompt for agent nodes
+  personality?: string // Agent personality traits
+  escalationLogic?: string // Escalation logic instructions
+  confidenceThreshold?: number // Confidence threshold for escalation
 }
 
 export interface ViewportTransform {

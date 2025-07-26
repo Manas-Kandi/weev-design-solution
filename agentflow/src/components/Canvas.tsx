@@ -3,6 +3,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { CanvasNode, Connection } from '@/types';
 import { theme } from '@/data/theme';
 import { nodeCategories } from '@/data/nodeDefinitions';
+import ChatBoxNode from './ChatBoxNode';
 
 interface Props {
   nodes: CanvasNode[];
@@ -549,6 +550,23 @@ export default function CanvasEngine(props: Props) {
         {nodes.map(node => {
           const IconComponent = getNodeIcon(node);
           const isSelected = selectedNodeIds.includes(node.id);
+          // Chat Interface Node Rendering
+          if (node.type === 'ui' && node.subtype === 'chat') {
+            return (
+              <ChatBoxNode
+                key={node.id}
+                node={node}
+                isSelected={isSelected}
+                onNodeMouseDown={handleNodeMouseDown}
+                onNodeClick={handleNodeClick}
+                onNodeContextMenu={handleNodeContextMenu}
+                onNodeUpdate={onNodeUpdate}
+                nodes={nodes}
+                connections={connections}
+                theme={theme}
+              />
+            );
+          }
           return (
             <div
               key={node.id}

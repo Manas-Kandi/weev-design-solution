@@ -33,6 +33,9 @@ export const nodeCategories: NodeCategory[] = [
         type: 'agent',
         subtype: 'generic',
         systemPrompt: 'You are an autonomous agent operating in a workflow. You will receive further instructions and context.',
+        personality: 'Friendly, helpful, concise',
+        escalationLogic: 'If confidence < 0.7, escalate to human-handoff node.',
+        confidenceThreshold: 0.7,
         defaultInputs: [
           { id: 'input-1', label: 'Input', type: 'text' },
           { id: 'context', label: 'Context', type: 'data' }
@@ -51,6 +54,9 @@ export const nodeCategories: NodeCategory[] = [
         type: 'agent',
         subtype: 'human-handoff',
         systemPrompt: 'You are a human handoff agent. Escalate to a human operator when required.',
+        personality: 'Empathetic, patient',
+        escalationLogic: 'Always respond to escalations from agents.',
+        confidenceThreshold: 1.0,
         defaultInputs: [
           { id: 'trigger', label: 'Trigger', type: 'boolean' },
           { id: 'context', label: 'Context', type: 'data' }
@@ -257,18 +263,13 @@ export const nodeCategories: NodeCategory[] = [
         id: 'chat-interface',
         name: 'Chat Interface',
         icon: MessageCircle,
-        color: '#32d74b',
-        description: 'Visualize and interact with conversations',
+        color: '#6c63ff',
+        description: 'User input chatbox for end-user interaction',
         type: 'ui',
-        subtype: 'chat-interface',
-        systemPrompt: 'You are a chat interface node. Visualize and interact with conversations, displaying messages and collecting user input.',
-        defaultInputs: [
-          { id: 'messages', label: 'Messages', type: 'data' },
-          { id: 'user-input', label: 'User Input', type: 'text' }
-        ],
+        subtype: 'chat',
+        defaultInputs: [],
         defaultOutputs: [
-          { id: 'formatted-chat', label: 'Formatted Chat', type: 'data' },
-          { id: 'user-interaction', label: 'User Interaction', type: 'data' }
+          { id: 'user-message', label: 'User Message', type: 'text' }
         ],
       },
     ],

@@ -35,14 +35,32 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
   const order = getExecutionOrder(nodes, connections);
   const nodeOutputs: Record<string, NodeOutput> = {};
   for (const node of order) {
-    if (node.type === "agent" || node.type === "conversation" || node.type === "logic" || node.type === "testing" || node.type === "ui") {
-      // Compose the prompt using systemPrompt, context, and user prompt
-      const systemPrompt = node.data.systemPrompt || "";
-      const userPrompt = node.data.prompt || "";
+    if (
+      node.type === "agent" ||
+      node.type === "logic" ||
+      node.type === "gui"
+    ) {
+      // Compose the prompt using systemPrompt, personality, escalationLogic, confidenceThreshold, context, and user prompt
+      const systemPrompt = "systemPrompt" in node.data ? node.data.systemPrompt || "" : "";
+      const personality = "personality" in node.data && node.data.personality ? `Personality: ${node.data.personality}` : "";
+      const escalationLogic = "escalationLogic" in node.data && node.data.escalationLogic ? `Escalation Logic: ${node.data.escalationLogic}` : "";
+      const confidenceThreshold = "confidenceThreshold" in node.data && node.data.confidenceThreshold !== undefined ? `Confidence Threshold: ${node.data.confidenceThreshold}` : "";
+      const userPrompt = "prompt" in node.data && typeof node.data.prompt === "string" ? node.data.prompt : "";
       const inputContext = node.inputs.map(i => nodeOutputs[i.id]).join("\n");
-      const finalPrompt = [systemPrompt, inputContext, userPrompt].filter(Boolean).join("\n\n");
+      const finalPrompt = [
+        systemPrompt,
+        personality,
+        escalationLogic,
+        confidenceThreshold,
+        inputContext,
+        userPrompt
+      ].filter(Boolean).join("\n\n");
       // Evaluate condition if present
-      if (node.data.condition && !evaluateCondition(node.data.condition, nodeOutputs)) {
+      if (
+        "condition" in node.data &&
+        node.data.condition &&
+        !evaluateCondition(node.data.condition, nodeOutputs)
+      ) {
         nodeOutputs[node.id] = "Skipped due to condition";
         continue;
       }
@@ -52,14 +70,6 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
         nodeOutputs[node.id] = { gemini: geminiRes };
       } catch (err) {
         nodeOutputs[node.id] = { error: err instanceof Error ? err.message : "Unknown error" };
-      }
-    } else if (node.type === "logic") {
-      // Example: logic node could evaluate JS from node.data.content
-      try {
-        // eslint-disable-next-line no-eval
-        nodeOutputs[node.id] = eval(node.data.content || 'null');
-      } catch (err) {
-        nodeOutputs[node.id] = { error: err instanceof Error ? err.message : "Logic error" };
       }
     } else {
       nodeOutputs[node.id] = "Not implemented";

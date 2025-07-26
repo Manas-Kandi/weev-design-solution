@@ -12,4 +12,12 @@ export const theme = {
   portBg:         '#333333',
   portHover:      '#555555',
   active:         '#00c4ff',
+  background:     '#0d0d0d',
+  success:        '#22c55e',
+  warning:        '#eab308',
+  error:          '#ef4444',
+  purple:         '#a259ff',
+  orange:         '#ff9500',
+  blue:           '#3b82f6',
+  green:          '#22c55e',
 } as const;

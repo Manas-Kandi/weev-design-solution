@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { theme } from "@/data/theme";
-import { CanvasNode } from "@/types";
+import { CanvasNode, AgentNodeData } from "@/types";
 import { Minimize2, Play, Settings } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { nodeCategories } from "@/data/nodeDefinitions";
@@ -13,6 +13,33 @@ interface PropertiesPanelProps {
   selectedNode: CanvasNode | null;
   onChange: (updatedNode: CanvasNode) => void;
 }
+
+const AGENT_PRESETS = [
+  {
+    label: "Support Agent",
+    value: "support",
+    systemPrompt: "You are a support agent. Help users resolve issues, escalate if unsure.",
+    personality: "Empathetic, patient, clear",
+    escalationLogic: "If confidence < 0.7, escalate to human-handoff node.",
+    confidenceThreshold: 0.7,
+  },
+  {
+    label: "Sales Agent",
+    value: "sales",
+    systemPrompt: "You are a sales agent. Guide users to products and answer questions.",
+    personality: "Persuasive, friendly, energetic",
+    escalationLogic: "If user requests a discount, escalate to manager.",
+    confidenceThreshold: 0.8,
+  },
+  {
+    label: "Research Agent",
+    value: "research",
+    systemPrompt: "You are a research agent. Find and summarize information for users.",
+    personality: "Analytical, concise, neutral",
+    escalationLogic: "If information is missing, escalate to human researcher.",
+    confidenceThreshold: 0.6,
+  }
+];
 
 export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPanelProps) {
   const [activeTab] = useState<'properties' | 'config' | 'testing'>('properties');
@@ -23,23 +50,17 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
     color: '',
     icon: '',
     prompt: '',
-    model: 'gemini-pro' // default model
+    model: 'gemini-pro', // default model
+    preset: '', // Add preset property for agent nodes
+    systemPrompt: '',
+    personality: '',
+    escalationLogic: '',
+    confidenceThreshold: 0.7
   });
   const [testResult, setTestResult] = useState<string | null>(null);
 
-  useEffect(() => {
-    setLocalData(selectedNode?.data || {
-      title: '',
-      description: '',
-      color: '',
-      icon: '',
-      prompt: '',
-      model: 'gemini-pro'
-    });
-  }, [selectedNode]);
-
   // Controlled input handlers
-  const handleFieldChange = (field: keyof CanvasNode['data'], value: string) => {
+  const handleFieldChange = (field: keyof AgentNodeData, value: string | number) => {
     const updatedData = { ...localData, [field]: value };
     setLocalData(updatedData);
     if (selectedNode) {
@@ -49,7 +70,13 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
 
   // Test node with Gemini
   const handleTestNode = async () => {
-    if (selectedNode && selectedNode.type === 'agent' && localData.prompt) {
+    if (
+      selectedNode &&
+      selectedNode.type === 'agent' &&
+      'prompt' in localData &&
+      typeof localData.prompt === 'string' &&
+      localData.prompt
+    ) {
       setTestResult('Running...');
       try {
         const { callGemini } = await import('@/lib/geminiClient');
@@ -80,10 +107,10 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
         <p className="text-sm" style={{ color: theme.textMute }}>
           Select a node to edit its properties.
         </p>
-      </div>
-    );
-  }
-
+        </div>
+      )
+    }
+  
   return (
     <div
       className="w-80 border-l flex flex-col"
@@ -119,7 +146,7 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
                   })()}
                 </div>
                 <span className="text-sm" style={{ color: theme.text }}>
-                  {localData.title}
+                  {localData.title || selectedNode.subtype || selectedNode.type}
                 </span>
               </div>
             </div>
@@ -153,48 +180,134 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
             {/* Agent node fields */}
             {selectedNode.type === 'agent' && (
               <>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
-                    System Prompt (Guardrail)
-                  </label>
-                  <textarea
-                    className="w-full px-3 py-2 text-sm rounded resize-none border-0"
-                    style={{ backgroundColor: theme.bgElevate, color: theme.text }}
-                    rows={3}
-                    placeholder="e.g. You are an autonomous agent operating in a workflow. You will receive further instructions and context."
-                    value={localData.systemPrompt || ''}
-                    onChange={e => handleFieldChange('systemPrompt', e.target.value)}
-                  />
+                <div className="space-y-2">
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.textSecondary }}>Agent Preset</span>
+                  </div>
+                  <div>
+                    <select
+                      className="w-full px-3 py-2 text-sm rounded border-0 bg-gray-800 text-white mb-2"
+                      style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                      value={selectedNode.type === 'agent' ? (localData as AgentNodeData).preset || '' : ''}
+                      onChange={e => {
+                        const preset = AGENT_PRESETS.find(p => p.value === e.target.value);
+                        if (preset && selectedNode.type === 'agent') {
+                          setLocalData({
+                            ...localData,
+                            systemPrompt: preset.systemPrompt,
+                            personality: preset.personality,
+                            escalationLogic: preset.escalationLogic,
+                            confidenceThreshold: preset.confidenceThreshold,
+                            preset: preset.value
+                          });
+                          onChange({ ...selectedNode, data: {
+                            ...localData,
+                            systemPrompt: preset.systemPrompt,
+                            personality: preset.personality,
+                            escalationLogic: preset.escalationLogic,
+                            confidenceThreshold: preset.confidenceThreshold,
+                            preset: preset.value
+                          }});
+                        }
+                      }}
+                    >
+                      <option value="">Select preset...</option>
+                      {AGENT_PRESETS.map(p => (
+                        <option key={p.value} value={p.value}>{p.label}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
-                    Model
-                  </label>
-                  <select
-                    className="w-full px-3 py-2 text-sm rounded border-0 bg-gray-800 text-white"
-                    style={{ backgroundColor: theme.bgElevate, color: theme.text }}
-                    value={localData.model || 'gemini-pro'}
-                    onChange={e => handleFieldChange('model', e.target.value)}
-                  >
-                    <option value="gemini-pro">Gemini Pro</option>
-                    <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="claude-3">Claude 3</option>
-                    <option value="llama-3">Llama 3</option>
-                  </select>
+                <div className="space-y-2">
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.textSecondary }}>Agent Guardrails</span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: theme.textMute }}>
+                      System Prompt
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 text-sm rounded resize-none border-0"
+                      style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                      rows={2}
+                      placeholder="e.g. You are an autonomous agent operating in a workflow."
+                      value={(localData as AgentNodeData).systemPrompt || ''}
+                      onChange={e => handleFieldChange('systemPrompt', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: theme.textMute }}>
+                      Personality
+                    </label>
+                    <Input
+                      className="border-0 px-3 py-2"
+                      style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                      value={(localData as AgentNodeData).personality || ''}
+                      placeholder="e.g. Friendly, helpful, concise"
+                      onChange={e => handleFieldChange('personality', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: theme.textMute }}>
+                      Escalation Logic
+                    </label>
+                    <Input
+                      className="border-0 px-3 py-2"
+                      style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                      value={(localData as AgentNodeData).escalationLogic || ''}
+                      placeholder="e.g. If confidence < 0.7, escalate to human-handoff node."
+                      onChange={e => handleFieldChange('escalationLogic', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: theme.textMute }}>
+                      Confidence Threshold
+                    </label>
+                    <Input
+                      type="number"
+                      className="border-0 px-3 py-2"
+                      style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                      value={(localData as AgentNodeData).confidenceThreshold ?? ''}
+                      placeholder="e.g. 0.7"
+                      onChange={e => handleFieldChange('confidenceThreshold', Number(e.target.value))}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
-                    User Prompt
-                  </label>
-                  <textarea
-                    className="w-full px-3 py-2 text-sm rounded resize-none border-0"
-                    style={{ backgroundColor: theme.bgElevate, color: theme.text }}
-                    rows={4}
-                    placeholder="Enter the prompt for Gemini..."
-                    value={localData.prompt || ''}
-                    onChange={e => handleFieldChange('prompt', e.target.value)}
-                  />
+                <Separator style={{ backgroundColor: theme.border }} />
+                <div className="space-y-2 mt-4">
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.textSecondary }}>Agent Prompt & Model</span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: theme.textMute }}>
+                      Model
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 text-sm rounded border-0 bg-gray-800 text-white"
+                      style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                      value={(localData as AgentNodeData).model || 'gemini-pro'}
+                      onChange={e => handleFieldChange('model', e.target.value)}
+                    >
+                      <option value="gemini-pro">Gemini Pro</option>
+                      <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                      <option value="gpt-4">GPT-4</option>
+                      <option value="claude-3">Claude 3</option>
+                      <option value="llama-3">Llama 3</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: theme.textMute }}>
+                      User Prompt
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 text-sm rounded resize-none border-0"
+                      style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                      rows={3}
+                      placeholder="Enter the prompt for Gemini..."
+                      value={(localData as AgentNodeData).prompt || ''}
+                      onChange={e => handleFieldChange('prompt', e.target.value)}
+                    />
+                  </div>
                 </div>
               </>
             )}
