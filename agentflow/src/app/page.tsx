@@ -360,21 +360,37 @@ export default function AgentFlowPage() {
           selectedNodeId={selectedNode ? selectedNode.id : null}
           onConnectionsChange={(updatedConnections: Connection[]) => setConnections(updatedConnections)}
           onCreateConnection={handleCreateConnection}
-          onNodeUpdate={(updatedNode: CanvasNode) => {
-            setNodes(prev => prev.map(node => node.id === updatedNode.id ? { ...node, position: { ...updatedNode.position } } : node));
+          onNodeUpdate={async (updatedNode: CanvasNode) => {
+            setNodes(prev =>
+              prev.map(node =>
+                node.id === updatedNode.id
+                  ? { ...node, position: { ...updatedNode.position } }
+                  : node
+              )
+            );
+            await supabase
+              .from('nodes')
+              .update({ position: updatedNode.position })
+              .eq('id', updatedNode.id);
           }}
         />
       }
       right={
         <PropertiesPanel
           selectedNode={selectedNode}
-          onChange={(updatedNode: CanvasNode) => {
+          onChange={async (updatedNode: CanvasNode) => {
             setNodes(prevNodes =>
-              prevNodes.map(node => node.id === updatedNode.id ? updatedNode : node)
+              prevNodes.map(node =>
+                node.id === updatedNode.id ? updatedNode : node
+              )
             );
             if (selectedNode && selectedNode.id === updatedNode.id) {
               setSelectedNode(updatedNode);
             }
+            await supabase
+              .from('nodes')
+              .update({ data: updatedNode.data })
+              .eq('id', updatedNode.id);
           }}
         />
       }
