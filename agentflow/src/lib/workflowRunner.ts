@@ -35,14 +35,25 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
   const order = getExecutionOrder(nodes, connections);
   const nodeOutputs: Record<string, NodeOutput> = {};
 
-  // Handle Chat Interface nodes - use their latest message
+  // Define the expected shape for chat node data
+  interface ChatNodeData {
+    inputValue?: string;
+    [key: string]: unknown;
+  }
+
+  // Define ChatBoxNodeData type for type safety
+  interface ChatBoxNodeData {
+    inputValue?: string;
+    title?: string;
+    // add other properties as needed
+  }
+
+  // Handle Text Input nodes first - use their input value
   for (const node of nodes) {
     if (node.type === "ui" && node.subtype === "chat") {
-      type ChatData = { messages?: { sender: string; text: string }[] };
-      const chatData = node.data as ChatData;
-      const messages = chatData.messages || [];
-      const lastUserMessage = messages.filter((m) => m.sender === 'user').pop();
-      nodeOutputs[node.id] = lastUserMessage?.text || "Hello";
+      // Get the input value from the node data
+      const inputValue = (node.data as ChatBoxNodeData).inputValue || "Hello";
+      nodeOutputs[node.id] = inputValue;
     }
   }
 

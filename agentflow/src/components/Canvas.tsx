@@ -561,10 +561,10 @@ export default function CanvasEngine(props: Props) {
                 onNodeClick={handleNodeClick}
                 onNodeContextMenu={handleNodeContextMenu}
                 onNodeUpdate={onNodeUpdate}
-                nodes={nodes}
-                connections={connections}
                 theme={theme}
                 onOutputPortMouseDown={handlePortMouseDown}
+                connections={connections}
+                nodes={nodes}
               />
             );
           }

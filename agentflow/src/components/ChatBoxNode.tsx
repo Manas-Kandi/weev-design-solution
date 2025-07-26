@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { CanvasNode, ChatNodeData, Connection, Colors } from '@/types';
-import { runWorkflow } from '@/lib/workflowRunner';
+import React, { useState, useEffect } from 'react';
+import { CanvasNode, Colors, Connection } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
 
 interface ChatBoxNodeProps {
@@ -10,8 +9,6 @@ interface ChatBoxNodeProps {
   onNodeClick: (e: React.MouseEvent, nodeId: string) => void;
   onNodeContextMenu: (e: React.MouseEvent, nodeId: string) => void;
   onNodeUpdate: (node: CanvasNode) => void;
-  nodes: CanvasNode[];
-  connections: Connection[];
   theme: Colors;
   onOutputPortMouseDown: (
     e: React.MouseEvent,
@@ -19,6 +16,8 @@ interface ChatBoxNodeProps {
     outputId: string,
     index: number
   ) => void;
+  connections: Connection[]; // Add this
+  nodes: CanvasNode[]; // Add this
 }
 
 export default function ChatBoxNode(props: ChatBoxNodeProps) {
@@ -29,84 +28,35 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
     onNodeClick,
     onNodeContextMenu,
     onNodeUpdate,
-    nodes,
-    connections,
     theme,
-    onOutputPortMouseDown
+    onOutputPortMouseDown,
+    connections,
+    nodes
   } = props;
 
-  const chatData = node.data as ChatNodeData;
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<{ sender: 'user' | 'agent'; text: string }[]>(chatData.messages || []);
+  interface ChatBoxNodeData {
+    inputValue?: string;
+    title?: string;
+    // add other properties as needed
+  }
 
-  // Find connected agent node
-  const agentConnection = connections.find(c => c.sourceNode === node.id);
-  const agentNode = agentConnection ? nodes.find(n => n.id === agentConnection.targetNode && n.type === 'agent') : null;
+  // Get the current input value from node data
+  const [input, setInput] = useState((node.data as ChatBoxNodeData).inputValue || '');
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-
-    const userMsg = { sender: 'user' as const, text: input };
-    const userMessages = [...messages, userMsg];
-    setMessages(userMessages);
-    setInput('');
-    onNodeUpdate({ ...node, data: { ...chatData, messages: userMessages } });
-    await supabase
+  // Update node data when input changes
+  const handleInputChange = (value: string) => {
+    setInput(value);
+    const updatedNode = {
+      ...node,
+      data: { ...node.data, inputValue: value }
+    };
+    onNodeUpdate(updatedNode);
+    
+    // Save to database
+    supabase
       .from('nodes')
-      .update({ data: { ...chatData, messages: userMessages } })
+      .update({ data: updatedNode.data })
       .eq('id', node.id);
-
-    if (agentNode) {
-      try {
-        const updatedNodes = nodes.map(n =>
-          n.id === agentNode.id ? { ...n, data: { ...n.data, prompt: input } } : n
-        );
-        const result = await runWorkflow(updatedNodes, connections);
-        let responseText = 'No response';
-        const output = result[agentNode.id];
-
-        type GeminiOutput = {
-          gemini?: {
-            candidates?: {
-              content?: {
-                parts?: {
-                  text?: string;
-                }[];
-              };
-            }[];
-          };
-          error?: string;
-        };
-
-        if (output && typeof output === 'object') {
-          const typedOutput = output as GeminiOutput;
-          if ('gemini' in typedOutput) {
-            const gem = typedOutput.gemini;
-            responseText = gem?.candidates?.[0]?.content?.parts?.[0]?.text || responseText;
-          } else if ('error' in typedOutput) {
-            responseText = `Error: ${typedOutput.error}`;
-          }
-        } else if (typeof output === 'string') {
-          responseText = output;
-        }
-        const finalMessages = [...userMessages, { sender: 'agent' as const, text: responseText }];
-        setMessages(finalMessages);
-        onNodeUpdate({ ...node, data: { ...chatData, messages: finalMessages } });
-        await supabase
-          .from('nodes')
-          .update({ data: { ...chatData, messages: finalMessages } })
-          .eq('id', node.id);
-      } catch (err) {
-        const errorMsg = `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
-        const finalMessages = [...userMessages, { sender: 'agent' as const, text: errorMsg }];
-        setMessages(finalMessages);
-        onNodeUpdate({ ...node, data: { ...chatData, messages: finalMessages } });
-        await supabase
-          .from('nodes')
-          .update({ data: { ...chatData, messages: finalMessages } })
-          .eq('id', node.id);
-      }
-    }
   };
 
   return (
@@ -126,39 +76,29 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
     >
       {/* Header */}
       <div className="flex items-center gap-2 p-2 border-b" style={{ borderColor: theme.border }}>
-        <span className="text-sm font-medium truncate" style={{ color: theme.text }}>{chatData.title || 'Chat Interface'}</span>
+        <span className="text-sm font-medium truncate" style={{ color: theme.text }}>
+          {(node.data as ChatBoxNodeData).title || 'Text Input'}
+        </span>
       </div>
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1 text-xs" style={{ color: theme.textSecondary }}>
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <span className={`px-2 py-1 rounded ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-700 text-white'}`}>{msg.text}</span>
-          </div>
-        ))}
+
+      {/* Simple Text Input */}
+      <div className="flex-1 p-3 flex items-center">
+        <input
+          className="w-full px-3 py-2 rounded border text-sm"
+          style={{ 
+            backgroundColor: theme.background, 
+            borderColor: theme.border,
+            color: theme.text
+          }}
+          type="text"
+          value={input}
+          onChange={e => handleInputChange(e.target.value)}
+          placeholder="Enter text..."
+          onMouseDown={e => e.stopPropagation()} // Prevent node drag when typing
+          onClick={e => e.stopPropagation()} // Prevent node selection when clicking input
+        />
       </div>
-      {/* Input Box */}
-      {isSelected && (
-        <form
-          className="flex gap-1 p-2 border-t"
-          style={{ borderColor: theme.border }}
-          onSubmit={e => { e.preventDefault(); handleSend(); }}
-        >
-          <input
-            className="flex-1 px-2 py-1 rounded bg-gray-900 text-white border"
-            style={{ borderColor: theme.border }}
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Type a message..."
-            autoFocus
-          />
-          <button
-            type="submit"
-            className="px-3 py-1 rounded bg-blue-600 text-white text-xs"
-            disabled={!input.trim()}
-          >Send</button>
-        </form>
-      )}
+
       {/* Output Ports */}
       {node.outputs.map((output, index) => (
         <div
