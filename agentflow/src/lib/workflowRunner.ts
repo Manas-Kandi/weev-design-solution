@@ -107,7 +107,7 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
             },
           ],
         });
-        nodeOutputs[node.id] = result;
+        nodeOutputs[node.id] = result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
       } catch (err) {
         nodeOutputs[node.id] = { error: err instanceof Error ? err.message : "Unknown error" };
       }
