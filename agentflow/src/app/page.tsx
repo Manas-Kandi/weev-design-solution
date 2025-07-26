@@ -10,6 +10,8 @@ import DesignerCanvas from "@/components/DesignerCanvas";
 import PropertiesPanel from "@/components/PropertiesPanel";
 import { nodeCategories } from "@/data/nodeDefinitions";
 
+const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 export default function AgentFlowPage() {
   const [currentView, setCurrentView] = useState<'projects' | 'designer'>("projects");
   const [projects, setProjects] = useState<Project[]>([]);
@@ -114,12 +116,11 @@ export default function AgentFlowPage() {
 
   const handleCreateProject = async (projectData: Omit<Project, 'id' | 'lastModified' | 'nodeCount'>) => {
     try {
-      // Create payload that matches your existing schema
       const projectPayload = {
         name: projectData.name || `New Project ${Date.now()}`,
         description: projectData.description || '',
-        status: projectData.status || 'draft'
-        // Note: No user_id - you might need to add this if your RLS requires it
+        status: projectData.status || 'draft',
+        user_id: DEFAULT_USER_ID // Use proper UUID
       };
 
       console.log('Creating project with payload:', projectPayload);
@@ -211,6 +212,7 @@ export default function AgentFlowPage() {
       // Create payload that matches your existing schema
       const nodePayload = {
         project_id: currentProject.id,
+        user_id: DEFAULT_USER_ID, // Use proper UUID instead of 'default-user'
         type: nodeDef?.type || nodeData.type,
         subtype,
         position: { x: baseX, y: baseY }, // JSON field
@@ -223,7 +225,6 @@ export default function AgentFlowPage() {
         },
         inputs: defaultInputs,
         outputs: defaultOutputs
-        // Note: No user_id - you might need to add this if your RLS requires it
       };
 
       console.log('Creating node with payload:', nodePayload);
@@ -285,11 +286,11 @@ export default function AgentFlowPage() {
       // Create payload that matches your existing schema
       const connectionPayload = {
         project_id: currentProject.id,
+        user_id: DEFAULT_USER_ID, // Use proper UUID
         source_node: connectionData.sourceNode,
         source_output: connectionData.sourceOutput,
         target_node: connectionData.targetNode,
         target_input: connectionData.targetInput
-        // Note: No user_id - you might need to add this if your RLS requires it
       };
 
       console.log('Creating connection with payload:', connectionPayload);
