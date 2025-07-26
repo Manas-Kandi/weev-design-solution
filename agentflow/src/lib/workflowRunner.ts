@@ -46,7 +46,15 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
       const escalationLogic = "escalationLogic" in node.data && node.data.escalationLogic ? `Escalation Logic: ${node.data.escalationLogic}` : "";
       const confidenceThreshold = "confidenceThreshold" in node.data && node.data.confidenceThreshold !== undefined ? `Confidence Threshold: ${node.data.confidenceThreshold}` : "";
       const userPrompt = "prompt" in node.data && typeof node.data.prompt === "string" ? node.data.prompt : "";
-      const inputContext = node.inputs.map(i => nodeOutputs[i.id]).join("\n");
+      const incoming = connections.filter(c => c.targetNode === node.id);
+      const inputContext = incoming
+        .map(conn => {
+          const output = nodeOutputs[conn.sourceNode];
+          if (typeof output === "string") return output;
+          if (output && typeof output === "object") return JSON.stringify(output);
+          return "";
+        })
+        .join("\n");
       const finalPrompt = [
         systemPrompt,
         personality,
