@@ -89,7 +89,24 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
       // Log the final payload
       console.log("Sending prompt to Gemini:", userPrompt, "System prompt:", systemPrompt);
       try {
-        const result = await callGemini(userPrompt);
+        const result = await callGemini("", {
+          model: data.model || "gemini-pro",
+          generationConfig: {
+            temperature: data.temperature ?? 0.7,
+          },
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: systemPrompt
+                    ? `${systemPrompt.trim()}\n\n${userPrompt.trim()}`
+                    : userPrompt.trim(),
+                },
+              ],
+            },
+          ],
+        });
         nodeOutputs[node.id] = result;
       } catch (err) {
         nodeOutputs[node.id] = { error: err instanceof Error ? err.message : "Unknown error" };
