@@ -1,17 +1,23 @@
+export interface AgentNodeData {
+  title: string
+  description: string
+  color: string
+  icon: string
+  content?: string
+  config?: Record<string, unknown>
+  prompt?: string
+  model?: string // Added model property for agent nodes
+  condition?: string // Optional: conditional logic for agent nodes
+  systemPrompt?: string // Guardrail/system prompt for agent nodes
+}
+
 export interface CanvasNode {
   id: string
   type: 'agent' | 'gui' | 'logic'
   subtype: string
   position: { x: number; y: number }
   size: { width: number; height: number }
-  data: {
-    title: string
-    description: string
-    color: string
-    icon: string
-    content?: string
-    config?: Record<string, unknown>
-  }
+  data: AgentNodeData
   inputs: { id: string; label: string; type?: string }[]
   outputs: { id: string; label: string; type?: string }[]
 }
@@ -59,6 +65,7 @@ export interface NodeType {
   subtype?: string
   defaultInputs?: { id: string; label: string; type?: string }[]
   defaultOutputs?: { id: string; label: string; type?: string }[]
+  systemPrompt?: string // Guardrail/system prompt for agent nodes
 }
 
 export interface ViewportTransform {
@@ -83,3 +90,5 @@ export interface Colors {
   blue: string
   green: string
 }
+
+export type NodeOutput = string | { gemini: unknown } | { error: string };

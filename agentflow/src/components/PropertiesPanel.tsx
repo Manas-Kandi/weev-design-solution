@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { theme } from "@/data/theme";
 import { CanvasNode } from "@/types";
 import { Minimize2, Play, Settings } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { nodeCategories } from "@/data/nodeDefinitions";
 
 interface PropertiesPanelProps {
@@ -15,44 +15,51 @@ interface PropertiesPanelProps {
 }
 
 export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPanelProps) {
-  const [activeTab, setActiveTab] = useState<'properties' | 'config' | 'testing'>('properties');
+  const [activeTab] = useState<'properties' | 'config' | 'testing'>('properties');
+  // Use a properly typed localData
+  const [localData, setLocalData] = useState<CanvasNode['data']>(selectedNode?.data || {
+    title: '',
+    description: '',
+    color: '',
+    icon: '',
+    prompt: '',
+    model: 'gemini-pro' // default model
+  });
+  const [testResult, setTestResult] = useState<string | null>(null);
 
-  if (!selectedNode) {
-    return (
-      <div
-        className="w-80 border-l flex flex-col items-center justify-center"
-        style={{
-          backgroundColor: theme.sidebar,
-          borderColor: theme.border,
-        }}
-      >
-        <p className="text-sm" style={{ color: theme.textMute }}>
-          Select a node to edit its properties.
-        </p>
-      </div>
-    );
-  }
-
-  // --- Update node name and description handlers ---
-  // Add controlled input for name and description, and call onChange
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange({
-      ...selectedNode,
-      data: {
-        ...selectedNode.data,
-        title: e.target.value,
-      },
+  useEffect(() => {
+    setLocalData(selectedNode?.data || {
+      title: '',
+      description: '',
+      color: '',
+      icon: '',
+      prompt: '',
+      model: 'gemini-pro'
     });
+  }, [selectedNode]);
+
+  // Controlled input handlers
+  const handleFieldChange = (field: keyof CanvasNode['data'], value: string) => {
+    const updatedData = { ...localData, [field]: value };
+    setLocalData(updatedData);
+    if (selectedNode) {
+      onChange({ ...selectedNode, data: updatedData });
+    }
   };
 
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange({
-      ...selectedNode,
-      data: {
-        ...selectedNode.data,
-        description: e.target.value,
-      },
-    });
+  // Test node with Gemini
+  const handleTestNode = async () => {
+    if (selectedNode && selectedNode.type === 'agent' && localData.prompt) {
+      setTestResult('Running...');
+      try {
+        const { callGemini } = await import('@/lib/geminiClient');
+        // For demo, always route to Gemini, but pass model for future extensibility
+        const res = await callGemini(localData.prompt, { model: localData.model });
+        setTestResult(res.candidates?.[0]?.content?.parts?.[0]?.text || 'No response');
+      } catch (err) {
+        setTestResult('Error: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      }
+    }
   };
 
   // Helper: get icon component from nodeCategories
@@ -64,27 +71,33 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
     return null;
   };
 
+  if (!selectedNode) {
+    return (
+      <div
+        className="w-80 border-l flex flex-col items-center justify-center"
+        style={{ backgroundColor: theme.sidebar, borderColor: theme.border }}
+      >
+        <p className="text-sm" style={{ color: theme.textMute }}>
+          Select a node to edit its properties.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div
       className="w-80 border-l flex flex-col"
-      style={{
-        backgroundColor: theme.sidebar,
-        borderColor: theme.border,
-      }}
+      style={{ backgroundColor: theme.sidebar, borderColor: theme.border }}
     >
       {/* Panel Header */}
       <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: theme.border }}>
         <h3 className="font-medium" style={{ color: theme.text }}>
           Properties
         </h3>
-        <button
-          className="p-1 hover:bg-white/10 rounded transition-colors"
-          style={{ color: theme.textMute }}
-        >
+        <button className="p-1 hover:bg-white/10 rounded transition-colors" style={{ color: theme.textMute }}>
           <Minimize2 className="w-4 h-4" />
         </button>
       </div>
-
       {/* Panel Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {activeTab === 'properties' && (
@@ -97,7 +110,7 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
               <div className="flex items-center space-x-2 p-2 rounded" style={{ backgroundColor: theme.bgElevate }}>
                 <div
                   className="w-4 h-4 rounded-sm flex items-center justify-center"
-                  style={{ backgroundColor: selectedNode.data.color }}
+                  style={{ backgroundColor: localData.color || '#888' }}
                 >
                   {/* Only render if icon is not null */}
                   {(() => {
@@ -106,11 +119,10 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
                   })()}
                 </div>
                 <span className="text-sm" style={{ color: theme.text }}>
-                  {selectedNode.data.title}
+                  {localData.title}
                 </span>
               </div>
             </div>
-
             {/* Node Name */}
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: theme.textSecondary }}>
@@ -118,16 +130,12 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
               </label>
               <Input
                 className="border-0"
-                style={{
-                  backgroundColor: theme.bgElevate,
-                  color: theme.text,
-                }}
-                value={selectedNode.data.title}
+                style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                value={localData.title}
                 placeholder="Enter node name..."
-                onChange={handleNameChange}
+                onChange={e => handleFieldChange('title', e.target.value)}
               />
             </div>
-
             {/* Description */}
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: theme.textSecondary }}>
@@ -135,69 +143,57 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
               </label>
               <textarea
                 className="w-full px-3 py-2 text-sm rounded resize-none border-0"
-                style={{
-                  backgroundColor: theme.bgElevate,
-                  color: theme.text,
-                }}
+                style={{ backgroundColor: theme.bgElevate, color: theme.text }}
                 rows={3}
                 placeholder="Describe what this node does..."
-                value={selectedNode.data.description}
-                onChange={handleDescriptionChange}
+                value={localData.description}
+                onChange={e => handleFieldChange('description', e.target.value)}
               />
             </div>
-
-            {/* Configuration based on node type */}
-            {selectedNode.subtype === "desktop-screen" && (
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
-                  Screen Dimensions
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder="Width"
-                    className="border-0"
-                    style={{ backgroundColor: theme.bgElevate, color: theme.text }}
-                  />
-                  <Input
-                    placeholder="Height"
-                    className="border-0"
-                    style={{ backgroundColor: theme.bgElevate, color: theme.text }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {selectedNode.type === "agent" && (
+            {/* Agent node fields */}
+            {selectedNode.type === 'agent' && (
               <>
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
-                    AI Model
+                    System Prompt (Guardrail)
+                  </label>
+                  <textarea
+                    className="w-full px-3 py-2 text-sm rounded resize-none border-0"
+                    style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                    rows={3}
+                    placeholder="e.g. You are an autonomous agent operating in a workflow. You will receive further instructions and context."
+                    value={localData.systemPrompt || ''}
+                    onChange={e => handleFieldChange('systemPrompt', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
+                    Model
                   </label>
                   <select
-                    className="w-full px-3 py-2 text-sm rounded border-0"
-                    style={{
-                      backgroundColor: theme.bgElevate,
-                      color: theme.text,
-                    }}
+                    className="w-full px-3 py-2 text-sm rounded border-0 bg-gray-800 text-white"
+                    style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                    value={localData.model || 'gemini-pro'}
+                    onChange={e => handleFieldChange('model', e.target.value)}
                   >
-                    <option>GPT-4</option>
-                    <option>Claude</option>
-                    <option>Gemini</option>
-                    <option>Custom Model</option>
+                    <option value="gemini-pro">Gemini Pro</option>
+                    <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="claude-3">Claude 3</option>
+                    <option value="llama-3">Llama 3</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: theme.textMute }}>
-                    System Prompt
+                    User Prompt
                   </label>
                   <textarea
                     className="w-full px-3 py-2 text-sm rounded resize-none border-0"
-                    style={{
-                      backgroundColor: theme.bgElevate,
-                      color: theme.text,
-                    }}
+                    style={{ backgroundColor: theme.bgElevate, color: theme.text }}
                     rows={4}
-                    placeholder="Enter the system prompt for this agent..."
+                    placeholder="Enter the prompt for Gemini..."
+                    value={localData.prompt || ''}
+                    onChange={e => handleFieldChange('prompt', e.target.value)}
                   />
                 </div>
               </>
@@ -220,30 +216,27 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
             </p>
           </div>
         )}
-
         <Separator style={{ backgroundColor: theme.border }} />
-
         {/* Actions */}
         <div className="space-y-2">
           <Button
             className="w-full gap-2"
-            style={{
-              backgroundColor: theme.accent,
-              color: "white",
-            }}
+            style={{ backgroundColor: theme.accent, color: 'white' }}
+            onClick={handleTestNode}
+            disabled={selectedNode.type !== 'agent'}
           >
             <Play className="w-4 h-4" />
             Test Node
           </Button>
-
+          {testResult && (
+            <div className="mt-2 p-2 rounded bg-gray-900 text-white text-xs">
+              {testResult}
+            </div>
+          )}
           <Button
             variant="outline"
             className="w-full gap-2 border-0"
-            style={{
-              backgroundColor: theme.bgElevate,
-              color: theme.text,
-              borderColor: theme.border,
-            }}
+            style={{ backgroundColor: theme.bgElevate, color: theme.text, borderColor: theme.border }}
           >
             <Settings className="w-4 h-4" />
             Advanced Settings

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CanvasEngine from '@/components/Canvas';
 import { CanvasNode, Connection } from '@/types';
+import { runWorkflow } from '@/lib/workflowRunner';
+import { Button } from '@/components/ui/button';
 
 interface DesignerCanvasProps {
   nodes: CanvasNode[];
@@ -23,6 +25,9 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     onCreateConnection
   } = props;
 
+  const [testFlowResult, setTestFlowResult] = useState<Record<string, unknown> | null>(null);
+  const [testing, setTesting] = useState(false);
+
   const handleNodeDrag = (id: string, pos: { x: number; y: number }) => {
     const node = nodes.find(n => n.id === id);
     if (!node) return;
@@ -30,8 +35,88 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     onNodeUpdate({ ...node, position: { x: pos.x, y: pos.y } });
   };
 
+  const handleTestFlow = async () => {
+    setTesting(true);
+    try {
+      const result = await runWorkflow(nodes, connections);
+      setTestFlowResult(result);
+    } catch (err) {
+      setTestFlowResult({ error: err instanceof Error ? err.message : 'Unknown error' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <div className="flex-1 relative overflow-hidden">
+      {/* Test Flow Button */}
+      <div className="absolute top-4 right-4 z-10">
+        <Button
+          className="bg-blue-600 text-white px-4 py-2 rounded shadow"
+          onClick={handleTestFlow}
+          disabled={testing}
+        >
+          {testing ? 'Testing...' : 'Test Flow'}
+        </Button>
+      </div>
+      {/* Results Panel */}
+      {testFlowResult && (
+        <div className="absolute top-16 right-4 w-96 max-h-[60vh] overflow-auto bg-gray-900 text-white p-4 rounded shadow z-20">
+          <h4 className="font-bold mb-2">Flow Results</h4>
+          <div className="space-y-3">
+            {Object.entries(testFlowResult).map(([nodeId, output]) => {
+              const node = nodes.find(n => n.id === nodeId);
+              const title = node?.data.title || nodeId;
+              const type = node?.type || '';
+              let display;
+              let isError = false;
+              if (output === null) {
+                display = <span className="text-gray-400">No output</span>;
+              } else if (typeof output === 'string') {
+                display = <span>{output}</span>;
+                if (output.toLowerCase().includes('error')) isError = true;
+              } else if (output && typeof output === 'object' && 'error' in output) {
+                display = <span className="text-red-400">{String((output as { error: string }).error)}</span>;
+                isError = true;
+              } else if (
+                output &&
+                typeof output === 'object' &&
+                'gemini' in output &&
+                output.gemini &&
+                typeof output.gemini === 'object' &&
+                Array.isArray((output.gemini as { candidates?: { content?: { parts?: { text?: string }[] } }[] }).candidates)
+              ) {
+                type GeminiCandidate = {
+                  content?: {
+                    parts?: {
+                      text?: string;
+                    }[];
+                  };
+                };
+                type GeminiOutput = {
+                  candidates?: GeminiCandidate[];
+                };
+                const gemini = output.gemini as GeminiOutput;
+                const text = gemini.candidates?.[0]?.content?.parts?.[0]?.text;
+                display = <span>{text ? text : <span className="text-gray-400">No response</span>}</span>;
+              } else {
+                display = <span>{JSON.stringify(output)}</span>;
+              }
+              return (
+                <div key={nodeId} className={`border-b pb-2 ${isError ? 'border-red-400' : 'border-gray-700'}`}>
+                  <div className="font-semibold text-sm mb-1">
+                    {title} <span className="text-xs text-gray-400">({type})</span>
+                  </div>
+                  <div className="text-xs">{display}</div>
+                </div>
+              );
+            })}
+          </div>
+          <Button className="mt-2 w-full" variant="outline" onClick={() => setTestFlowResult(null)}>
+            Close
+          </Button>
+        </div>
+      )}
       <CanvasEngine
         nodes={nodes}
         connections={connections}

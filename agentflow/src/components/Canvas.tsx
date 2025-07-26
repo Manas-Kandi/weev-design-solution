@@ -41,6 +41,13 @@ export default function CanvasEngine(props: Props) {
     currentPos: { x: number; y: number };
   } | null>(null);
 
+  // --- New state for advanced features ---
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
+  const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [undoStack, setUndoStack] = useState<CanvasNode[][]>([]);
+  const [redoStack, setRedoStack] = useState<CanvasNode[][]>([]);
+
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -105,8 +112,16 @@ export default function CanvasEngine(props: Props) {
     } else if (dragConnection) {
       const canvasPos = screenToCanvas(e.clientX, e.clientY);
       setDragConnection(prev => prev ? { ...prev, currentPos: canvasPos } : null);
+    } else if (isSelecting && selectionRect) {
+      const canvasPos = screenToCanvas(e.clientX, e.clientY);
+      setSelectionRect(rect => rect ? {
+        x: rect.x,
+        y: rect.y,
+        w: canvasPos.x - rect.x,
+        h: canvasPos.y - rect.y
+      } : null);
     }
-  }, [isPanning, panStart, dragConnection, screenToCanvas]);
+  }, [isPanning, panStart, dragConnection, screenToCanvas, isSelecting, selectionRect]);
 
   // --- Mouse Up on Canvas ---
   const handleMouseUp = useCallback(() => {
@@ -254,16 +269,205 @@ export default function CanvasEngine(props: Props) {
     return 'grab';
   };
 
+  // --- Multi-select logic ---
+  const handleNodeClick = useCallback((e: React.MouseEvent, nodeId: string) => {
+    e.stopPropagation();
+    if (e.shiftKey) {
+      setSelectedNodeIds(prev => prev.includes(nodeId) ? prev.filter(id => id !== nodeId) : [...prev, nodeId]);
+    } else {
+      setSelectedNodeIds([nodeId]);
+      onNodeSelect(nodes.find(n => n.id === nodeId) || null);
+    }
+  }, [nodes, onNodeSelect]);
+
+  // --- Selection rectangle logic ---
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isDragging || dragConnection || isPanning) return;
+    if (e.button !== 0) return;
+    setIsSelecting(true);
+    const canvasPos = screenToCanvas(e.clientX, e.clientY);
+    setSelectionRect({ x: canvasPos.x, y: canvasPos.y, w: 0, h: 0 });
+  }, [isDragging, dragConnection, isPanning, screenToCanvas]);
+
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isSelecting && selectionRect) {
+      const canvasPos = screenToCanvas(e.clientX, e.clientY);
+      setSelectionRect(rect => rect ? {
+        x: rect.x,
+        y: rect.y,
+        w: canvasPos.x - rect.x,
+        h: canvasPos.y - rect.y
+      } : null);
+    }
+  }, [isSelecting, selectionRect, screenToCanvas]);
+
+  const handleCanvasMouseUp = useCallback(() => {
+    if (isSelecting && selectionRect) {
+      // Select all nodes within rectangle
+      const x1 = Math.min(selectionRect.x, selectionRect.x + selectionRect.w);
+      const y1 = Math.min(selectionRect.y, selectionRect.y + selectionRect.h);
+      const x2 = Math.max(selectionRect.x, selectionRect.x + selectionRect.w);
+      const y2 = Math.max(selectionRect.y, selectionRect.y + selectionRect.h);
+      const selected = nodes.filter(n =>
+        n.position.x >= x1 && n.position.x + n.size.width <= x2 &&
+        n.position.y >= y1 && n.position.y + n.size.height <= y2
+      ).map(n => n.id);
+      setSelectedNodeIds(selected);
+      setSelectionRect(null);
+      setIsSelecting(false);
+    }
+  }, [isSelecting, selectionRect, nodes]);
+
+  // --- Delete selected nodes ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeIds.length > 0) {
+        // Remove selected nodes
+        const remaining = nodes.filter(n => !selectedNodeIds.includes(n.id));
+        setUndoStack(stack => [...stack, nodes]);
+        setSelectedNodeIds([]);
+        onConnectionsChange(connections.filter(c => !selectedNodeIds.includes(c.sourceNode) && !selectedNodeIds.includes(c.targetNode)));
+        onNodeSelect(null);
+        props.onNodeUpdate && remaining.forEach(n => props.onNodeUpdate(n));
+      }
+      // Select all
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+        setSelectedNodeIds(nodes.map(n => n.id));
+        e.preventDefault();
+      }
+      // Deselect
+      if (e.key === 'Escape') {
+        setSelectedNodeIds([]);
+        onNodeSelect(null);
+      }
+      // Duplicate
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd' && selectedNodeIds.length > 0) {
+        const newNodes = nodes.filter(n => selectedNodeIds.includes(n.id)).map(n => ({
+          ...n,
+          id: `${n.id}-copy-${Date.now()}`,
+          position: { x: n.position.x + 30, y: n.position.y + 30 }
+        }));
+        setUndoStack(stack => [...stack, nodes]);
+        props.onNodeUpdate && newNodes.forEach(n => props.onNodeUpdate(n));
+        setSelectedNodeIds(newNodes.map(n => n.id));
+      }
+      // Undo
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        setUndoStack(stack => {
+          if (stack.length === 0) return stack;
+          setRedoStack(r => [nodes, ...r]);
+          props.onNodeUpdate && stack[stack.length - 1].forEach(n => props.onNodeUpdate(n));
+          return stack.slice(0, -1);
+        });
+      }
+      // Redo
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+        setRedoStack(stack => {
+          if (stack.length === 0) return stack;
+          setUndoStack(u => [...u, nodes]);
+          props.onNodeUpdate && stack[0].forEach(n => props.onNodeUpdate(n));
+          return stack.slice(1);
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedNodeIds, nodes, connections, onConnectionsChange, onNodeSelect, props.onNodeUpdate]);
+
+  // --- Snap to grid ---
+  const snapToGrid = (pos: { x: number; y: number }) => {
+    const grid = 20;
+    return {
+      x: Math.round(pos.x / grid) * grid,
+      y: Math.round(pos.y / grid) * grid
+    };
+  };
+
+  // --- Multi-drag logic ---
+  useEffect(() => {
+    if (!isDragging || !draggedNode) return;
+    const handleMove = (e: MouseEvent) => {
+      const canvasPos = screenToCanvas(e.clientX, e.clientY);
+      if (selectedNodeIds.length > 1) {
+        // Move all selected nodes by delta
+        const node = nodes.find(n => n.id === draggedNode);
+        if (!node) return;
+        const delta = {
+          x: canvasPos.x - dragOffset.x - node.position.x,
+          y: canvasPos.y - dragOffset.y - node.position.y
+        };
+        selectedNodeIds.forEach(id => {
+          const n = nodes.find(n => n.id === id);
+          if (n) onNodeDrag(id, snapToGrid({ x: n.position.x + delta.x, y: n.position.y + delta.y }));
+        });
+      } else {
+        onNodeDrag(draggedNode, snapToGrid({ x: canvasPos.x - dragOffset.x, y: canvasPos.y - dragOffset.y }));
+      }
+    };
+    const handleUp = () => {
+      setIsDragging(false);
+      setDraggedNode(null);
+    };
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [isDragging, draggedNode, dragOffset, screenToCanvas, onNodeDrag, selectedNodeIds, nodes]);
+
+  // --- Context menu logic ---
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; nodeId: string } | null>(null);
+  const handleNodeContextMenu = useCallback((e: React.MouseEvent, nodeId: string) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, nodeId });
+  }, []);
+  const handleContextMenuAction = (action: string) => {
+    if (!contextMenu) return;
+    if (action === 'delete') {
+      setSelectedNodeIds(ids => ids.filter(id => id !== contextMenu.nodeId));
+      // ...existing delete logic...
+    }
+    if (action === 'duplicate') {
+      // ...existing duplicate logic...
+    }
+    setContextMenu(null);
+  };
+
+  // --- Zoom to fit ---
+  const zoomToFit = () => {
+    if (nodes.length === 0) return;
+    const minX = Math.min(...nodes.map(n => n.position.x));
+    const minY = Math.min(...nodes.map(n => n.position.y));
+    const maxX = Math.max(...nodes.map(n => n.position.x + n.size.width));
+    const maxY = Math.max(...nodes.map(n => n.position.y + n.size.height));
+    const padding = 40;
+    const canvasW = canvasRef.current?.offsetWidth || 800;
+    const canvasH = canvasRef.current?.offsetHeight || 600;
+    const scale = Math.min(
+      (canvasW - padding) / (maxX - minX),
+      (canvasH - padding) / (maxY - minY),
+      2
+    );
+    setViewportTransform({
+      x: padding - minX * scale,
+      y: padding - minY * scale,
+      scale
+    });
+  };
+
+  // --- Render ---
   return (
     <div
       ref={canvasRef}
       className="relative w-full h-full overflow-hidden"
       style={{ backgroundColor: theme.bg, cursor: getCursor() }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
+      onMouseDown={handleCanvasMouseDown}
+      onMouseMove={handleCanvasMouseMove}
+      onMouseUp={handleCanvasMouseUp}
       onClick={handleCanvasClick}
       onWheel={handleWheel}
+      tabIndex={0}
     >
       {/* Background Grid */}
       <svg
@@ -300,6 +504,39 @@ export default function CanvasEngine(props: Props) {
         </g>
       </svg>
 
+      {/* Selection Rectangle */}
+      {selectionRect && (
+        <div
+          className="absolute border-2 border-blue-400 bg-blue-400/10 pointer-events-none"
+          style={{
+            left: Math.min(selectionRect.x, selectionRect.x + selectionRect.w) * viewportTransform.scale + viewportTransform.x,
+            top: Math.min(selectionRect.y, selectionRect.y + selectionRect.h) * viewportTransform.scale + viewportTransform.y,
+            width: Math.abs(selectionRect.w) * viewportTransform.scale,
+            height: Math.abs(selectionRect.h) * viewportTransform.scale,
+            zIndex: 10
+          }}
+        />
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className="absolute bg-white border rounded shadow-lg z-50"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button className="block w-full px-4 py-2 text-left" onClick={() => handleContextMenuAction('delete')}>Delete</button>
+          <button className="block w-full px-4 py-2 text-left" onClick={() => handleContextMenuAction('duplicate')}>Duplicate</button>
+        </div>
+      )}
+
+      {/* Zoom to fit button */}
+      <button
+        className="absolute top-4 right-4 px-2 py-1 rounded bg-gray-800 text-white text-xs z-20"
+        onClick={zoomToFit}
+      >
+        Zoom to Fit
+      </button>
+
       {/* Nodes Layer */}
       <div
         className="absolute inset-0"
@@ -311,11 +548,11 @@ export default function CanvasEngine(props: Props) {
       >
         {nodes.map(node => {
           const IconComponent = getNodeIcon(node);
-          const isSelected = selectedNodeId === node.id;
+          const isSelected = selectedNodeIds.includes(node.id);
           return (
             <div
               key={node.id}
-              className="absolute cursor-pointer pointer-events-auto"
+              className={`absolute cursor-pointer pointer-events-auto ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
               style={{
                 left: node.position.x,
                 top: node.position.y,
@@ -328,6 +565,8 @@ export default function CanvasEngine(props: Props) {
                 zIndex: 3
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
+              onClick={(e) => handleNodeClick(e, node.id)}
+              onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
             >
               {/* Node Header */}
               <div 

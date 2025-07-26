@@ -32,6 +32,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Generic configurable AI agent',
         type: 'agent',
         subtype: 'generic',
+        systemPrompt: 'You are an autonomous agent operating in a workflow. You will receive further instructions and context.',
         defaultInputs: [
           { id: 'input-1', label: 'Input', type: 'text' },
           { id: 'context', label: 'Context', type: 'data' }
@@ -49,6 +50,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Escalate to human operator when needed',
         type: 'agent',
         subtype: 'human-handoff',
+        systemPrompt: 'You are a human handoff agent. Escalate to a human operator when required.',
         defaultInputs: [
           { id: 'trigger', label: 'Trigger', type: 'boolean' },
           { id: 'context', label: 'Context', type: 'data' }
@@ -73,6 +75,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Handle agent/user dialogue exchange',
         type: 'conversation',
         subtype: 'message',
+        systemPrompt: 'You are a message handler. Format and route dialogue between agents and users.',
         defaultInputs: [
           { id: 'user-input', label: 'User Input', type: 'text' },
           { id: 'agent-response', label: 'Agent Response', type: 'text' }
@@ -90,6 +93,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Structure agent instructions and prompts',
         type: 'conversation',
         subtype: 'prompt-template',
+        systemPrompt: 'You are a prompt template node. Structure and format instructions for agents.',
         defaultInputs: [
           { id: 'variables', label: 'Variables', type: 'data' },
           { id: 'context', label: 'Context', type: 'text' }
@@ -106,6 +110,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Provide contextual information and data',
         type: 'conversation',
         subtype: 'knowledge-base',
+        systemPrompt: 'You are a knowledge base node. Provide relevant information and context to agents.',
         defaultInputs: [
           { id: 'query', label: 'Query', type: 'text' },
           { id: 'filters', label: 'Filters', type: 'data' }
@@ -130,6 +135,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Simple conditional branching logic',
         type: 'logic',
         subtype: 'if-else',
+        systemPrompt: 'You are a logic node. Evaluate conditions and route data accordingly.',
         defaultInputs: [
           { id: 'condition', label: 'Condition', type: 'boolean' },
           { id: 'data', label: 'Data', type: 'data' }
@@ -147,6 +153,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Complex multi-branch decision making',
         type: 'logic',
         subtype: 'decision-tree',
+        systemPrompt: 'You are a decision tree node. Make multi-branch decisions based on input and rules.',
         defaultInputs: [
           { id: 'input-data', label: 'Input Data', type: 'data' },
           { id: 'rules', label: 'Rules', type: 'data' }
@@ -166,6 +173,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Track and manage conversation state',
         type: 'logic',
         subtype: 'state-machine',
+        systemPrompt: 'You are a state machine node. Track and manage the state of the workflow.',
         defaultInputs: [
           { id: 'current-state', label: 'Current State', type: 'text' },
           { id: 'event', label: 'Event', type: 'text' },
@@ -192,6 +200,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Test with real AI responses and scenarios',
         type: 'testing',
         subtype: 'simulator',
+        systemPrompt: 'You are a simulator node. Test agent responses and scenarios in the workflow.',
         defaultInputs: [
           { id: 'test-input', label: 'Test Input', type: 'text' },
           { id: 'config', label: 'Config', type: 'data' }
@@ -209,6 +218,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Define specific testing scenarios and assertions',
         type: 'testing',
         subtype: 'test-case',
+        systemPrompt: 'You are a test case node. Define and validate specific scenarios and assertions.',
         defaultInputs: [
           { id: 'input-scenario', label: 'Input Scenario', type: 'text' },
           { id: 'expected-output', label: 'Expected Output', type: 'text' }
@@ -233,6 +243,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Monitor and control agent system',
         type: 'ui',
         subtype: 'dashboard',
+        systemPrompt: 'You are a dashboard node. Monitor and control the agent system, displaying metrics and status.',
         defaultInputs: [
           { id: 'metrics', label: 'Metrics', type: 'data' },
           { id: 'status', label: 'Status', type: 'data' }
@@ -250,6 +261,7 @@ export const nodeCategories: NodeCategory[] = [
         description: 'Visualize and interact with conversations',
         type: 'ui',
         subtype: 'chat-interface',
+        systemPrompt: 'You are a chat interface node. Visualize and interact with conversations, displaying messages and collecting user input.',
         defaultInputs: [
           { id: 'messages', label: 'Messages', type: 'data' },
           { id: 'user-input', label: 'User Input', type: 'text' }
