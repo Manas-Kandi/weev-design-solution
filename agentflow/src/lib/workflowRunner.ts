@@ -85,7 +85,10 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
       const data = node.data as import("@/types").AgentNodeData;
       // Grab prompt from inputs cleanly
       const userPrompt = Object.values(resolvedInputs)[0] as string || "What would you like me to help you with?";
-      const systemPrompt = data.systemPrompt || "";
+      let systemPrompt = data.systemPrompt || "";
+      for (const [key, value] of Object.entries(resolvedInputs)) {
+        systemPrompt = systemPrompt.replaceAll(`{{${key}}}`, String(value));
+      }
       // Log the final payload
       console.log("Sending prompt to Gemini:", userPrompt, "System prompt:", systemPrompt);
       try {
