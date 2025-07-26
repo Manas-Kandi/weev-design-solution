@@ -39,6 +39,9 @@ export default function DesignerCanvas(props: DesignerCanvasProps & { onTestFlow
   const handleTestFlow = async () => {
     setTesting(true);
     try {
+      // Debug: Check if we have the latest node data
+      const chatNode = nodes.find(n => n.type === 'ui' && n.subtype === 'chat');
+      console.log('Chat node data in handleTestFlow:', chatNode?.data);
       const result = await runWorkflow(nodes, connections);
       setTestFlowResult(result);
       if (onTestFlow) onTestFlow(); // Call parent handler if provided

@@ -45,18 +45,23 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
 
   // Update node data when input changes
   const handleInputChange = (value: string) => {
+    console.log('Input changed to:', value); // Add this
     setInput(value);
     const updatedNode = {
       ...node,
       data: { ...node.data, inputValue: value }
     };
+    console.log('Updated node data:', updatedNode.data); // Add this
+    console.log('Calling onNodeUpdate...'); // Debug log
     onNodeUpdate(updatedNode);
+    console.log('onNodeUpdate called'); // Debug log
     
     // Save to database
     supabase
       .from('nodes')
       .update({ data: updatedNode.data })
-      .eq('id', node.id);
+      .eq('id', node.id)
+      .then(result => console.log('Database update result:', result)); // Add this
   };
 
   return (

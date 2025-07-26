@@ -333,12 +333,25 @@ export default function AgentFlowPage() {
   };
 
   const handleNodeUpdate = (updatedNode: CanvasNode) => {
-    setNodes(prev =>
-      prev.map(node =>
+    console.log('handleNodeUpdate received:', updatedNode.data); // Debug log
+    setNodes(prevNodes => {
+      const updated = prevNodes.map(node =>
         node.id === updatedNode.id ? updatedNode : node
-      )
-    );
+      );
+      console.log('Updated nodes array:', updated); // Debug log
+      return updated;
+    });
     setSelectedNode(updatedNode);
+    // Also save to database
+    supabase
+      .from('nodes')
+      .update({ 
+        data: updatedNode.data,
+        position: updatedNode.position,
+        size: updatedNode.size 
+      })
+      .eq('id', updatedNode.id)
+      .then(result => console.log('Supabase node update result:', result)); // Debug log
   };
 
   // Render
@@ -372,19 +385,7 @@ export default function AgentFlowPage() {
           selectedNodeId={selectedNode ? selectedNode.id : null}
           onConnectionsChange={(updatedConnections: Connection[]) => setConnections(updatedConnections)}
           onCreateConnection={handleCreateConnection}
-          onNodeUpdate={async (updatedNode: CanvasNode) => {
-            setNodes(prev =>
-              prev.map(node =>
-                node.id === updatedNode.id
-                  ? { ...node, position: { ...updatedNode.position } }
-                  : node
-              )
-            );
-          }}
-          onTestFlow={async () => {
-            // Run the workflow and handle results here if needed
-            // You can also trigger DesignerCanvas's test logic if needed
-          }}
+          onNodeUpdate={handleNodeUpdate}
         />
       }
       right={

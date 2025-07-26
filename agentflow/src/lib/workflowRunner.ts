@@ -51,8 +51,10 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
   // Handle Text Input nodes first - use their input value
   for (const node of nodes) {
     if (node.type === "ui" && node.subtype === "chat") {
-      // Get the input value from the node data
-      const inputValue = (node.data as ChatBoxNodeData).inputValue || "Hello";
+      console.log('Full node data:', JSON.stringify(node.data, null, 2));
+      const chatData = node.data as unknown as ChatNodeData;
+      const inputValue = chatData.inputValue || (chatData as { input?: string }).input || "Hello";
+      console.log('Using input value:', inputValue);
       nodeOutputs[node.id] = inputValue;
     }
   }
