@@ -18,12 +18,14 @@ interface DesignerLayoutProps {
   left: ReactNode;
   center: ReactNode;
   right: ReactNode;
+  onTestFlow?: () => void; // Add this
 }
 
 export default function DesignerLayout({
   left,
   center,
   right,
+  onTestFlow,
 }: DesignerLayoutProps) {
   return (
     <div
@@ -91,6 +93,7 @@ export default function DesignerLayout({
                 color: colors.text,
                 borderColor: colors.border,
               }}
+              onClick={onTestFlow} // Add this prop
             >
               <Play className="w-4 h-4" />
               Test

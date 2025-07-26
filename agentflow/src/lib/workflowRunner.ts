@@ -34,7 +34,23 @@ function evaluateCondition(condition: string, context: Record<string, NodeOutput
 export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]) {
   const order = getExecutionOrder(nodes, connections);
   const nodeOutputs: Record<string, NodeOutput> = {};
+
+  // Handle Chat Interface nodes - use their latest message
+  for (const node of nodes) {
+    if (node.type === "ui" && node.subtype === "chat") {
+      type ChatData = { messages?: { sender: string; text: string }[] };
+      const chatData = node.data as ChatData;
+      const messages = chatData.messages || [];
+      const lastUserMessage = messages.filter((m) => m.sender === 'user').pop();
+      nodeOutputs[node.id] = lastUserMessage?.text || "Hello";
+    }
+  }
+
   for (const node of order) {
+    // Skip Chat Interface nodes in main loop
+    if (node.type === "ui" && node.subtype === "chat") {
+      continue; // Already handled above
+    }
     if (
       node.type === "agent" ||
       node.type === "logic" ||
@@ -85,7 +101,9 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
       try {
         // Always use gemini-2.5-flash-lite for demo, regardless of model picker
         const geminiRes = await callGemini(finalPrompt, { model: "gemini-2.5-flash-lite" });
-        nodeOutputs[node.id] = { gemini: geminiRes };
+        // Extract text from Gemini response
+        const responseText = geminiRes.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+        nodeOutputs[node.id] = responseText;
       } catch (err) {
         nodeOutputs[node.id] = { error: err instanceof Error ? err.message : "Unknown error" };
       }

@@ -14,7 +14,7 @@ interface DesignerCanvasProps {
   onCreateConnection: (connectionData: Connection) => Promise<void>;
 }
 
-export default function DesignerCanvas(props: DesignerCanvasProps) {
+export default function DesignerCanvas(props: DesignerCanvasProps & { onTestFlow?: () => void }) {
   const {
     nodes,
     connections,
@@ -22,7 +22,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     selectedNodeId,
     onNodeUpdate,
     onConnectionsChange,
-    onCreateConnection
+    onCreateConnection,
+    onTestFlow // Add this
   } = props;
 
   const [testFlowResult, setTestFlowResult] = useState<Record<string, unknown> | null>(null);
@@ -40,6 +41,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     try {
       const result = await runWorkflow(nodes, connections);
       setTestFlowResult(result);
+      if (onTestFlow) onTestFlow(); // Call parent handler if provided
     } catch (err) {
       setTestFlowResult({ error: err instanceof Error ? err.message : 'Unknown error' });
     } finally {

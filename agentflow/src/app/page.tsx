@@ -332,6 +332,15 @@ export default function AgentFlowPage() {
     }
   };
 
+  const handleNodeUpdate = (updatedNode: CanvasNode) => {
+    setNodes(prev =>
+      prev.map(node =>
+        node.id === updatedNode.id ? updatedNode : node
+      )
+    );
+    setSelectedNode(updatedNode);
+  };
+
   // Render
   if (currentView === "projects") {
     return (
@@ -371,32 +380,23 @@ export default function AgentFlowPage() {
                   : node
               )
             );
-            await supabase
-              .from('nodes')
-              .update({ position: updatedNode.position })
-              .eq('id', updatedNode.id);
+          }}
+          onTestFlow={async () => {
+            // Run the workflow and handle results here if needed
+            // You can also trigger DesignerCanvas's test logic if needed
           }}
         />
       }
       right={
         <PropertiesPanel
           selectedNode={selectedNode}
-          onChange={async (updatedNode: CanvasNode) => {
-            setNodes(prevNodes =>
-              prevNodes.map(node =>
-                node.id === updatedNode.id ? updatedNode : node
-              )
-            );
-            if (selectedNode && selectedNode.id === updatedNode.id) {
-              setSelectedNode(updatedNode);
-            }
-            await supabase
-              .from('nodes')
-              .update({ data: updatedNode.data })
-              .eq('id', updatedNode.id);
-          }}
+          onChange={handleNodeUpdate}
         />
       }
+      onTestFlow={async () => {
+        // Run the workflow and handle results here if needed
+        // You can also trigger DesignerCanvas's test logic if needed
+      }}
     />
   );
 }
