@@ -55,13 +55,40 @@ export interface PromptTemplateNodeData {
   variables: Record<string, string> // e.g. { topic: "inflation" }
 }
 
+export interface ConditionGroup {
+  id: string;
+  operator: 'AND' | 'OR';
+  conditions: Condition[];
+}
+export interface Condition {
+  id: string;
+  field: string;
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'greater_equal' | 'less_equal' | 'exists' | 'not_exists' | 'matches_regex' | 'in_array' | 'llm_evaluate';
+  value: string | number | boolean | string[];
+  dataType: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'auto';
+  llmPrompt?: string;
+}
+export interface ComplexIfElseNodeData {
+  title: string;
+  description: string;
+  color: string;
+  icon: string;
+  conditionGroups: ConditionGroup[];
+  globalOperator: 'AND' | 'OR';
+  truePath: { label: string; description: string };
+  falsePath: { label: string; description: string };
+  testData?: Record<string, unknown>;
+  evaluationMode: 'strict' | 'fuzzy' | 'llm_assisted';
+  llmModel: 'gemini-pro' | 'gemini-2.5-flash-lite';
+}
+
 export interface CanvasNode {
   id: string
   type: 'agent' | 'gui' | 'logic' | 'conversation' | 'testing' | 'ui'
   subtype: string
   position: { x: number; y: number }
   size: { width: number; height: number }
-  data: AgentNodeData | ChatNodeData | PromptTemplateNodeData
+  data: AgentNodeData | ChatNodeData | PromptTemplateNodeData | ComplexIfElseNodeData
   inputs: { id: string; label: string; type?: string }[]
   outputs: { id: string; label: string; type?: string }[]
   output?: NodeOutput // Add output property for workflow results
