@@ -3,6 +3,7 @@ import CanvasEngine from '@/components/Canvas';
 import { CanvasNode, Connection } from '@/types';
 import { runWorkflow } from '@/lib/workflowRunner';
 import { Button } from '@/components/ui/button';
+import ConversationTester from '@/components/ConversationTester';
 
 interface DesignerCanvasProps {
   nodes: CanvasNode[];
@@ -28,6 +29,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps & { onTestFlow
 
   const [testFlowResult, setTestFlowResult] = useState<Record<string, unknown> | null>(null);
   const [testing, setTesting] = useState(false);
+  const [showTester, setShowTester] = useState(false);
 
   const handleNodeDrag = (id: string, pos: { x: number; y: number }) => {
     const node = nodes.find(n => n.id === id);
@@ -44,7 +46,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps & { onTestFlow
       console.log('Chat node data in handleTestFlow:', chatNode?.data);
       const result = await runWorkflow(nodes, connections);
       setTestFlowResult(result);
-      if (onTestFlow) onTestFlow(); // Call parent handler if provided
+      if (onTestFlow) onTestFlow();
+      setShowTester(true); // Show the ConversationTester modal
     } catch (err) {
       setTestFlowResult({ error: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
@@ -64,6 +67,24 @@ export default function DesignerCanvas(props: DesignerCanvasProps & { onTestFlow
           {testing ? 'Testing...' : 'Test Flow'}
         </Button>
       </div>
+      {/* Conversation Tester Modal */}
+      {showTester && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-lg w-[600px] max-w-full p-6 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+              onClick={() => setShowTester(false)}
+            >
+              ✕
+            </button>
+            <ConversationTester
+              nodes={nodes}
+              connections={connections}
+              onClose={() => setShowTester(false)}
+            />
+          </div>
+        </div>
+      )}
       {/* Results Panel */}
       {testFlowResult && (
         <div className="absolute top-16 right-4 w-96 max-h-[60vh] overflow-auto bg-gray-900 text-white p-4 rounded shadow z-20">
@@ -129,7 +150,6 @@ export default function DesignerCanvas(props: DesignerCanvasProps & { onTestFlow
         onNodeDrag={handleNodeDrag}
         onConnectionsChange={onConnectionsChange}
         onCreateConnection={onCreateConnection}
-        selectedNodeId={selectedNodeId}
         onNodeUpdate={onNodeUpdate}
       />
     </div>
