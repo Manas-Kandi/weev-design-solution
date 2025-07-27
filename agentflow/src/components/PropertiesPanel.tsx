@@ -9,26 +9,7 @@ import { Minimize2 } from "lucide-react";
 import EnhancedAgentConfig from "./EnhancedAgentConfig";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
-
-// Move interfaces to types/index.ts for reuse and import them here
-// import {
-//   MessageNodeData,
-//   PromptTemplateNodeData,
-//   KnowledgeBaseNodeData,
-//   ConversationFlowNodeData,
-//   IfElseNodeData,
-//   DecisionTreeNodeData,
-//   StateMachineNodeData,
-//   TestCaseNodeData,
-//   SimulatorNodeData,
-//   ChatInterfaceNodeData,
-//   DashboardNodeData
-// } from '@/types';
-
-interface PropertiesPanelProps {
-  selectedNode: CanvasNode | null;
-  onChange: (updatedNode: CanvasNode) => void;
-}
+import { ComplexIfElseNodeData as ImportedComplexIfElseNodeData } from "@/types";
 
 // --- Enhanced If/Else Interfaces ---
 interface ConditionGroup {
@@ -44,146 +25,46 @@ interface Condition {
   dataType: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'auto';
   llmPrompt?: string;
 }
-interface ComplexIfElseNodeData extends Record<string, unknown> {
-  conditionGroups: ConditionGroup[];
-  globalOperator: 'AND' | 'OR';
-  truePath: { label: string; description: string };
-  falsePath: { label: string; description: string };
-  testData?: Record<string, unknown>;
-  evaluationMode: 'strict' | 'fuzzy' | 'llm_assisted';
-  llmModel: 'gemini-pro' | 'gemini-2.5-flash-lite';
-  title?: string;
-  description?: string;
-  color?: string;
-  icon?: string;
+
+interface PropertiesPanelProps {
+  selectedNode: CanvasNode | null;
+  onChange: (updatedNode: CanvasNode) => void;
 }
 
+// --- Main Component ---
 export default function PropertiesPanel({
   selectedNode,
   onChange,
 }: PropertiesPanelProps) {
-  // --- Component-Specific Properties Renderer ---
-  const renderComponentSpecificProperties = (): React.ReactNode => {
-    const nodeType = selectedNode?.type;
-    const nodeSubtype = selectedNode?.subtype;
-    switch (nodeType) {
-      case "conversation":
-        switch (nodeSubtype) {
-          case "message":
-            return renderMessageProperties();
-          case "prompt-template":
-            return renderPromptTemplateProperties();
-          case "knowledge-base":
-            return renderKnowledgeBaseProperties();
-          case "conversation-flow":
-            return renderConversationFlowProperties();
-          default:
-            return null;
-        }
-      case "logic":
-        switch (nodeSubtype) {
-          case "if-else":
-            return renderComplexIfElseProperties();
-          case "decision-tree":
-            return renderDecisionTreeProperties();
-          case "state-machine":
-            return renderStateMachineProperties();
-          default:
-            return null;
-        }
-      case "testing":
-        switch (nodeSubtype) {
-          case "test-case":
-            return renderTestCaseProperties();
-          case "simulator":
-            return renderSimulatorProperties();
-          default:
-            return null;
-        }
-      case "ui":
-        switch (nodeSubtype) {
-          case "chat":
-            return renderChatInterfaceProperties();
-          case "dashboard":
-            return renderDashboardProperties();
-          default:
-            return null;
-        }
-      default:
-        return null;
+  // --- Local state for If/Else logic ---
+  const [localData, setLocalData] = React.useState<ImportedComplexIfElseNodeData | null>(null);
+  const [testResult, setTestResult] = React.useState<string>("");
+
+  React.useEffect(() => {
+    if (selectedNode && selectedNode.type === 'logic' && selectedNode.subtype === 'if-else') {
+      setLocalData(selectedNode.data as unknown as ImportedComplexIfElseNodeData);
     }
-  };
+  }, [selectedNode]);
 
-  // --- Specialized Property Renderers ---
-  const renderMessageProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering message properties */}
-    </div>
-  );
-  const renderPromptTemplateProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering prompt template properties */}
-    </div>
-  );
-  const renderKnowledgeBaseProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering knowledge base properties */}
-    </div>
-  );
-  const renderConversationFlowProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering conversation flow properties */}
-    </div>
-  );
-  const renderIfElseProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering if-else properties */}
-    </div>
-  );
-  const renderDecisionTreeProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering decision tree properties */}
-    </div>
-  );
-  const renderStateMachineProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering state machine properties */}
-    </div>
-  );
-  const renderTestCaseProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering test case properties */}
-    </div>
-  );
-  const renderSimulatorProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering simulator properties */}
-    </div>
-  );
-  const renderChatInterfaceProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering chat interface properties */}
-    </div>
-  );
-  const renderDashboardProperties = (): React.ReactElement => (
-    <div className="space-y-4">
-      {/* Implementation for rendering dashboard properties */}
-    </div>
-  );
-
-  // --- Enhanced If/Else Properties Panel ---
-  const renderComplexIfElseProperties = (): React.ReactElement | null => {
-    if (!selectedNode || selectedNode.type !== 'logic' || selectedNode.subtype !== 'if-else') return null;
-    const nodeData = selectedNode.data as unknown as ComplexIfElseNodeData;
+  // --- New If/Else Properties Panel ---
+  const renderIfElseProperties = () => {
+    if (!localData) return null;
+    const nodeData = localData;
     const conditionGroups = nodeData.conditionGroups || [];
 
     // Use the onChange prop to update node data
     const handleFieldChange = (
-      field: keyof ComplexIfElseNodeData,
+      field: keyof ImportedComplexIfElseNodeData,
       value: string | number | boolean | ConditionGroup[] | { label: string; description: string } | Record<string, unknown> | undefined
     ) => {
+      if (!selectedNode) return;
       onChange({
         ...selectedNode,
+        id: selectedNode.id ?? "",
+        type: selectedNode.type,
+        subtype: selectedNode.subtype,
+        position: selectedNode.position,
+        size: selectedNode.size ?? { width: 320, height: 180 },
         data: {
           ...nodeData,
           [field]: value,
@@ -270,38 +151,142 @@ export default function PropertiesPanel({
       updateCondition(groupId, conditionId, { value });
     };
 
+    // Test the If/Else conditions and show the result
+    const testIfElseConditions = () => {
+      if (!nodeData.testData) return;
+      const { testData, conditionGroups, truePath, falsePath } = nodeData;
+      let result = "Test Results:\n";
+
+      conditionGroups.forEach((group, groupIndex) => {
+        const groupResult = group.conditions.map(condition => {
+          const fieldValue = testData[condition.field];
+          let conditionMet = false;
+
+          // Check condition based on operator
+          switch (condition.operator) {
+            case 'equals':
+              conditionMet = fieldValue == condition.value;
+              break;
+            case 'not_equals':
+              conditionMet = fieldValue != condition.value;
+              break;
+            case 'contains':
+              conditionMet = Array.isArray(fieldValue) && fieldValue.includes(condition.value);
+              break;
+            case 'not_contains':
+              conditionMet = Array.isArray(fieldValue) && !fieldValue.includes(condition.value);
+              break;
+            case 'greater_than':
+              conditionMet = typeof fieldValue === 'number' && fieldValue > Number(condition.value);
+              break;
+            case 'less_than':
+              conditionMet = typeof fieldValue === 'number' && fieldValue < Number(condition.value);
+              break;
+            case 'greater_equal':
+              conditionMet = typeof fieldValue === 'number' && fieldValue >= Number(condition.value);
+              break;
+            case 'less_equal':
+              conditionMet = typeof fieldValue === 'number' && fieldValue <= Number(condition.value);
+              break;
+            case 'exists':
+              conditionMet = fieldValue !== undefined && fieldValue !== null;
+              break;
+            case 'not_exists':
+              conditionMet = fieldValue === undefined || fieldValue === null;
+              break;
+            case 'matches_regex':
+              conditionMet = typeof fieldValue === 'string' && new RegExp(String(condition.value)).test(fieldValue);
+              break;
+            case 'in_array':
+              conditionMet = Array.isArray(fieldValue) && fieldValue.some(v => v == condition.value);
+              break;
+            case 'llm_evaluate':
+              // For LLM evaluation, we would call the LLM API here
+              conditionMet = false; // Placeholder, set to false by default
+              break;
+            default:
+              conditionMet = false;
+          }
+
+          return conditionMet;
+        });
+
+        const groupOperator = group.operator === 'AND' ? 'all' : 'any';
+        const groupConditionMet = groupResult.length > 0 && groupResult.every(r => r === (group.operator === 'AND'));
+
+        result += `Group ${groupIndex + 1} (${groupOperator} conditions): ${groupConditionMet ? 'Met' : 'Not Met'}\n`;
+      });
+
+      // Check true/false path based on conditions
+      const allConditionsMet = conditionGroups.every(group => group.conditions.every(condition => {
+        const fieldValue = testData[condition.field];
+        let conditionMet = false;
+
+        // Check condition based on operator
+        switch (condition.operator) {
+          case 'equals':
+            conditionMet = fieldValue == condition.value;
+            break;
+          case 'not_equals':
+            conditionMet = fieldValue != condition.value;
+            break;
+          case 'contains':
+            conditionMet = Array.isArray(fieldValue) && fieldValue.includes(condition.value);
+            break;
+          case 'not_contains':
+            conditionMet = Array.isArray(fieldValue) && !fieldValue.includes(condition.value);
+            break;
+          case 'greater_than':
+            conditionMet = typeof fieldValue === 'number' && fieldValue > Number(condition.value);
+            break;
+          case 'less_than':
+            conditionMet = typeof fieldValue === 'number' && fieldValue < Number(condition.value);
+            break;
+          case 'greater_equal':
+            conditionMet = typeof fieldValue === 'number' && fieldValue >= Number(condition.value);
+            break;
+          case 'less_equal':
+            conditionMet = typeof fieldValue === 'number' && fieldValue <= Number(condition.value);
+            break;
+          case 'exists':
+            conditionMet = fieldValue !== undefined && fieldValue !== null;
+            break;
+          case 'not_exists':
+            conditionMet = fieldValue === undefined || fieldValue === null;
+            break;
+          case 'matches_regex':
+            conditionMet = typeof fieldValue === 'string' && new RegExp(String(condition.value)).test(fieldValue);
+            break;
+          case 'in_array':
+            conditionMet = Array.isArray(fieldValue) && fieldValue.some(v => v == condition.value);
+            break;
+          case 'llm_evaluate':
+            // For LLM evaluation, we would call the LLM API here
+            conditionMet = false; // Placeholder, set to false by default
+            break;
+          default:
+            conditionMet = false;
+        }
+
+        return conditionMet;
+      }));
+
+      result += `Overall: ${allConditionsMet ? 'True Path' : 'False Path'}\n`;
+      setTestResult(result);
+    };
+
     return (
       <div className="space-y-4">
-        {/* Node Name */}
+        <Separator style={{ backgroundColor: theme.border }} />
+        {/* Header */}
         <div>
-          <label className="text-sm" style={{ color: theme.textSecondary }}>
-            Node Name
-          </label>
-          <Input
-            value={nodeData.title || ""}
-            onChange={(e) => handleFieldChange('title', e.target.value)}
-            className="mt-1"
-          />
+          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.textSecondary }}>
+            If/Else Conditional Logic
+          </span>
+          <p className="text-xs mt-1" style={{ color: theme.textMute }}>
+            Define the conditions that determine the flow of the conversation. Each group can have multiple conditions.
+          </p>
         </div>
-
-        {/* Description */}
-        <div>
-          <label className="text-sm" style={{ color: theme.textSecondary }}>
-            Description
-          </label>
-          <textarea
-            value={nodeData.description || ""}
-            onChange={(e) => handleFieldChange('description', e.target.value)}
-            className="mt-1 w-full h-20 px-3 py-2 rounded border bg-transparent resize-none"
-            style={{
-              borderColor: theme.border,
-              color: theme.text,
-            }}
-            placeholder="Enter a brief description of this node..."
-          />
-        </div>
-
-        <Separator />
 
         {/* Condition Groups */}
         <div>
@@ -551,6 +536,23 @@ export default function PropertiesPanel({
             <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
           </select>
         </div>
+
+        {/* Test Button and Result */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={testIfElseConditions}
+          disabled={conditionGroups.length === 0}
+        >
+          <Play className="w-4 h-4 mr-2" />
+          Test If/Else Logic
+        </Button>
+        {testResult && (
+          <div className="mt-2 p-2 rounded bg-black/20 text-xs whitespace-pre-wrap" style={{ color: theme.text }}>
+            {testResult}
+          </div>
+        )}
       </div>
     );
   };
@@ -607,107 +609,26 @@ export default function PropertiesPanel({
     );
   }
 
-  // For conversation flow nodes, show specific configuration
-  if (selectedNode.type === "conversation" && selectedNode.subtype === "conversation-flow") {
+  // If/Else Logic Configuration for logic/if-else nodes
+  if (selectedNode.type === 'logic' && selectedNode.subtype === 'if-else') {
     return (
-      <div
-        className="w-96 h-full border-l flex flex-col"
-        style={{
-          backgroundColor: theme.sidebar,
-          borderColor: theme.border,
-        }}
+      <aside
+        className="bg-[#18181b] border border-[#23232a] rounded font-mono"
+        style={{ minWidth: 320, maxWidth: 400, height: "100%", boxShadow: "none", display: "flex", flexDirection: "column" }}
       >
-        <div
-          className="h-12 border-b flex items-center justify-between px-4"
-          style={{ borderColor: theme.border }}
-        >
-          <h3 className="font-medium" style={{ color: theme.text }}>
-            Conversation Flow
-          </h3>
+        <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: "#23232a" }}>
+          <h3 className="text-white font-semibold text-sm">If/Else Properties</h3>
+          <button
+            className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-600/10 transition-colors"
+            style={{ color: "#60a5fa" }}
+          >
+            <Minimize2 className="w-4 h-4" />
+          </button>
         </div>
-
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div>
-            <label className="text-sm" style={{ color: theme.textSecondary }}>
-              Flow Name
-            </label>
-            <Input
-              value={selectedNode.data.title || ""}
-              onChange={(e) =>
-                onChange({
-                  ...selectedNode,
-                  data: { ...selectedNode.data, title: e.target.value },
-                })
-              }
-              className="mt-1"
-            />
-          </div>
-
-          <Separator />
-
-          <div>
-            <h4 className="text-sm font-medium mb-2" style={{ color: theme.text }}>
-              Branch Settings
-            </h4>
-            <p className="text-xs" style={{ color: theme.textSecondary }}>
-              Configure branch conditions and routing logic for this conversation flow.
-              Each branch can connect to different nodes based on user input or context.
-            </p>
-          </div>
-
-          <div>
-            <label className="text-sm" style={{ color: theme.textSecondary }}>
-              Default Response
-            </label>
-            <textarea
-              value={
-                typeof selectedNode.data === "object" &&
-                "defaultResponse" in selectedNode.data
-                  ? (selectedNode.data as { defaultResponse?: string }).defaultResponse ||
-                    ""
-                  : ""
-              }
-              onChange={(e) =>
-                onChange({
-                  ...selectedNode,
-                  data: {
-                    ...selectedNode.data,
-                    ...(typeof selectedNode.data === "object"
-                      ? { defaultResponse: e.target.value }
-                      : {}),
-                  },
-                })
-              }
-              className="mt-1 w-full h-20 px-3 py-2 rounded border bg-transparent resize-none"
-              style={{
-                borderColor: theme.border,
-                color: theme.text,
-              }}
-              placeholder="Enter default response when no branches match..."
-            />
-          </div>
-
-          <div>
-            <label className="text-sm" style={{ color: theme.textSecondary }}>
-              Context Variables
-            </label>
-            <p className="text-xs mt-1 mb-2" style={{ color: theme.textSecondary }}>
-              Variables available in this conversation flow
-            </p>
-            <div className="space-y-2">
-              {["user_name", "user_id", "conversation_id", "timestamp"].map((variable) => (
-                <div
-                  key={variable}
-                  className="flex items-center justify-between p-2 rounded bg-black/20"
-                >
-                  <code className="text-xs" style={{ color: theme.accent }}>{`{{${variable}}}`}</code>
-                  <span className="text-xs" style={{ color: theme.textSecondary }}>System</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {renderIfElseProperties()}
         </div>
-      </div>
+      </aside>
     );
   }
 
@@ -730,7 +651,7 @@ export default function PropertiesPanel({
         <div>
           <label className="text-xs text-gray-400 font-mono">Node ID</label>
           <Input
-            value={selectedNode.id}
+            value={selectedNode.id || ''}
             disabled
             className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
           />
@@ -775,10 +696,6 @@ export default function PropertiesPanel({
             </div>
           </div>
         </div>
-
-        {/* Component-Specific Properties */}
-        {renderComponentSpecificProperties()}
-
         {selectedNode && String(selectedNode.type) !== "agent" && (
           <div className="pt-4">
             <Button
