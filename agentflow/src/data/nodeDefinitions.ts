@@ -121,6 +121,23 @@ export const nodeCategories: NodeCategory[] = [
           { id: 'relevance-score', label: 'Relevance Score', type: 'number' }
         ],
       },
+      {
+        id: 'conversation-flow',
+        name: 'Conversation Flow',
+        icon: MessageSquare,
+        color: '#6366f1',
+        description: 'Design branching conversation flows with visual preview',
+        type: 'conversation',
+        subtype: 'conversation-flow',
+        defaultInputs: [
+          { id: 'context', label: 'Context', type: 'data' },
+          { id: 'user-input', label: 'User Input', type: 'text' }
+        ],
+        defaultOutputs: [
+          { id: 'default', label: 'Default', type: 'text' }
+          // Dynamic outputs will be added based on branches
+        ],
+      },
     ],
   },
   {
