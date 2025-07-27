@@ -6,5 +6,8 @@
     "suppressCommitHas带领HeaderHint": true
   },
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "typescript.checkJs": false
+  "typescript.checkJs": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
 }

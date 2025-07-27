@@ -14,15 +14,28 @@ import { ComplexIfElseNodeData as ImportedComplexIfElseNodeData } from "@/types"
 // --- Enhanced If/Else Interfaces ---
 interface ConditionGroup {
   id: string;
-  operator: 'AND' | 'OR';
+  operator: "AND" | "OR";
   conditions: Condition[];
 }
 interface Condition {
   id: string;
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'greater_equal' | 'less_equal' | 'exists' | 'not_exists' | 'matches_regex' | 'in_array' | 'llm_evaluate';
+  operator:
+    | "equals"
+    | "not_equals"
+    | "contains"
+    | "not_contains"
+    | "greater_than"
+    | "less_than"
+    | "greater_equal"
+    | "less_equal"
+    | "exists"
+    | "not_exists"
+    | "matches_regex"
+    | "in_array"
+    | "llm_evaluate";
   value: string | number | boolean | string[];
-  dataType: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'auto';
+  dataType: "string" | "number" | "boolean" | "array" | "object" | "auto";
   llmPrompt?: string;
 }
 
@@ -37,12 +50,19 @@ export default function PropertiesPanel({
   onChange,
 }: PropertiesPanelProps) {
   // --- Local state for If/Else logic ---
-  const [localData, setLocalData] = React.useState<ImportedComplexIfElseNodeData | null>(null);
+  const [localData, setLocalData] =
+    React.useState<ImportedComplexIfElseNodeData | null>(null);
   const [testResult, setTestResult] = React.useState<string>("");
 
   React.useEffect(() => {
-    if (selectedNode && selectedNode.type === 'logic' && selectedNode.subtype === 'if-else') {
-      setLocalData(selectedNode.data as unknown as ImportedComplexIfElseNodeData);
+    if (
+      selectedNode &&
+      selectedNode.type === "logic" &&
+      selectedNode.subtype === "if-else"
+    ) {
+      setLocalData(
+        selectedNode.data as unknown as ImportedComplexIfElseNodeData
+      );
     }
   }, [selectedNode]);
 
@@ -55,7 +75,14 @@ export default function PropertiesPanel({
     // Use the onChange prop to update node data
     const handleFieldChange = (
       field: keyof ImportedComplexIfElseNodeData,
-      value: string | number | boolean | ConditionGroup[] | { label: string; description: string } | Record<string, unknown> | undefined
+      value:
+        | string
+        | number
+        | boolean
+        | ConditionGroup[]
+        | { label: string; description: string }
+        | Record<string, unknown>
+        | undefined
     ) => {
       if (!selectedNode) return;
       onChange({
@@ -71,8 +98,11 @@ export default function PropertiesPanel({
           color: nodeData.color || "#ffffff",
           icon: nodeData.icon || "settings",
           title: typeof nodeData.title === "string" ? nodeData.title : "",
-          description: typeof nodeData.description === "string" ? nodeData.description : ""
-        }
+          description:
+            typeof nodeData.description === "string"
+              ? nodeData.description
+              : "",
+        },
       });
     };
 
@@ -80,67 +110,91 @@ export default function PropertiesPanel({
     const addConditionGroup = () => {
       const newGroup: ConditionGroup = {
         id: `group-${Date.now()}`,
-        operator: 'AND',
-        conditions: [{
-          id: `condition-${Date.now()}`,
-          field: '',
-          operator: 'equals',
-          value: '',
-          dataType: 'auto'
-        }]
+        operator: "AND",
+        conditions: [
+          {
+            id: `condition-${Date.now()}`,
+            field: "",
+            operator: "equals",
+            value: "",
+            dataType: "auto",
+          },
+        ],
       };
-      handleFieldChange('conditionGroups', [...conditionGroups, newGroup]);
+      handleFieldChange("conditionGroups", [...conditionGroups, newGroup]);
     };
-    const updateConditionGroup = (groupId: string, updates: Partial<ConditionGroup>) => {
-      const updatedGroups = conditionGroups.map(group => 
+    const updateConditionGroup = (
+      groupId: string,
+      updates: Partial<ConditionGroup>
+    ) => {
+      const updatedGroups = conditionGroups.map((group) =>
         group.id === groupId ? { ...group, ...updates } : group
       );
-      handleFieldChange('conditionGroups', updatedGroups);
+      handleFieldChange("conditionGroups", updatedGroups);
     };
     const addConditionToGroup = (groupId: string) => {
-      const updatedGroups = conditionGroups.map(group => {
+      const updatedGroups = conditionGroups.map((group) => {
         if (group.id === groupId) {
           const newCondition: Condition = {
             id: `condition-${Date.now()}`,
-            field: '',
-            operator: 'equals',
-            value: '',
-            dataType: 'auto'
+            field: "",
+            operator: "equals",
+            value: "",
+            dataType: "auto",
           };
           return { ...group, conditions: [...group.conditions, newCondition] };
         }
         return group;
       });
-      handleFieldChange('conditionGroups', updatedGroups);
+      handleFieldChange("conditionGroups", updatedGroups);
     };
-    const updateCondition = (groupId: string, conditionId: string, updates: Partial<Condition>) => {
-      const updatedGroups = conditionGroups.map(group => {
+    const updateCondition = (
+      groupId: string,
+      conditionId: string,
+      updates: Partial<Condition>
+    ) => {
+      const updatedGroups = conditionGroups.map((group) => {
         if (group.id === groupId) {
-          const updatedConditions = group.conditions.map(condition =>
-            condition.id === conditionId ? { ...condition, ...updates } : condition
+          const updatedConditions = group.conditions.map((condition) =>
+            condition.id === conditionId
+              ? { ...condition, ...updates }
+              : condition
           );
           return { ...group, conditions: updatedConditions };
         }
         return group;
       });
-      handleFieldChange('conditionGroups', updatedGroups);
+      handleFieldChange("conditionGroups", updatedGroups);
     };
     const removeCondition = (groupId: string, conditionId: string) => {
-      const updatedGroups = conditionGroups.map(group => {
+      const updatedGroups = conditionGroups.map((group) => {
         if (group.id === groupId) {
-          return { ...group, conditions: group.conditions.filter(c => c.id !== conditionId) };
+          return {
+            ...group,
+            conditions: group.conditions.filter((c) => c.id !== conditionId),
+          };
         }
         return group;
       });
-      handleFieldChange('conditionGroups', updatedGroups.filter(group => group.conditions.length > 0));
+      handleFieldChange(
+        "conditionGroups",
+        updatedGroups.filter((group) => group.conditions.length > 0)
+      );
     };
     const handleRemoveConditionGroup = (groupId: string) => {
-      handleFieldChange('conditionGroups', conditionGroups.filter(group => group.id !== groupId));
+      handleFieldChange(
+        "conditionGroups",
+        conditionGroups.filter((group) => group.id !== groupId)
+      );
     };
     const handleAddConditionGroup = () => {
       addConditionGroup();
     };
-    const handleConditionOperatorChange = (groupId: string, conditionId: string, operator: Condition['operator']) => {
+    const handleConditionOperatorChange = (
+      groupId: string,
+      conditionId: string,
+      operator: Condition["operator"]
+    ) => {
       updateCondition(groupId, conditionId, { operator });
     };
     const handleConditionValueChange = (
@@ -158,49 +212,65 @@ export default function PropertiesPanel({
       let result = "Test Results:\n";
 
       conditionGroups.forEach((group, groupIndex) => {
-        const groupResult = group.conditions.map(condition => {
+        const groupResult = group.conditions.map((condition) => {
           const fieldValue = testData[condition.field];
           let conditionMet = false;
 
           // Check condition based on operator
           switch (condition.operator) {
-            case 'equals':
+            case "equals":
               conditionMet = fieldValue == condition.value;
               break;
-            case 'not_equals':
+            case "not_equals":
               conditionMet = fieldValue != condition.value;
               break;
-            case 'contains':
-              conditionMet = Array.isArray(fieldValue) && fieldValue.includes(condition.value);
+            case "contains":
+              conditionMet =
+                Array.isArray(fieldValue) &&
+                fieldValue.includes(condition.value);
               break;
-            case 'not_contains':
-              conditionMet = Array.isArray(fieldValue) && !fieldValue.includes(condition.value);
+            case "not_contains":
+              conditionMet =
+                Array.isArray(fieldValue) &&
+                !fieldValue.includes(condition.value);
               break;
-            case 'greater_than':
-              conditionMet = typeof fieldValue === 'number' && fieldValue > Number(condition.value);
+            case "greater_than":
+              conditionMet =
+                typeof fieldValue === "number" &&
+                fieldValue > Number(condition.value);
               break;
-            case 'less_than':
-              conditionMet = typeof fieldValue === 'number' && fieldValue < Number(condition.value);
+            case "less_than":
+              conditionMet =
+                typeof fieldValue === "number" &&
+                fieldValue < Number(condition.value);
               break;
-            case 'greater_equal':
-              conditionMet = typeof fieldValue === 'number' && fieldValue >= Number(condition.value);
+            case "greater_equal":
+              conditionMet =
+                typeof fieldValue === "number" &&
+                fieldValue >= Number(condition.value);
               break;
-            case 'less_equal':
-              conditionMet = typeof fieldValue === 'number' && fieldValue <= Number(condition.value);
+            case "less_equal":
+              conditionMet =
+                typeof fieldValue === "number" &&
+                fieldValue <= Number(condition.value);
               break;
-            case 'exists':
+            case "exists":
               conditionMet = fieldValue !== undefined && fieldValue !== null;
               break;
-            case 'not_exists':
+            case "not_exists":
               conditionMet = fieldValue === undefined || fieldValue === null;
               break;
-            case 'matches_regex':
-              conditionMet = typeof fieldValue === 'string' && new RegExp(String(condition.value)).test(fieldValue);
+            case "matches_regex":
+              conditionMet =
+                typeof fieldValue === "string" &&
+                new RegExp(String(condition.value)).test(fieldValue);
               break;
-            case 'in_array':
-              conditionMet = Array.isArray(fieldValue) && fieldValue.some(v => v == condition.value);
+            case "in_array":
+              conditionMet =
+                Array.isArray(fieldValue) &&
+                fieldValue.some((v) => v == condition.value);
               break;
-            case 'llm_evaluate':
+            case "llm_evaluate":
               // For LLM evaluation, we would call the LLM API here
               conditionMet = false; // Placeholder, set to false by default
               break;
@@ -211,67 +281,89 @@ export default function PropertiesPanel({
           return conditionMet;
         });
 
-        const groupOperator = group.operator === 'AND' ? 'all' : 'any';
-        const groupConditionMet = groupResult.length > 0 && groupResult.every(r => r === (group.operator === 'AND'));
+        const groupOperator = group.operator === "AND" ? "all" : "any";
+        const groupConditionMet =
+          groupResult.length > 0 &&
+          groupResult.every((r) => r === (group.operator === "AND"));
 
-        result += `Group ${groupIndex + 1} (${groupOperator} conditions): ${groupConditionMet ? 'Met' : 'Not Met'}\n`;
+        result += `Group ${groupIndex + 1} (${groupOperator} conditions): ${
+          groupConditionMet ? "Met" : "Not Met"
+        }\n`;
       });
 
       // Check true/false path based on conditions
-      const allConditionsMet = conditionGroups.every(group => group.conditions.every(condition => {
-        const fieldValue = testData[condition.field];
-        let conditionMet = false;
+      const allConditionsMet = conditionGroups.every((group) =>
+        group.conditions.every((condition) => {
+          const fieldValue = testData[condition.field];
+          let conditionMet = false;
 
-        // Check condition based on operator
-        switch (condition.operator) {
-          case 'equals':
-            conditionMet = fieldValue == condition.value;
-            break;
-          case 'not_equals':
-            conditionMet = fieldValue != condition.value;
-            break;
-          case 'contains':
-            conditionMet = Array.isArray(fieldValue) && fieldValue.includes(condition.value);
-            break;
-          case 'not_contains':
-            conditionMet = Array.isArray(fieldValue) && !fieldValue.includes(condition.value);
-            break;
-          case 'greater_than':
-            conditionMet = typeof fieldValue === 'number' && fieldValue > Number(condition.value);
-            break;
-          case 'less_than':
-            conditionMet = typeof fieldValue === 'number' && fieldValue < Number(condition.value);
-            break;
-          case 'greater_equal':
-            conditionMet = typeof fieldValue === 'number' && fieldValue >= Number(condition.value);
-            break;
-          case 'less_equal':
-            conditionMet = typeof fieldValue === 'number' && fieldValue <= Number(condition.value);
-            break;
-          case 'exists':
-            conditionMet = fieldValue !== undefined && fieldValue !== null;
-            break;
-          case 'not_exists':
-            conditionMet = fieldValue === undefined || fieldValue === null;
-            break;
-          case 'matches_regex':
-            conditionMet = typeof fieldValue === 'string' && new RegExp(String(condition.value)).test(fieldValue);
-            break;
-          case 'in_array':
-            conditionMet = Array.isArray(fieldValue) && fieldValue.some(v => v == condition.value);
-            break;
-          case 'llm_evaluate':
-            // For LLM evaluation, we would call the LLM API here
-            conditionMet = false; // Placeholder, set to false by default
-            break;
-          default:
-            conditionMet = false;
-        }
+          // Check condition based on operator
+          switch (condition.operator) {
+            case "equals":
+              conditionMet = fieldValue == condition.value;
+              break;
+            case "not_equals":
+              conditionMet = fieldValue != condition.value;
+              break;
+            case "contains":
+              conditionMet =
+                Array.isArray(fieldValue) &&
+                fieldValue.includes(condition.value);
+              break;
+            case "not_contains":
+              conditionMet =
+                Array.isArray(fieldValue) &&
+                !fieldValue.includes(condition.value);
+              break;
+            case "greater_than":
+              conditionMet =
+                typeof fieldValue === "number" &&
+                fieldValue > Number(condition.value);
+              break;
+            case "less_than":
+              conditionMet =
+                typeof fieldValue === "number" &&
+                fieldValue < Number(condition.value);
+              break;
+            case "greater_equal":
+              conditionMet =
+                typeof fieldValue === "number" &&
+                fieldValue >= Number(condition.value);
+              break;
+            case "less_equal":
+              conditionMet =
+                typeof fieldValue === "number" &&
+                fieldValue <= Number(condition.value);
+              break;
+            case "exists":
+              conditionMet = fieldValue !== undefined && fieldValue !== null;
+              break;
+            case "not_exists":
+              conditionMet = fieldValue === undefined || fieldValue === null;
+              break;
+            case "matches_regex":
+              conditionMet =
+                typeof fieldValue === "string" &&
+                new RegExp(String(condition.value)).test(fieldValue);
+              break;
+            case "in_array":
+              conditionMet =
+                Array.isArray(fieldValue) &&
+                fieldValue.some((v) => v == condition.value);
+              break;
+            case "llm_evaluate":
+              // For LLM evaluation, we would call the LLM API here
+              conditionMet = false; // Placeholder, set to false by default
+              break;
+            default:
+              conditionMet = false;
+          }
 
-        return conditionMet;
-      }));
+          return conditionMet;
+        })
+      );
 
-      result += `Overall: ${allConditionsMet ? 'True Path' : 'False Path'}\n`;
+      result += `Overall: ${allConditionsMet ? "True Path" : "False Path"}\n`;
       setTestResult(result);
     };
 
@@ -280,21 +372,29 @@ export default function PropertiesPanel({
         <Separator style={{ backgroundColor: theme.border }} />
         {/* Header */}
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.textSecondary }}>
+          <span
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: theme.textSecondary }}
+          >
             If/Else Conditional Logic
           </span>
           <p className="text-xs mt-1" style={{ color: theme.textMute }}>
-            Define the conditions that determine the flow of the conversation. Each group can have multiple conditions.
+            Define the conditions that determine the flow of the conversation.
+            Each group can have multiple conditions.
           </p>
         </div>
 
         {/* Condition Groups */}
         <div>
-          <h4 className="text-sm font-medium mb-2" style={{ color: theme.text }}>
+          <h4
+            className="text-sm font-medium mb-2"
+            style={{ color: theme.text }}
+          >
             Condition Groups
           </h4>
           <p className="text-xs" style={{ color: theme.textSecondary }}>
-            Define the conditions that determine the flow of the conversation. Each group can have multiple conditions.
+            Define the conditions that determine the flow of the conversation.
+            Each group can have multiple conditions.
           </p>
         </div>
 
@@ -314,19 +414,40 @@ export default function PropertiesPanel({
                 className="text-red-500 hover:text-red-400 transition-colors"
                 title="Remove Condition Group"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
 
             {/* Render conditions within the group */}
             {group.conditions.map((condition: Condition) => (
-              <div key={condition.id} className="space-y-2 mb-3 p-2 rounded" style={{ backgroundColor: theme.bg }}>
+              <div
+                key={condition.id}
+                className="space-y-2 mb-3 p-2 rounded"
+                style={{ backgroundColor: theme.bg }}
+              >
                 <div className="flex items-center">
                   <select
                     value={condition.operator}
-                    onChange={(e) => handleConditionOperatorChange(group.id, condition.id, e.target.value as Condition['operator'])}
+                    onChange={(e) =>
+                      handleConditionOperatorChange(
+                        group.id,
+                        condition.id,
+                        e.target.value as Condition["operator"]
+                      )
+                    }
                     className="mr-2 bg-transparent border rounded px-3 py-1 text-sm"
                     style={{ borderColor: theme.border, color: theme.text }}
                   >
@@ -347,7 +468,13 @@ export default function PropertiesPanel({
 
                   <Input
                     value={condition.value as string}
-                    onChange={(e) => handleConditionValueChange(group.id, condition.id, e.target.value)}
+                    onChange={(e) =>
+                      handleConditionValueChange(
+                        group.id,
+                        condition.id,
+                        e.target.value
+                      )
+                    }
                     className="flex-1 bg-transparent border rounded px-3 py-1 text-sm"
                     style={{ borderColor: theme.border, color: theme.text }}
                     placeholder="Enter value..."
@@ -358,22 +485,42 @@ export default function PropertiesPanel({
                 <Input
                   placeholder="Field name (e.g., user_message, confidence_score)"
                   className="border-0 text-xs"
-                  style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                  style={{
+                    backgroundColor: theme.bgElevate,
+                    color: theme.text,
+                  }}
                   value={condition.field}
-                  onChange={e => updateCondition(group.id, condition.id, { field: e.target.value })}
+                  onChange={(e) =>
+                    updateCondition(group.id, condition.id, {
+                      field: e.target.value,
+                    })
+                  }
                 />
 
                 {/* Value input */}
                 <Input
                   placeholder="Value to compare"
                   className="border-0 text-xs"
-                  style={{ backgroundColor: theme.bgElevate, color: theme.text }}
-                  value={typeof condition.value === 'string' || typeof condition.value === 'number' ? condition.value : String(condition.value)}
-                  onChange={e => {
-                    let value: string | number | boolean | string[] = e.target.value;
-                    if (condition.dataType === 'number') value = Number(value);
-                    if (condition.dataType === 'boolean') value = value === 'true';
-                    if (condition.dataType === 'array') value = (value as string).split(',').map((s: string) => s.trim());
+                  style={{
+                    backgroundColor: theme.bgElevate,
+                    color: theme.text,
+                  }}
+                  value={
+                    typeof condition.value === "string" ||
+                    typeof condition.value === "number"
+                      ? condition.value
+                      : String(condition.value)
+                  }
+                  onChange={(e) => {
+                    let value: string | number | boolean | string[] =
+                      e.target.value;
+                    if (condition.dataType === "number") value = Number(value);
+                    if (condition.dataType === "boolean")
+                      value = value === "true";
+                    if (condition.dataType === "array")
+                      value = (value as string)
+                        .split(",")
+                        .map((s: string) => s.trim());
                     updateCondition(group.id, condition.id, { value });
                   }}
                 />
@@ -418,7 +565,10 @@ export default function PropertiesPanel({
 
         {/* Paths */}
         <div>
-          <h4 className="text-sm font-medium mb-2" style={{ color: theme.text }}>
+          <h4
+            className="text-sm font-medium mb-2"
+            style={{ color: theme.text }}
+          >
             Paths
           </h4>
           <p className="text-xs" style={{ color: theme.textSecondary }}>
@@ -433,7 +583,12 @@ export default function PropertiesPanel({
             </label>
             <Input
               value={nodeData.truePath?.label || ""}
-              onChange={(e) => handleFieldChange('truePath', { ...nodeData.truePath, label: e.target.value })}
+              onChange={(e) =>
+                handleFieldChange("truePath", {
+                  ...nodeData.truePath,
+                  label: e.target.value,
+                })
+              }
               className="mt-1"
             />
           </div>
@@ -444,7 +599,12 @@ export default function PropertiesPanel({
             </label>
             <textarea
               value={nodeData.truePath?.description || ""}
-              onChange={(e) => handleFieldChange('truePath', { ...nodeData.truePath, description: e.target.value })}
+              onChange={(e) =>
+                handleFieldChange("truePath", {
+                  ...nodeData.truePath,
+                  description: e.target.value,
+                })
+              }
               className="mt-1 w-full h-20 px-3 py-2 rounded border bg-transparent resize-none"
               style={{
                 borderColor: theme.border,
@@ -460,7 +620,12 @@ export default function PropertiesPanel({
             </label>
             <Input
               value={nodeData.falsePath?.label || ""}
-              onChange={(e) => handleFieldChange('falsePath', { ...nodeData.falsePath, label: e.target.value })}
+              onChange={(e) =>
+                handleFieldChange("falsePath", {
+                  ...nodeData.falsePath,
+                  label: e.target.value,
+                })
+              }
               className="mt-1"
             />
           </div>
@@ -471,7 +636,12 @@ export default function PropertiesPanel({
             </label>
             <textarea
               value={nodeData.falsePath?.description || ""}
-              onChange={(e) => handleFieldChange('falsePath', { ...nodeData.falsePath, description: e.target.value })}
+              onChange={(e) =>
+                handleFieldChange("falsePath", {
+                  ...nodeData.falsePath,
+                  description: e.target.value,
+                })
+              }
               className="mt-1 w-full h-20 px-3 py-2 rounded border bg-transparent resize-none"
               style={{
                 borderColor: theme.border,
@@ -493,10 +663,10 @@ export default function PropertiesPanel({
             rows={4}
             placeholder={`{\n  "user_message": "I need help with my order",\n  "confidence_score": 0.85,\n  "user_tier": "premium",\n  "sentiment": "neutral"\n}`}
             value={JSON.stringify(nodeData.testData || {}, null, 2)}
-            onChange={e => {
+            onChange={(e) => {
               try {
                 const parsed = JSON.parse(e.target.value);
-                handleFieldChange('testData', parsed);
+                handleFieldChange("testData", parsed);
               } catch {
                 // Invalid JSON, keep the text but don't update
               }
@@ -511,7 +681,9 @@ export default function PropertiesPanel({
           </label>
           <select
             value={nodeData.evaluationMode}
-            onChange={(e) => handleFieldChange('evaluationMode', e.target.value)}
+            onChange={(e) =>
+              handleFieldChange("evaluationMode", e.target.value)
+            }
             className="mt-1 bg-transparent border rounded px-3 py-1 text-sm"
             style={{ borderColor: theme.border, color: theme.text }}
           >
@@ -528,7 +700,7 @@ export default function PropertiesPanel({
           </label>
           <select
             value={nodeData.llmModel}
-            onChange={(e) => handleFieldChange('llmModel', e.target.value)}
+            onChange={(e) => handleFieldChange("llmModel", e.target.value)}
             className="mt-1 bg-transparent border rounded px-3 py-1 text-sm"
             style={{ borderColor: theme.border, color: theme.text }}
           >
@@ -549,7 +721,10 @@ export default function PropertiesPanel({
           Test If/Else Logic
         </Button>
         {testResult && (
-          <div className="mt-2 p-2 rounded bg-black/20 text-xs whitespace-pre-wrap" style={{ color: theme.text }}>
+          <div
+            className="mt-2 p-2 rounded bg-black/20 text-xs whitespace-pre-wrap"
+            style={{ color: theme.text }}
+          >
             {testResult}
           </div>
         )}
@@ -574,6 +749,36 @@ export default function PropertiesPanel({
 
   // For agent nodes, show the enhanced configuration
   if (selectedNode.type === "agent") {
+    // Define a type for toolConfig
+    interface ToolConfig {
+      toolType:
+        | "web-search"
+        | "calculator"
+        | "code-executor"
+        | "file-operations"
+        | "database-query"
+        | "custom-api";
+      endpoint?: string;
+      // Add other properties as needed
+    }
+
+    function handleFieldChange(field: string, value: unknown): void {
+      if (!selectedNode) return;
+      onChange({
+        ...selectedNode,
+        data: {
+          ...selectedNode.data,
+          [field]: value,
+        },
+      });
+    }
+
+    // Helper to get toolConfig safely
+    const agentToolConfig: ToolConfig | undefined =
+      (localData && (localData as { toolConfig?: ToolConfig }).toolConfig) ||
+      (selectedNode.data &&
+        (selectedNode.data as { toolConfig?: ToolConfig }).toolConfig);
+
     return (
       <div
         className="w-96 h-full border-l flex flex-col"
@@ -599,25 +804,102 @@ export default function PropertiesPanel({
 
         <div className="flex-1 h-full overflow-hidden flex flex-col">
           <EnhancedAgentConfig
-            node={{ data: selectedNode.data as import("@/types").AgentNodeData }}
+            node={{
+              data: selectedNode.data as import("@/types").AgentNodeData,
+            }}
             onUpdate={(data) =>
-              onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } })
+              onChange({
+                ...selectedNode,
+                data: { ...selectedNode.data, ...data },
+              })
             }
           />
+
+          {/* Tool Agent Configuration */}
+          {selectedNode.subtype === "tool-agent" && (
+            <>
+              <div>
+                <label
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: theme.textMute }}
+                >
+                  Tool Type
+                </label>
+                <select
+                  className="w-full p-2 rounded text-sm"
+                  style={{
+                    backgroundColor: theme.bgElevate,
+                    color: theme.text,
+                    borderColor: theme.border,
+                  }}
+                  value={agentToolConfig?.toolType || "web-search"}
+                  onChange={(e) =>
+                    handleFieldChange("toolConfig", {
+                      ...agentToolConfig,
+                      toolType: e.target.value as ToolConfig["toolType"],
+                    })
+                  }
+                >
+                  <option value="web-search">Web Search</option>
+                  <option value="calculator">Calculator</option>
+                  <option value="code-executor">Code Executor</option>
+                  <option value="file-operations">File Operations</option>
+                  <option value="database-query">Database Query</option>
+                  <option value="custom-api">Custom API</option>
+                </select>
+              </div>
+              {agentToolConfig?.toolType === "custom-api" && (
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: theme.textMute }}
+                  >
+                    API Endpoint
+                  </label>
+                  <Input
+                    value={agentToolConfig?.endpoint || ""}
+                    onChange={(e) =>
+                      handleFieldChange("toolConfig", {
+                        ...agentToolConfig,
+                        endpoint: e.target.value,
+                      })
+                    }
+                    placeholder="https://api.example.com/endpoint"
+                    style={{
+                      backgroundColor: theme.bgElevate,
+                      color: theme.text,
+                    }}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     );
   }
 
   // If/Else Logic Configuration for logic/if-else nodes
-  if (selectedNode.type === 'logic' && selectedNode.subtype === 'if-else') {
+  if (selectedNode.type === "logic" && selectedNode.subtype === "if-else") {
     return (
       <aside
         className="bg-[#18181b] border border-[#23232a] rounded font-mono"
-        style={{ minWidth: 320, maxWidth: 400, height: "100%", boxShadow: "none", display: "flex", flexDirection: "column" }}
+        style={{
+          minWidth: 320,
+          maxWidth: 400,
+          height: "100%",
+          boxShadow: "none",
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
-        <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: "#23232a" }}>
-          <h3 className="text-white font-semibold text-sm">If/Else Properties</h3>
+        <div
+          className="h-12 border-b flex items-center justify-between px-4"
+          style={{ borderColor: "#23232a" }}
+        >
+          <h3 className="text-white font-semibold text-sm">
+            If/Else Properties
+          </h3>
           <button
             className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-600/10 transition-colors"
             style={{ color: "#60a5fa" }}
@@ -636,9 +918,19 @@ export default function PropertiesPanel({
   return (
     <aside
       className="bg-[#18181b] border border-[#23232a] rounded font-mono"
-      style={{ minWidth: 320, maxWidth: 400, height: "100%", boxShadow: "none", display: "flex", flexDirection: "column" }}
+      style={{
+        minWidth: 320,
+        maxWidth: 400,
+        height: "100%",
+        boxShadow: "none",
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
-      <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: "#23232a" }}>
+      <div
+        className="h-12 border-b flex items-center justify-between px-4"
+        style={{ borderColor: "#23232a" }}
+      >
         <h3 className="text-white font-semibold text-sm">Properties</h3>
         <button
           className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-600/10 transition-colors"
@@ -651,7 +943,7 @@ export default function PropertiesPanel({
         <div>
           <label className="text-xs text-gray-400 font-mono">Node ID</label>
           <Input
-            value={selectedNode.id || ''}
+            value={selectedNode.id || ""}
             disabled
             className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
           />
@@ -660,7 +952,12 @@ export default function PropertiesPanel({
           <label className="text-xs text-gray-400 font-mono">Title</label>
           <Input
             value={selectedNode.data.title || ""}
-            onChange={(e) => onChange({ ...selectedNode, data: { ...selectedNode.data, title: e.target.value } })}
+            onChange={(e) =>
+              onChange({
+                ...selectedNode,
+                data: { ...selectedNode.data, title: e.target.value },
+              })
+            }
             className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
           />
         </div>
@@ -668,7 +965,12 @@ export default function PropertiesPanel({
           <label className="text-xs text-gray-400 font-mono">Description</label>
           <textarea
             value={selectedNode.data.description || ""}
-            onChange={(e) => onChange({ ...selectedNode, data: { ...selectedNode.data, description: e.target.value } })}
+            onChange={(e) =>
+              onChange({
+                ...selectedNode,
+                data: { ...selectedNode.data, description: e.target.value },
+              })
+            }
             className="mt-1 w-full h-16 px-2 py-1 rounded border bg-[#23232a] border-[#23232a] font-mono text-white text-xs resize-none"
           />
         </div>
@@ -681,7 +983,15 @@ export default function PropertiesPanel({
               <Input
                 type="number"
                 value={Math.round(selectedNode.position.x)}
-                onChange={(e) => onChange({ ...selectedNode, position: { ...selectedNode.position, x: parseInt(e.target.value) || 0 } })}
+                onChange={(e) =>
+                  onChange({
+                    ...selectedNode,
+                    position: {
+                      ...selectedNode.position,
+                      x: parseInt(e.target.value) || 0,
+                    },
+                  })
+                }
                 className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
               />
             </div>
@@ -690,7 +1000,15 @@ export default function PropertiesPanel({
               <Input
                 type="number"
                 value={Math.round(selectedNode.position.y)}
-                onChange={(e) => onChange({ ...selectedNode, position: { ...selectedNode.position, y: parseInt(e.target.value) || 0 } })}
+                onChange={(e) =>
+                  onChange({
+                    ...selectedNode,
+                    position: {
+                      ...selectedNode.position,
+                      y: parseInt(e.target.value) || 0,
+                    },
+                  })
+                }
                 className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
               />
             </div>
@@ -704,7 +1022,11 @@ export default function PropertiesPanel({
               className="w-full"
               onClick={() => {
                 // Component-specific testing logic
-                console.log('Testing component:', selectedNode.type, selectedNode.subtype);
+                console.log(
+                  "Testing component:",
+                  selectedNode.type,
+                  selectedNode.subtype
+                );
                 // Optionally show a toast or modal for feedback
               }}
             >
