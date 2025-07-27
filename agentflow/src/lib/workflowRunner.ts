@@ -116,6 +116,12 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
       }
       continue;
     }
+    if (node.type === "logic" && node.subtype === "ifelse") {
+      const condition = (node.data as { condition?: string }).condition || "";
+      const isTrue = evaluateCondition(condition, nodeOutputs);
+      nodeOutputs[node.id] = isTrue ? "true" : "false";
+      continue;
+    }
     // ...existing code for other node types...
   }
   return nodeOutputs;
