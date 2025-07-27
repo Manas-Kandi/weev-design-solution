@@ -1,35 +1,37 @@
-import React, { useState } from 'react';
+import React from 'react';
 import CanvasEngine from '@/components/Canvas';
 import { CanvasNode, Connection } from '@/types';
 import { runWorkflow } from '@/lib/workflowRunner';
-import { Button } from '@/components/ui/button';
 import ConversationTester from '@/components/ConversationTester';
 
 interface DesignerCanvasProps {
   nodes: CanvasNode[];
   connections: Connection[];
   onNodeSelect: (n: CanvasNode | null) => void;
-  selectedNodeId: string | null;
   onNodeUpdate: (updated: CanvasNode) => void;
   onConnectionsChange: (c: Connection[]) => void;
   onCreateConnection: (connectionData: Connection) => Promise<void>;
+  showTester: boolean;
+  isTesting: boolean;
+  testFlowResult: Record<string, unknown> | null;
+  setShowTester: (show: boolean) => void;
+  setTestFlowResult: (result: Record<string, unknown> | null) => void;
 }
 
-export default function DesignerCanvas(props: DesignerCanvasProps & { onTestFlow?: () => void }) {
+export default function DesignerCanvas(props: DesignerCanvasProps) {
   const {
     nodes,
     connections,
     onNodeSelect,
-    selectedNodeId,
     onNodeUpdate,
     onConnectionsChange,
     onCreateConnection,
-    onTestFlow // Add this
+    showTester,
+    isTesting,
+    testFlowResult,
+    setShowTester,
+    setTestFlowResult,
   } = props;
-
-  const [testFlowResult, setTestFlowResult] = useState<Record<string, unknown> | null>(null);
-  const [testing, setTesting] = useState(false);
-  const [showTester, setShowTester] = useState(false);
 
   const handleNodeDrag = (id: string, pos: { x: number; y: number }) => {
     const node = nodes.find(n => n.id === id);
@@ -38,50 +40,30 @@ export default function DesignerCanvas(props: DesignerCanvasProps & { onTestFlow
     onNodeUpdate({ ...node, position: { x: pos.x, y: pos.y } });
   };
 
-  const handleTestFlow = async () => {
-    setTesting(true);
-    try {
-      // Debug: Check if we have the latest node data
-      const chatNode = nodes.find(n => n.type === 'ui' && n.subtype === 'chat');
-      console.log('Chat node data in handleTestFlow:', chatNode?.data);
-      const result = await runWorkflow(nodes, connections);
-      setTestFlowResult(result);
-      if (onTestFlow) onTestFlow();
-      setShowTester(true); // Show the ConversationTester modal
-    } catch (err) {
-      setTestFlowResult({ error: err instanceof Error ? err.message : 'Unknown error' });
-    } finally {
-      setTesting(false);
-    }
-  };
-
   return (
     <div className="flex-1 relative overflow-hidden">
-      {/* Test Flow Button */}
-      <div className="absolute top-4 right-4 z-10">
-        <Button
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow"
-          onClick={handleTestFlow}
-          disabled={testing}
-        >
-          {testing ? 'Testing...' : 'Test Flow'}
-        </Button>
-      </div>
       {/* Conversation Tester Modal */}
       {showTester && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-lg w-[600px] max-w-full p-6 relative">
             <button
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-              onClick={() => setShowTester(false)}
+              onClick={() => { setShowTester(false); setTestFlowResult(null); }}
             >
               ✕
             </button>
-            <ConversationTester
-              nodes={nodes}
-              connections={connections}
-              onClose={() => setShowTester(false)}
-            />
+            {isTesting ? (
+              <div className="flex flex-col items-center justify-center h-48">
+                <span className="animate-spin text-3xl mb-2">⏳</span>
+                <span className="text-gray-700">Running workflow...</span>
+              </div>
+            ) : (
+              <ConversationTester
+                nodes={nodes}
+                connections={connections}
+                onClose={() => { setShowTester(false); setTestFlowResult(null); }}
+              />
+            )}
           </div>
         </div>
       )}
@@ -138,19 +120,19 @@ export default function DesignerCanvas(props: DesignerCanvasProps & { onTestFlow
               );
             })}
           </div>
-          <Button className="mt-2 w-full" variant="outline" onClick={() => setTestFlowResult(null)}>
+          <button className="mt-2 w-full bg-blue-600 text-white px-4 py-2 rounded shadow" onClick={() => setTestFlowResult(null)}>
             Close
-          </Button>
+          </button>
         </div>
       )}
       <CanvasEngine
         nodes={nodes}
         connections={connections}
         onNodeSelect={onNodeSelect}
-        onNodeDrag={handleNodeDrag}
+        onNodeUpdate={onNodeUpdate}
         onConnectionsChange={onConnectionsChange}
         onCreateConnection={onCreateConnection}
-        onNodeUpdate={onNodeUpdate}
+        onNodeDrag={handleNodeDrag}
       />
     </div>
   );

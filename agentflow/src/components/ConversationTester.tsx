@@ -1,45 +1,68 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, RotateCcw, User, Bot, Clock, AlertCircle, CheckCircle, TrendingUp, Send } from 'lucide-react';
-
-interface Node {
-  id: string;
-  type: string;
-  // Add other properties as needed
-}
-
-type Connection = object; // Replace empty interface with object type
+import { Play, Pause, RotateCcw, User, Bot, AlertCircle, TrendingUp, Send } from 'lucide-react';
+import { CanvasNode, Connection } from '@/types';
 
 interface ConversationTesterProps {
-  nodes: Node[];
+  nodes: CanvasNode[];
   connections: Connection[];
   onClose?: () => void;
+  testFlowResult?: Record<string, unknown> | null;
 }
 
-interface TestMessage {
-  id: string;
-  sender: 'user' | 'agent' | 'system';
-  text: string;
-  timestamp: Date;
-  confidence?: number;
-  processingTime?: number;
-  nodeId?: string;
-  metadata?: Record<string, unknown>;
+function getChronologicalMessages(nodes: CanvasNode[], testFlowResult: Record<string, unknown> | null) {
+  if (!testFlowResult) return [];
+  // Sort nodes by type and id for now (can be improved with topological order)
+  return nodes
+    .filter(n => testFlowResult[n.id] !== undefined)
+    .map(n => {
+      const output = testFlowResult[n.id];
+      let sender: 'user' | 'agent' | 'system' | 'logic' = 'system';
+      if (n.type === 'agent') sender = 'agent';
+      else if (n.type === 'ui' && n.subtype === 'chat') sender = 'user';
+      else if (n.type === 'logic') sender = 'logic';
+      else sender = 'system';
+      let text = '';
+      if (output === null) text = 'No output';
+      else if (typeof output === 'string') text = output;
+      else if (output && typeof output === 'object' && 'error' in output) text = `Error: ${(output as { error: string }).error}`;
+      else if (
+        output &&
+        typeof output === 'object' &&
+        'gemini' in output &&
+        output.gemini &&
+        typeof output.gemini === 'object' &&
+        Array.isArray((output.gemini as { candidates?: { content?: { parts?: { text?: string }[] } }[] }).candidates)
+      ) {
+        type GeminiCandidate = {
+          content?: {
+            parts?: {
+              text?: string;
+            }[];
+          };
+        };
+        type GeminiOutput = {
+          candidates?: GeminiCandidate[];
+        };
+        const gemini = output.gemini as GeminiOutput;
+        text = gemini.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+      } else {
+        text = JSON.stringify(output);
+      }
+      return {
+        id: n.id,
+        sender,
+        text,
+        node: n,
+      };
+    });
 }
 
-interface TestMetrics {
-  totalMessages: number;
-  avgResponseTime: number;
-  avgConfidence: number;
-  escalations: number;
-  errors: number;
-}
-
-export default function ConversationTester({ nodes, connections, onClose }: ConversationTesterProps) {
-  const [messages, setMessages] = useState<TestMessage[]>([]);
+export default function ConversationTester({ nodes, onClose, testFlowResult }: ConversationTesterProps) {
+  const chronologicalMessages = getChronologicalMessages(nodes, testFlowResult ?? null);
   const [inputText, setInputText] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [currentNodePath, setCurrentNodePath] = useState<string[]>([]);
-  const [metrics, setMetrics] = useState<TestMetrics>({
+  const [metrics, setMetrics] = useState({
     totalMessages: 0,
     avgResponseTime: 0,
     avgConfidence: 0,
@@ -94,9 +117,9 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [chronologicalMessages]);
 
-  const simulateAgentResponse = async (userMessage: string, currentNode: Node) => {
+  const simulateAgentResponse = async (userMessage: string, currentNode: CanvasNode) => {
     const startTime = Date.now();
     
     // Simulate processing delay
@@ -130,15 +153,12 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
   const sendMessage = async () => {
     if (!inputText.trim() || !isRunning) return;
     
-    const userMessage: TestMessage = {
+    const userMessage = {
       id: Date.now().toString(),
       sender: 'user',
       text: inputText,
       timestamp: new Date()
     };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setInputText('');
     
     // Find the current active node (simplified - in real implementation, follow the actual flow)
     const currentNode = nodes.find(n => n.type === 'agent') || nodes[0];
@@ -146,7 +166,7 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
     try {
       const response = await simulateAgentResponse(userMessage.text, currentNode);
       
-      const agentMessage: TestMessage = {
+      const agentMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'agent',
         text: response.text,
@@ -155,8 +175,6 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
         processingTime: response.processingTime,
         nodeId: currentNode?.id
       };
-      
-      setMessages(prev => [...prev, agentMessage]);
       
       // Update metrics
       setMetrics(prev => ({
@@ -174,20 +192,18 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
         }
       }
     } catch (error) {
-      const errorMessage: TestMessage = {
+      const errorMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'system',
         text: 'Error: Failed to process message',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
       setMetrics(prev => ({ ...prev, errors: prev.errors + 1 }));
     }
   };
 
   const runScenario = async (scenario: typeof testScenarios[0]) => {
     setSelectedScenario(scenario.id);
-    setMessages([]);
     setMetrics({
       totalMessages: 0,
       avgResponseTime: 0,
@@ -205,7 +221,6 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
   };
 
   const reset = () => {
-    setMessages([]);
     setInputText('');
     setCurrentNodePath([]);
     setMetrics({
@@ -332,54 +347,32 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            {messages.map(message => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[70%] ${message.sender === 'system' ? 'w-full' : ''}`}>
-                  {message.sender === 'system' ? (
-                    <div className="flex items-center gap-2 text-yellow-400 text-sm">
-                      <AlertCircle className="w-4 h-4" />
-                      {message.text}
+            {chronologicalMessages.length > 0 ? (
+              chronologicalMessages.map(msg => (
+                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[70%]`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      {msg.sender === 'user' ? (
+                        <User className="w-4 h-4 text-blue-400" />
+                      ) : msg.sender === 'agent' ? (
+                        <Bot className="w-4 h-4 text-green-400" />
+                      ) : msg.sender === 'logic' ? (
+                        <TrendingUp className="w-4 h-4 text-yellow-400" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-gray-400" />
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {msg.sender.charAt(0).toUpperCase() + msg.sender.slice(1)}
+                        {msg.node.data?.title ? ` (${msg.node.data.title})` : ''}
+                      </span>
                     </div>
-                  ) : (
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        {message.sender === 'user' ? (
-                          <User className="w-4 h-4 text-blue-400" />
-                        ) : (
-                          <Bot className="w-4 h-4 text-green-400" />
-                        )}
-                        <span className="text-xs text-gray-400">
-                          {message.sender === 'user' ? 'User' : `Agent${message.nodeId ? ` (${message.nodeId})` : ''}`}
-                        </span>
-                        {message.processingTime && (
-                          <span className="text-xs text-gray-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {message.processingTime}ms
-                          </span>
-                        )}
-                        {message.confidence && (
-                          <span className={`text-xs ${message.confidence > 0.8 ? 'text-green-400' : 'text-yellow-400'}`}>
-                            {(message.confidence * 100).toFixed(0)}% confident
-                          </span>
-                        )}
-                      </div>
-                      <div
-                        className={`rounded-lg px-4 py-2 ${
-                          message.sender === 'user'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-700 text-gray-100'
-                        }`}
-                      >
-                        {message.text}
-                      </div>
-                    </div>
-                  )}
+                    <div className={`rounded-lg px-4 py-2 ${msg.sender === 'user' ? 'bg-blue-600 text-white' : msg.sender === 'agent' ? 'bg-gray-700 text-gray-100' : msg.sender === 'logic' ? 'bg-yellow-900 text-yellow-100' : 'bg-gray-800 text-gray-300'}`}>{msg.text}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-gray-400">No test flow results. Click the Test button to run the flow.</div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 

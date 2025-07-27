@@ -9,6 +9,7 @@ import { ComponentLibrary } from "@/components/ComponentLibrary";
 import DesignerCanvas from "@/components/DesignerCanvas";
 import PropertiesPanel from "@/components/PropertiesPanel";
 import { nodeCategories } from "@/data/nodeDefinitions";
+import { runWorkflow } from "@/lib/workflowRunner";
 
 const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -37,6 +38,9 @@ export default function AgentFlowPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [selectedNode, setSelectedNode] = useState<CanvasNode | null>(null);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
+  const [showTester, setShowTester] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testFlowResult, setTestFlowResult] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     fetchProjects();
@@ -372,6 +376,19 @@ export default function AgentFlowPage() {
       .then(result => console.log('Supabase node update result:', result)); // Debug log
   };
 
+  const handleTestFlow = async () => {
+    setShowTester(true);
+    setIsTesting(true);
+    try {
+      const result = await runWorkflow(nodes, connections);
+      setTestFlowResult(result);
+    } catch (err) {
+      setTestFlowResult({ error: err instanceof Error ? err.message : 'Unknown error' });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   // Render
   if (currentView === "projects") {
     return (
@@ -400,10 +417,14 @@ export default function AgentFlowPage() {
           nodes={nodes}
           connections={connections}
           onNodeSelect={(n: CanvasNode | null) => setSelectedNode(n)}
-          selectedNodeId={selectedNode ? selectedNode.id : null}
           onConnectionsChange={(updatedConnections: Connection[]) => setConnections(updatedConnections)}
           onCreateConnection={handleCreateConnection}
           onNodeUpdate={handleNodeUpdate}
+          showTester={showTester}
+          isTesting={isTesting}
+          testFlowResult={testFlowResult}
+          setShowTester={setShowTester}
+          setTestFlowResult={setTestFlowResult}
         />
       }
       right={
@@ -412,10 +433,8 @@ export default function AgentFlowPage() {
           onChange={handleNodeUpdate}
         />
       }
-      onTestFlow={async () => {
-        // Run the workflow and handle results here if needed
-        // You can also trigger DesignerCanvas's test logic if needed
-      }}
+      onTestFlow={handleTestFlow}
+      testButtonDisabled={isTesting}
     />
   );
 }

@@ -18,7 +18,8 @@ interface DesignerLayoutProps {
   left: ReactNode;
   center: ReactNode;
   right: ReactNode;
-  onTestFlow?: () => void; // Add this
+  onTestFlow?: () => void;
+  testButtonDisabled?: boolean;
 }
 
 export default function DesignerLayout({
@@ -26,11 +27,12 @@ export default function DesignerLayout({
   center,
   right,
   onTestFlow,
+  testButtonDisabled = false,
 }: DesignerLayoutProps) {
   return (
     <div
-      className="h-screen w-full flex overflow-hidden"
-      style={{ backgroundColor: colors.bg }}
+      className="h-screen w-full flex overflow-hidden bg-[#18181b]"
+      style={{ fontFamily: 'Inter, Menlo, monospace' }}
     >
       {/* Left Sidebar */}
       {left}
@@ -39,13 +41,10 @@ export default function DesignerLayout({
       <div className="flex-1 flex flex-col">
         {/* Toolbar */}
         <div
-          className="h-12 border-b flex items-center justify-between px-4"
-          style={{
-            backgroundColor: colors.sidebar,
-            borderColor: colors.border,
-          }}
+          className="h-12 border-b flex items-center justify-between px-3 bg-[#23232a] border-[#23232a]"
+          style={{ fontFamily: 'Inter, Menlo, monospace' }}
         >
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center gap-1">
             {[
               { id: "select", name: "Select", icon: MousePointer, shortcut: "V" },
               { id: "hand", name: "Hand", icon: Hand, shortcut: "H" },
@@ -54,8 +53,8 @@ export default function DesignerLayout({
             ].map((tool) => (
               <button
                 key={tool.id}
-                className="w-8 h-8 rounded flex items-center justify-center transition-colors hover:bg-white/10"
-                style={{ color: colors.textSecondary }}
+                className="w-7 h-7 flex items-center justify-center transition-colors text-gray-400 hover:bg-[#18181b]"
+                style={{ borderRadius: 4 }}
                 title={`${tool.name} (${tool.shortcut})`}
               >
                 <tool.icon className="w-4 h-4" />
@@ -63,59 +62,41 @@ export default function DesignerLayout({
             ))}
           </div>
 
-          <div className="flex items-center space-x-3">
-            <span className="text-sm" style={{ color: colors.textSecondary }}>
-              100%
-            </span>
-            <div className="flex items-center space-x-1">
-              <button
-                className="w-7 h-7 rounded flex items-center justify-center hover:bg-white/10 transition-colors"
-                style={{ color: colors.textSecondary }}
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
-              <button
-                className="w-7 h-7 rounded flex items-center justify-center hover:bg-white/10 transition-colors"
-                style={{ color: colors.textSecondary }}
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 border-0"
-              style={{
-                backgroundColor: colors.panel,
-                color: colors.text,
-                borderColor: colors.border,
-              }}
-              onClick={onTestFlow} // Add this prop
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 font-mono">100%</span>
+            <button
+              className="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-[#18181b] transition-colors"
+              style={{ borderRadius: 4 }}
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <button
+              className="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-[#18181b] transition-colors"
+              style={{ borderRadius: 4 }}
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <button
+              className="flex items-center gap-1 px-3 py-1 text-xs font-mono bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              style={{ borderRadius: 4 }}
+              onClick={onTestFlow}
+              disabled={testButtonDisabled}
             >
               <Play className="w-4 h-4" />
               Test
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 border-0"
-              style={{
-                backgroundColor: colors.panel,
-                color: colors.text,
-                borderColor: colors.border,
-              }}
+            </button>
+            <button
+              className="flex items-center gap-1 px-3 py-1 text-xs font-mono bg-[#23232a] text-gray-300 hover:bg-[#18181b] transition-colors"
+              style={{ borderRadius: 4 }}
             >
               <Share className="w-4 h-4" />
               Share
-            </Button>
+            </button>
           </div>
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 flex">{center}</div>
+        <div className="flex-1 flex bg-[#18181b]">{center}</div>
       </div>
 
       {/* Right Sidebar */}
