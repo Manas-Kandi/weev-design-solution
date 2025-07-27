@@ -308,7 +308,6 @@ export default function AgentFlowPage() {
       // Create payload that matches your existing schema
       const connectionPayload = {
         project_id: currentProject.id,
-        user_id: DEFAULT_USER_ID, // Use proper UUID
         source_node: connectionData.sourceNode,
         source_output: connectionData.sourceOutput,
         target_node: connectionData.targetNode,
@@ -331,13 +330,17 @@ export default function AgentFlowPage() {
           hint: error.hint,
           code: error.code
         });
-        return;
+        // Don't return here - we might still want to add to local state
+        // or handle this gracefully
+        throw new Error(`Failed to create connection in database: ${error.message}`);
       }
 
       if (!data) {
         console.error('No data returned from connection creation');
-        return;
+        throw new Error('No data returned from connection creation');
       }
+
+      console.log('Connection created in database:', data);
 
       // Transform the response to match our Connection interface
       const newConnection: Connection = {
@@ -348,9 +351,23 @@ export default function AgentFlowPage() {
         targetInput: data.target_input
       };
 
-      setConnections(prev => [...prev, newConnection]);
+      console.log('Adding connection to local state:', newConnection);
+
+      // Update local state
+      setConnections(prev => {
+        const updated = [...prev, newConnection];
+        console.log('Updated connections array:', updated);
+        return updated;
+      });
+
+      console.log('Connection successfully created and added to state!');
+
     } catch (err) {
       console.error('Unexpected error creating connection:', err);
+      // For now, let's still add it to local state even if DB fails
+      // This will at least show the connection visually while you debug
+      console.log('Adding connection to local state despite error...');
+      setConnections(prev => [...prev, connectionData]);
     }
   };
 
@@ -388,6 +405,11 @@ export default function AgentFlowPage() {
       setIsTesting(false);
     }
   };
+
+  // Debug logging for connections state
+  useEffect(() => {
+    console.log('Connections state updated:', connections);
+  }, [connections]);
 
   // Render
   if (currentView === "projects") {

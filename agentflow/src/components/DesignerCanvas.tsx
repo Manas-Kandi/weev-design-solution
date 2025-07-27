@@ -134,8 +134,9 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         onConnectionsChange={onConnectionsChange}
         onCreateConnection={onCreateConnection}
         onNodeDrag={handleNodeDrag}
-        onNodesChange={props.setNodes ?? (() => {})}
+        selectedNodeId={null} 
       />
+      {/* Pass the selected node id here if available */}
     </div>
   );
 }
