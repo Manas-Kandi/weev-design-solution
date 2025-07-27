@@ -416,15 +416,20 @@ export default function AgentFlowPage() {
         <DesignerCanvas
           nodes={nodes}
           connections={connections}
-          onNodeSelect={(n: CanvasNode | null) => setSelectedNode(n)}
-          onConnectionsChange={(updatedConnections: Connection[]) => setConnections(updatedConnections)}
-          onCreateConnection={handleCreateConnection}
-          onNodeUpdate={handleNodeUpdate}
+          onNodeSelect={setSelectedNode}
+          onNodeUpdate={updatedNode => {
+            setNodes(nodes.map(n => n.id === updatedNode.id ? updatedNode : n));
+          }}
+          onConnectionsChange={setConnections}
+          onCreateConnection={async (connectionData) => {
+            // ...existing logic...
+          }}
           showTester={showTester}
           isTesting={isTesting}
           testFlowResult={testFlowResult}
           setShowTester={setShowTester}
           setTestFlowResult={setTestFlowResult}
+          setNodes={setNodes} // <-- Pass setNodes for node deletion
         />
       }
       right={

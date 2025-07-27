@@ -16,6 +16,7 @@ interface DesignerCanvasProps {
   testFlowResult: Record<string, unknown> | null;
   setShowTester: (show: boolean) => void;
   setTestFlowResult: (result: Record<string, unknown> | null) => void;
+  setNodes?: (nodes: CanvasNode[]) => void; // Added optional setNodes prop
 }
 
 export default function DesignerCanvas(props: DesignerCanvasProps) {
@@ -133,6 +134,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         onConnectionsChange={onConnectionsChange}
         onCreateConnection={onCreateConnection}
         onNodeDrag={handleNodeDrag}
+        onNodesChange={props.setNodes ?? (() => {})}
       />
     </div>
   );

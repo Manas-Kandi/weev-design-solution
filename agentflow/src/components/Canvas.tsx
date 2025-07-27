@@ -5,6 +5,7 @@ import { theme } from '@/data/theme';
 import { nodeCategories } from '@/data/nodeDefinitions';
 import ChatBoxNode from './ChatBoxNode';
 import ConversationFlowNode from './ConversationFlowNode';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Props {
   nodes: CanvasNode[];
@@ -14,6 +15,7 @@ interface Props {
   onConnectionsChange: (c: Connection[]) => void;
   onCreateConnection: (connectionData: Connection) => Promise<void>;
   onNodeUpdate: (node: CanvasNode) => void;
+  onNodesChange: (nodes: CanvasNode[]) => void;
 }
 
 // Define ConversationMessage type for casting
@@ -44,7 +46,8 @@ export default function CanvasEngine(props: Props) {
     onNodeDrag,
     onConnectionsChange,
     onCreateConnection,
-    onNodeUpdate
+    onNodeUpdate,
+    onNodesChange
   } = props;
 
   // Canvas state
@@ -65,6 +68,10 @@ export default function CanvasEngine(props: Props) {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
+
+  // 1. History stack for undo
+  const [history, setHistory] = useState<{ nodes: CanvasNode[]; connections: Connection[] }[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -321,7 +328,12 @@ export default function CanvasEngine(props: Props) {
       }
       // Undo
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
-        // ...existing undo logic...
+        if (historyIndex > 0) {
+          const prev = history[historyIndex - 1];
+          onConnectionsChange(prev.connections);
+          prev.nodes.forEach(n => onNodeUpdate(n));
+          setHistoryIndex(historyIndex - 1);
+        }
       }
       // Redo
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
@@ -330,7 +342,7 @@ export default function CanvasEngine(props: Props) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedNodeIds, nodes, connections, onConnectionsChange, onNodeSelect, onNodeUpdate]);
+  }, [selectedNodeIds, nodes, connections, onConnectionsChange, onNodeSelect, onNodeUpdate, history, historyIndex]);
 
   // --- Snap to grid ---
   const snapToGrid = (pos: { x: number; y: number }) => {
@@ -414,6 +426,17 @@ export default function CanvasEngine(props: Props) {
     });
   };
 
+  // Move handleDeleteNode to top-level scope so it's available in node rendering
+  function handleDeleteNode(id: string) {
+    const newNodes = nodes.filter(n => n.id !== id);
+    const newConnections = connections.filter(c => c.sourceNode !== id && c.targetNode !== id);
+    onConnectionsChange(newConnections);
+    onNodesChange(newNodes);
+    // Delete from Supabase
+    supabase.from('nodes').delete().eq('id', id);
+    supabase.from('connections').delete().or(`sourceNode.eq.${id},targetNode.eq.${id}`);
+  }
+
   // --- Render ---
   return (
     <div
@@ -431,32 +454,65 @@ export default function CanvasEngine(props: Props) {
       <svg
         ref={svgRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ 
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 2,
           backgroundImage: `
-            linear-gradient(${theme.border} 1px, transparent 1px),
-            linear-gradient(90deg, ${theme.border} 1px, transparent 1px)
+            linear-gradient(rgba(35,35,42,0.3) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(35,35,42,0.3) 1px, transparent 1px)
           `,
           backgroundSize: `${20 * viewportTransform.scale}px ${20 * viewportTransform.scale}px`,
           backgroundPosition: `${viewportTransform.x}px ${viewportTransform.y}px`
         }}
       >
-        {/* Connections Layer */}
         <g
           style={{
-            transform: `translate(${viewportTransform.x}px, ${viewportTransform.y}px) scale(${viewportTransform.scale})`
+            transform: `translate(${viewportTransform.x}px, ${viewportTransform.y}px) scale(${viewportTransform.scale})`,
+            transformOrigin: '0 0',
+            zIndex: 3
           }}
         >
-          {connections.map(renderConnection)}
-          
-          {/* Drag connection preview */}
+          {/* Render all connections as visible lines */}
+          {connections.map(connection => {
+            const sourceNode = nodes.find(n => n.id === connection.sourceNode);
+            const targetNode = nodes.find(n => n.id === connection.targetNode);
+            if (!sourceNode || !targetNode) return null;
+
+            // Find correct port indices using port IDs
+            const sourcePortIndex = sourceNode.outputs.findIndex(o => o.id === connection.sourceOutput);
+            const targetPortIndex = targetNode.inputs.findIndex(i => i.id === connection.targetInput);
+
+            const sourcePos = getPortPosition(connection.sourceNode, 'output', sourcePortIndex);
+            const targetPos = getPortPosition(connection.targetNode, 'input', targetPortIndex);
+
+            return (
+              <line
+                key={connection.id}
+                x1={sourcePos.x}
+                y1={sourcePos.y}
+                x2={targetPos.x}
+                y2={targetPos.y}
+                stroke="#3b82f6"
+                strokeWidth={3}
+                opacity={0.95}
+              />
+            );
+          })}
+          {/* Dotted connector preview: thick, blue, snaps to port if hovered */}
           {dragConnection && (
-            <path
-              d={`M ${dragConnection.from.pos.x} ${dragConnection.from.pos.y} L ${dragConnection.currentPos.x} ${dragConnection.currentPos.y}`}
-              stroke={theme.accent}
-              strokeWidth="2"
-              strokeDasharray="5,5"
-              fill="none"
-              opacity={0.7}
+            <line
+              x1={dragConnection.from.pos.x}
+              y1={dragConnection.from.pos.y}
+              x2={dragConnection.currentPos.x}
+              y2={dragConnection.currentPos.y}
+              stroke="#3b82f6"
+              strokeDasharray="8 6"
+              strokeWidth={4}
+              opacity={0.95}
             />
           )}
         </g>
@@ -501,7 +557,8 @@ export default function CanvasEngine(props: Props) {
         style={{
           zIndex: 2,
           transform: `translate(${viewportTransform.x}px, ${viewportTransform.y}px) scale(${viewportTransform.scale})`,
-          transformOrigin: '0 0'
+          transformOrigin: '0 0',
+          transition: 'transform 0.15s cubic-bezier(.4,0,.2,1)'
         }}
       >
         {nodes.map(node => {
@@ -546,21 +603,23 @@ export default function CanvasEngine(props: Props) {
           return (
             <div
               key={node.id}
-              className={`absolute cursor-pointer pointer-events-auto ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
+              className={`absolute cursor-pointer pointer-events-auto font-mono transition-all duration-150 ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
               style={{
                 left: node.position.x,
                 top: node.position.y,
                 width: node.size.width,
                 height: node.size.height,
-                backgroundColor: theme.bgElevate,
-                border: `2px solid ${isSelected ? theme.accent : theme.border}`,
-                borderRadius: '8px',
-                boxShadow: isSelected ? `0 0 0 2px ${theme.accent}33` : '0 2px 8px rgba(0,0,0,0.3)',
+                backgroundColor: '#18181b',
+                border: `1px solid #23232a`,
+                borderRadius: '4px',
+                boxShadow: isSelected ? `0 0 0 2px #3b82f6AA` : '0 2px 8px rgba(0,0,0,0.15)',
                 zIndex: 3
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
               onClick={(e) => handleNodeClick(e, node.id)}
               onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 0 2px #3b82f6AA`}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = isSelected ? `0 0 0 2px #3b82f6AA` : '0 2px 8px rgba(0,0,0,0.15)'}
             >
               {/* Node Header */}
               <div 
@@ -597,12 +656,13 @@ export default function CanvasEngine(props: Props) {
               {node.inputs.map((input, index) => (
                 <div
                   key={input.id}
-                  className="absolute w-3 h-3 rounded-full border-2 cursor-pointer hover:scale-110 transition-transform"
+                  className="absolute w-5 h-5 rounded-full border-2 cursor-crosshair transition-transform duration-150 hover:border-blue-500 hover:bg-blue-500/20 shadow"
                   style={{
-                    left: -6,
-                    top: (node.size.height / (node.inputs.length + 1)) * (index + 1) - 6,
-                    backgroundColor: theme.portBg,
-                    borderColor: theme.border
+                    left: -10,
+                    top: (node.size.height / (node.inputs.length + 1)) * (index + 1) - 10,
+                    backgroundColor: '#23232a',
+                    borderColor: '#23232a',
+                    zIndex: 4
                   }}
                   onMouseUp={(e) => handlePortMouseUp(e, node.id, input.id)}
                   title={input.label}
@@ -613,17 +673,29 @@ export default function CanvasEngine(props: Props) {
               {node.outputs.map((output, index) => (
                 <div
                   key={output.id}
-                  className="absolute w-3 h-3 rounded-full border-2 cursor-pointer hover:scale-110 transition-transform"
+                  className="absolute w-5 h-5 rounded-full border-2 cursor-crosshair transition-transform duration-150 hover:border-blue-500 hover:bg-blue-500/20 shadow"
                   style={{
-                    right: -6,
-                    top: (node.size.height / (node.outputs.length + 1)) * (index + 1) - 6,
-                    backgroundColor: theme.portBg,
-                    borderColor: theme.border
+                    right: -10,
+                    top: (node.size.height / (node.outputs.length + 1)) * (index + 1) - 10,
+                    backgroundColor: '#23232a',
+                    borderColor: '#23232a',
+                    zIndex: 4
                   }}
                   onMouseDown={(e) => handlePortMouseDown(e, node.id, output.id, index)}
                   title={output.label}
                 />
               ))}
+
+              {/* Delete button */}
+              {isSelected && (
+                <button
+                  className="absolute top-1 right-1 text-gray-400 hover:text-red-500 bg-[#23232a] rounded p-1"
+                  onClick={() => handleDeleteNode(node.id)}
+                  title="Delete node"
+                >
+                  🗑️
+                </button>
+              )}
             </div>
           );
         })}
@@ -664,7 +736,7 @@ export default function CanvasEngine(props: Props) {
 
       {/* Zoom indicator */}
       <div 
-        className="absolute bottom-4 right-4 px-2 py-1 rounded text-xs"
+        className="absolute bottom-4 right-4 px-2 py-1 rounded text-xs font-mono bg-[#23232a] text-gray-400 border border-[#23232a]"
         style={{ 
           backgroundColor: theme.bgElevate,
           color: theme.textMute,
