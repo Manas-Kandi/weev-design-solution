@@ -1,3 +1,21 @@
+import React from 'react';
+
+export interface PersonalityTrait {
+  id: string
+  name: string
+  icon?: React.ElementType
+  value: number
+  color?: string
+  description?: string
+}
+
+export interface BehaviorRule {
+  id: string
+  trigger: string
+  action: string
+  enabled: boolean
+}
+
 export interface AgentNodeData {
   title: string
   description: string
@@ -14,6 +32,9 @@ export interface AgentNodeData {
   confidenceThreshold?: number // Confidence threshold for escalation
   preset?: string // Agent preset selection
   temperature?: number // Temperature for model sampling
+  personalityTraits?: PersonalityTrait[]
+  behaviorRules?: BehaviorRule[]
+  knowledge?: string
 }
 
 export interface ChatNodeData {
@@ -119,4 +140,4 @@ export interface Colors {
   green: string
 }
 
-export type NodeOutput = string | { gemini: unknown } | { error: string };
+export type NodeOutput = string | { gemini: unknown } | { error: string }

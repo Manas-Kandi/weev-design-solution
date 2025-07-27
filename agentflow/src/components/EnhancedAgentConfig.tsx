@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Brain, Heart, Zap, Shield, AlertTriangle, MessageSquare, Gauge } from 'lucide-react';
-
-interface AgentNodeData {
-  systemPrompt?: string;
-  personalityTraits?: PersonalityTrait[];
-  // Add other properties as needed
-}
+import { AgentNodeData, PersonalityTrait, BehaviorRule } from '@/types';
 
 interface AgentNode {
   data: AgentNodeData;
@@ -15,15 +10,6 @@ interface AgentNode {
 interface AgentConfigProps {
   node: AgentNode;
   onUpdate: (data: AgentNodeData) => void;
-}
-
-interface PersonalityTrait {
-  id: string;
-  name: string;
-  icon: React.ElementType;
-  value: number;
-  color: string;
-  description: string;
 }
 
 export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps) {
@@ -37,7 +23,7 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
     { id: 'empathy', name: 'Empathy', icon: Brain, value: 80, color: '#10b981', description: 'Understanding and emotional intelligence' }
   ]);
 
-  const [behaviorRules, setBehaviorRules] = useState([
+  const [behaviorRules, setBehaviorRules] = useState<BehaviorRule[]>([
     { id: '1', trigger: 'User expresses frustration', action: 'Acknowledge feelings and offer immediate help', enabled: true },
     { id: '2', trigger: 'Confidence < 70%', action: 'Suggest escalation to human agent', enabled: true },
     { id: '3', trigger: 'User asks for manager', action: 'Initiate handoff protocol', enabled: true },
@@ -48,8 +34,15 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(150);
 
-  // Add local state for systemPrompt
-  const [systemPrompt, setSystemPrompt] = useState(node.data.systemPrompt || '');
+  // Load initial state from node.data
+  React.useEffect(() => {
+    if (node.data.personalityTraits) setPersonalityTraits(node.data.personalityTraits);
+    if (node.data.behaviorRules) setBehaviorRules(node.data.behaviorRules);
+    if (node.data.knowledge) setKnowledge(node.data.knowledge);
+  }, [node.data]);
+
+  // Knowledge state
+  const [knowledge, setKnowledge] = useState(node.data.knowledge || "");
 
   const updateTrait = (traitId: string, value: number) => {
     const updated = personalityTraits.map(trait =>
@@ -79,6 +72,24 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
     }).join(', ');
 
     return `You are an AI assistant with the following personality traits: ${traits}. Adjust your responses accordingly while maintaining helpfulness and accuracy.`;
+  };
+
+  // Update behavior rules handler
+  const updateBehaviorRules = (rules: BehaviorRule[]) => {
+    setBehaviorRules(rules);
+    onUpdate({
+      ...node.data,
+      behaviorRules: rules
+    });
+  };
+
+  // Update knowledge handler
+  const updateKnowledge = (value: string) => {
+    setKnowledge(value);
+    onUpdate({
+      ...node.data,
+      knowledge: value
+    });
   };
 
   return (
@@ -123,7 +134,7 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
             {/* Personality Traits */}
             <div className="space-y-2">
               {personalityTraits.map(trait => {
-                const Icon = trait.icon;
+                const Icon = trait.icon || Sparkles;
                 return (
                   <div key={trait.id} className="bg-[#23232a] border border-[#23232a] p-3" style={{ borderRadius: 4 }}>
                     <div className="flex items-center justify-between mb-1">
@@ -247,7 +258,7 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
                       type="checkbox"
                       checked={rule.enabled}
                       onChange={(e) => {
-                        setBehaviorRules(behaviorRules.map(r =>
+                        updateBehaviorRules(behaviorRules.map(r =>
                           r.id === rule.id ? { ...r, enabled: e.target.checked } : r
                         ));
                       }}
@@ -260,7 +271,7 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
                           type="text"
                           value={rule.trigger}
                           onChange={(e) => {
-                            setBehaviorRules(behaviorRules.map(r =>
+                            updateBehaviorRules(behaviorRules.map(r =>
                               r.id === rule.id ? { ...r, trigger: e.target.value } : r
                             ));
                           }}
@@ -274,7 +285,7 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
                           type="text"
                           value={rule.action}
                           onChange={(e) => {
-                            setBehaviorRules(behaviorRules.map(r =>
+                            updateBehaviorRules(behaviorRules.map(r =>
                               r.id === rule.id ? { ...r, action: e.target.value } : r
                             ));
                           }}
@@ -304,15 +315,10 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
               <h4 className="font-medium text-white mb-3">System Instructions</h4>
               <textarea
                 className="w-full h-32 bg-gray-700 text-white p-3 rounded text-sm"
-                placeholder="Enter system instructions for this agent..."
-                value={systemPrompt}
-                onChange={e => {
-                  setSystemPrompt(e.target.value);
-                  onUpdate({ ...node.data, systemPrompt: e.target.value });
-                }}
-                onBlur={e => {
-                  onUpdate({ ...node.data, systemPrompt: e.target.value });
-                }}
+                placeholder="Describe what your agent knows..."
+                value={knowledge}
+                onChange={e => updateKnowledge(e.target.value)}
+                onBlur={e => updateKnowledge(e.target.value)}
               />
             </div>
 

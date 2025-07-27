@@ -93,9 +93,23 @@ export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]
       for (const [key, value] of Object.entries(inputs)) {
         systemPrompt = systemPrompt.replaceAll(`{{${key}}}`, String(value));
       }
+      // Personality traits, behavior, and knowledge
+      let personalitySection = "";
+      if (data.personalityTraits && Array.isArray(data.personalityTraits)) {
+        const traits = data.personalityTraits.map(trait => `${trait.name}: ${trait.value}/100`).join("; ");
+        personalitySection += `Personality Traits: ${traits}\n`;
+      }
+      if (data.behaviorRules && Array.isArray(data.behaviorRules)) {
+        const rules = data.behaviorRules.filter(r => r.enabled).map(r => `If ${r.trigger}, then ${r.action}.`).join(" ");
+        if (rules) personalitySection += `Behavior Rules: ${rules}\n`;
+      }
+      if (data.knowledge && typeof data.knowledge === 'string' && data.knowledge.trim() !== '') {
+        personalitySection += `Knowledge: ${data.knowledge.trim()}\n`;
+      }
       // Strict instruction prefix for Gemini
       const strictPrefix = "ONLY reply with the email as specified. Do NOT add extra explanations, options, or commentary. Format the email cleanly.\n\n";
-      const finalPrompt = strictPrefix + (systemPrompt.trim() ? `${systemPrompt.trim()}\n\n${userPrompt.trim()}` : userPrompt.trim());
+      // Compose final prompt
+      const finalPrompt = strictPrefix + (personalitySection ? personalitySection + "\n" : "") + (systemPrompt.trim() ? `${systemPrompt.trim()}\n\n${userPrompt.trim()}` : userPrompt.trim());
       const contents = [{
         role: "user",
         parts: [{ text: finalPrompt }],
