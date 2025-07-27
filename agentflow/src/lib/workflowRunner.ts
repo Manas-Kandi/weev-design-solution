@@ -34,95 +34,111 @@ function evaluateCondition(condition: string, context: Record<string, NodeOutput
 export async function runWorkflow(nodes: CanvasNode[], connections: Connection[]) {
   const order = getExecutionOrder(nodes, connections);
   const nodeOutputs: Record<string, NodeOutput> = {};
-
-  // Define the expected shape for chat node data
-  interface ChatNodeData {
-    inputValue?: string;
-    [key: string]: unknown;
-  }
-
-  // Define ChatBoxNodeData type for type safety
-  interface ChatBoxNodeData {
-    inputValue?: string;
-    title?: string;
-    // add other properties as needed
-  }
+  const executionTrace: Array<{
+    node: CanvasNode;
+    inputs: Record<string, unknown>;
+    output: NodeOutput;
+    context: Record<string, NodeOutput>;
+    order: number;
+    error?: string;
+  }> = [];
 
   // Handle Text Input nodes first - use their input value
   for (const node of nodes) {
     if (node.type === "ui" && node.subtype === "chat") {
-      console.log('Full node data:', JSON.stringify(node.data, null, 2));
-      const chatData = node.data as unknown as ChatNodeData;
-      const inputValue = chatData.inputValue || (chatData as { input?: string }).input || "Hello";
-      console.log('Using input value:', inputValue);
+      const chatData = node.data as import("@/types").ChatNodeData;
+      // Prefer inputValue if present, else last user message, else fallback
+      const inputValue = typeof chatData.inputValue === 'string' && chatData.inputValue.trim() !== ''
+        ? chatData.inputValue
+        : Array.isArray(chatData.messages)
+          ? chatData.messages.filter(m => m.sender === "user").pop()?.text || "Hello"
+          : "Hello";
       nodeOutputs[node.id] = inputValue;
+      executionTrace.push({
+        node,
+        inputs: {},
+        output: inputValue,
+        context: { ...nodeOutputs },
+        order: executionTrace.length,
+      });
     }
   }
 
   for (const node of order) {
+    const inputs: Record<string, unknown> = {};
+    let output: NodeOutput = "";
+    let error: string | undefined = undefined;
     // Handle Prompt Template node
     if (node.type === "conversation" && node.subtype === "template") {
       const data = node.data as import("@/types").PromptTemplateNodeData;
-      let output = data.template;
+      output = data.template;
       for (const [key, value] of Object.entries(data.variables || {})) {
         output = output.replaceAll(`{{${key}}}`, value);
       }
       nodeOutputs[node.id] = output;
+    } else if (node.type === "ui" && node.subtype === "chat") {
       continue;
-    }
-    // Skip Chat Interface nodes in main loop
-    if (node.type === "ui" && node.subtype === "chat") {
-      continue; // Already handled above
-    }
-    if (node.type === "agent") {
-      // Gather resolved inputs for agent node
+    } else if (node.type === "agent") {
       const incoming = connections.filter(c => c.targetNode === node.id);
-      const resolvedInputs: Record<string, unknown> = {};
       incoming.forEach(conn => {
-        const output = nodeOutputs[conn.sourceNode];
-        resolvedInputs[conn.targetInput] = output;
+        inputs[conn.targetInput] = nodeOutputs[conn.sourceNode];
       });
       const data = node.data as import("@/types").AgentNodeData;
-      // Grab prompt from inputs cleanly
-      const userPrompt = Object.values(resolvedInputs)[0] as string || "What would you like me to help you with?";
-      let systemPrompt = data.systemPrompt || "";
-      for (const [key, value] of Object.entries(resolvedInputs)) {
+      // Use both systemPrompt and prompt from agent config, and combine with chat input
+      const userPrompt = typeof data.prompt === 'string' && data.prompt.trim() !== ''
+        ? data.prompt
+        : Object.values(inputs)[0] as string || "What would you like me to help you with?";
+      let systemPrompt = typeof data.systemPrompt === 'string' ? data.systemPrompt : "";
+      // Replace variables in systemPrompt with input values
+      for (const [key, value] of Object.entries(inputs)) {
         systemPrompt = systemPrompt.replaceAll(`{{${key}}}`, String(value));
       }
-      // Log the final payload
-      console.log("Sending prompt to Gemini:", userPrompt, "System prompt:", systemPrompt);
+      // Strict instruction prefix for Gemini
+      const strictPrefix = "ONLY reply with the email as specified. Do NOT add extra explanations, options, or commentary. Format the email cleanly.\n\n";
+      const finalPrompt = strictPrefix + (systemPrompt.trim() ? `${systemPrompt.trim()}\n\n${userPrompt.trim()}` : userPrompt.trim());
+      const contents = [{
+        role: "user",
+        parts: [{ text: finalPrompt }],
+      }];
       try {
         const result = await callGemini("", {
           model: data.model || "gemini-pro",
           generationConfig: {
             temperature: data.temperature ?? 0.7,
           },
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: systemPrompt
-                    ? `${systemPrompt.trim()}\n\n${userPrompt.trim()}`
-                    : userPrompt.trim(),
-                },
-              ],
-            },
-          ],
+          contents,
         });
-        nodeOutputs[node.id] = result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+        let rawOutput = result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+        // Clean up output: replace \n with real newlines, remove extra text after email
+        rawOutput = rawOutput.replace(/\\n/g, '\n').replace(/---[\s\S]*$/, '').trim();
+        output = rawOutput;
+        nodeOutputs[node.id] = output;
       } catch (err) {
-        nodeOutputs[node.id] = { error: err instanceof Error ? err.message : "Unknown error" };
+        error = err instanceof Error ? err.message : "Unknown error";
+        output = { error };
+        nodeOutputs[node.id] = output;
       }
-      continue;
-    }
-    if (node.type === "logic" && node.subtype === "ifelse") {
+    } else if (node.type === "logic" && node.subtype === "ifelse") {
       const condition = (node.data as { condition?: string }).condition || "";
       const isTrue = evaluateCondition(condition, nodeOutputs);
-      nodeOutputs[node.id] = isTrue ? "true" : "false";
-      continue;
+      output = isTrue ? "true" : "false";
+      nodeOutputs[node.id] = output;
+    } else {
+      output = nodeOutputs[node.id] ?? null;
     }
-    // ...existing code for other node types...
+    executionTrace.push({
+      node,
+      inputs,
+      output,
+      context: { ...nodeOutputs },
+      order: executionTrace.length,
+      error,
+    });
   }
-  return nodeOutputs;
+  // After building executionTrace, assign output/context to each node for UI wiring
+  executionTrace.forEach(traceStep => {
+    traceStep.node.output = traceStep.output;
+    traceStep.node.context = traceStep.context;
+  });
+  return { outputs: nodeOutputs, trace: executionTrace };
 }

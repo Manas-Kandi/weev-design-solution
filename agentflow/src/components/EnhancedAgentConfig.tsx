@@ -48,6 +48,9 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(150);
 
+  // Add local state for systemPrompt
+  const [systemPrompt, setSystemPrompt] = useState(node.data.systemPrompt || '');
+
   const updateTrait = (traitId: string, value: number) => {
     const updated = personalityTraits.map(trait =>
       trait.id === traitId ? { ...trait, value } : trait
@@ -302,7 +305,14 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
               <textarea
                 className="w-full h-32 bg-gray-700 text-white p-3 rounded text-sm"
                 placeholder="Enter system instructions for this agent..."
-                defaultValue={node.data.systemPrompt || ''}
+                value={systemPrompt}
+                onChange={e => {
+                  setSystemPrompt(e.target.value);
+                  onUpdate({ ...node.data, systemPrompt: e.target.value });
+                }}
+                onBlur={e => {
+                  onUpdate({ ...node.data, systemPrompt: e.target.value });
+                }}
               />
             </div>
 

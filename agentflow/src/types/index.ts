@@ -22,6 +22,7 @@ export interface ChatNodeData {
   color: string
   icon: string
   messages: { sender: 'user' | 'agent'; text: string }[]
+  inputValue?: string // <-- Add this line
 }
 
 export interface PromptTemplateNodeData {
@@ -42,6 +43,8 @@ export interface CanvasNode {
   data: AgentNodeData | ChatNodeData | PromptTemplateNodeData
   inputs: { id: string; label: string; type?: string }[]
   outputs: { id: string; label: string; type?: string }[]
+  output?: NodeOutput // Add output property for workflow results
+  context?: Record<string, unknown> // Add context property for workflow results
 }
 
 export interface Connection {
