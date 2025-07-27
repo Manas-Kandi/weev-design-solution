@@ -79,61 +79,64 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
   };
 
   return (
-    <div className="w-full h-full bg-gray-900 rounded-lg overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-[#18181b] border border-[#23232a] overflow-hidden" style={{ borderRadius: 4, fontFamily: 'Inter, Menlo, monospace' }}>
       {/* Tabs */}
-      <div className="flex border-b border-gray-700">
-        {[
-          { id: 'personality', label: 'Personality', icon: Sparkles },
-          { id: 'behavior', label: 'Behavior', icon: Brain },
-          { id: 'knowledge', label: 'Knowledge', icon: MessageSquare },
-          { id: 'testing', label: 'Testing', icon: Gauge }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as 'personality' | 'behavior' | 'knowledge' | 'testing')}
-            className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 transition-colors ${
-              activeTab === tab.id
-                ? 'bg-gray-800 text-white border-b-2 border-blue-500'
-                : 'text-gray-400 hover:bg-gray-800'
-            }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            <span className="text-sm font-medium">{tab.label}</span>
-          </button>
-        ))}
+      <div className="flex-shrink-0 border-b border-[#23232a]">
+        <div className="flex border-b border-[#23232a]">
+          {[
+            { id: 'personality', label: 'Personality', icon: Sparkles },
+            { id: 'behavior', label: 'Behavior', icon: Brain },
+            { id: 'knowledge', label: 'Knowledge', icon: MessageSquare },
+            { id: 'testing', label: 'Testing', icon: Gauge }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as 'personality' | 'behavior' | 'knowledge' | 'testing')}
+              className={`flex-1 px-3 py-2 flex items-center justify-center gap-2 transition-colors text-xs font-mono ${
+                activeTab === tab.id
+                  ? 'bg-[#23232a] text-white border-b-2 border-blue-500'
+                  : 'text-gray-400 hover:bg-[#23232a]'
+              }`}
+              style={{ borderRadius: 4 }}
+            >
+              <tab.icon className="w-4 h-4" />
+              <span className="font-medium">{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {/* Personality Tab */}
         {activeTab === 'personality' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Agent Personality</h3>
-              <p className="text-sm text-gray-400 mb-6">
+              <h3 className="text-base font-semibold text-white mb-2">Agent Personality</h3>
+              <p className="text-xs text-gray-400 mb-2">
                 Adjust personality traits to define how your agent communicates
               </p>
             </div>
 
             {/* Personality Traits */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               {personalityTraits.map(trait => {
                 const Icon = trait.icon;
                 return (
-                  <div key={trait.id} className="bg-gray-800 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
+                  <div key={trait.id} className="bg-[#23232a] border border-[#23232a] p-3" style={{ borderRadius: 4 }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
                         <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: `${trait.color}20` }}
+                          className="w-8 h-8 flex items-center justify-center"
+                          style={{ backgroundColor: `${trait.color}20`, borderRadius: 4 }}
                         >
-                          <Icon className="w-5 h-5" style={{ color: trait.color }} />
+                          <Icon className="w-4 h-4" style={{ color: trait.color }} />
                         </div>
                         <div>
-                          <h4 className="font-medium text-white">{trait.name}</h4>
+                          <h4 className="font-medium text-white text-xs">{trait.name}</h4>
                           <p className="text-xs text-gray-400">{trait.description}</p>
                         </div>
                       </div>
-                      <span className="text-lg font-semibold text-white">{trait.value}%</span>
+                      <span className="text-xs font-semibold text-white">{trait.value}%</span>
                     </div>
                     <div className="relative">
                       <input
@@ -142,9 +145,10 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
                         max="100"
                         value={trait.value}
                         onChange={(e) => updateTrait(trait.id, parseInt(e.target.value))}
-                        className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                        className="w-full h-2 bg-[#23232a] appearance-none cursor-pointer"
                         style={{
-                          background: `linear-gradient(to right, ${trait.color} 0%, ${trait.color} ${trait.value}%, #374151 ${trait.value}%, #374151 100%)`
+                          borderRadius: 4,
+                          background: `linear-gradient(to right, ${trait.color} 0%, ${trait.color} ${trait.value}%, #23232a ${trait.value}%, #23232a 100%)`
                         }}
                       />
                     </div>
@@ -154,9 +158,9 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
             </div>
 
             {/* Generated Prompt Preview */}
-            <div className="bg-gray-800 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-2">Generated Personality Prompt</h4>
-              <p className="text-sm text-gray-300 font-mono bg-gray-900 p-3 rounded">
+            <div className="bg-[#23232a] border border-[#23232a] p-3" style={{ borderRadius: 4 }}>
+              <h4 className="font-medium text-white mb-1 text-xs">Generated Personality Prompt</h4>
+              <p className="text-xs text-gray-300 font-mono bg-[#18181b] p-2" style={{ borderRadius: 4 }}>
                 {generatePersonalityPrompt()}
               </p>
             </div>

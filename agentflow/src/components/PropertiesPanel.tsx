@@ -56,7 +56,7 @@ export default function PropertiesPanel({
           </button>
         </div>
         
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 h-full overflow-hidden flex flex-col">
           <EnhancedAgentConfig
             node={{ data: selectedNode.data as import('@/types').AgentNodeData }}
             onUpdate={(data) => onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } })}

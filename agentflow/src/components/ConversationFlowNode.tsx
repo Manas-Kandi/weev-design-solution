@@ -147,40 +147,53 @@ export default function ConversationFlowNode({
     }));
   };
 
+  // UI/UX ENHANCEMENTS FOR HYPER-MINIMAL DARK THEME
+  // - Use less rounded corners (borderRadius: 4px)
+  // - Sleek, modern, VS Code-inspired
+  // - Consistent dark colors, subtle borders, minimal shadows
+  // - Remove excessive padding, use tight spacing
+  // - Use subtle hover/focus effects
+  // - Use monospace font for message bubbles for a professional feel
+
   return (
     <div
-      className={`absolute bg-gray-900 border-2 rounded-lg overflow-hidden transition-all ${
-        isSelected ? 'ring-2 ring-blue-400 shadow-2xl' : 'shadow-lg'
+      className={`absolute bg-[#18181b] border border-[#23232a] overflow-hidden transition-all ${
+        isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'shadow-sm'
       }`}
       style={{
         left: node.position.x,
         top: node.position.y,
         width: 400,
         minHeight: 300,
-        borderColor: isSelected ? '#3b82f6' : '#374151',
-        zIndex: isSelected ? 10 : 5
+        borderRadius: 4,
+        borderColor: isSelected ? '#2563eb' : '#23232a',
+        zIndex: isSelected ? 10 : 5,
+        fontFamily: 'Inter, Menlo, monospace',
+        boxShadow: isSelected ? '0 0 0 2px #2563eb33' : '0 2px 8px #000a',
       }}
       onMouseDown={(e) => onNodeMouseDown(e, node.id)}
       onClick={(e) => onNodeClick(e, node.id)}
     >
       {/* Header */}
-      <div className="bg-gray-800 px-4 py-3 flex items-center justify-between border-b border-gray-700">
+      <div className="bg-[#23232a] px-3 py-2 flex items-center justify-between border-b border-[#23232a]">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-blue-400" />
-          <span className="font-medium text-white">Conversation Flow</span>
+          <MessageSquare className="w-5 h-5 text-blue-500" />
+          <span className="font-medium text-white text-sm tracking-tight">Conversation Flow</span>
         </div>
         <div className="flex gap-1">
           <button
             onClick={(e) => { e.stopPropagation(); addMessage('user'); }}
-            className="p-1.5 hover:bg-gray-700 rounded transition-colors"
+            className="p-1 hover:bg-[#23232a] rounded transition-colors"
             title="Add user message"
+            style={{ borderRadius: 4 }}
           >
             <User className="w-4 h-4 text-gray-400" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); addMessage('agent'); }}
-            className="p-1.5 hover:bg-gray-700 rounded transition-colors"
+            className="p-1 hover:bg-[#23232a] rounded transition-colors"
             title="Add agent response"
+            style={{ borderRadius: 4 }}
           >
             <Bot className="w-4 h-4 text-gray-400" />
           </button>
@@ -188,27 +201,28 @@ export default function ConversationFlowNode({
       </div>
 
       {/* Messages */}
-      <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
+      <div className="p-3 space-y-2 max-h-[500px] overflow-y-auto">
         {messages.map((message, index) => (
           <div key={message.id} className="relative group">
             {/* Connection Line */}
             {index > 0 && (
-              <div className="absolute -top-3 left-6 w-0.5 h-3 bg-gray-600" />
+              <div className="absolute -top-2 left-6 w-0.5 h-2 bg-[#23232a]" />
             )}
 
             {/* Message Bubble */}
-            <div className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-end'}`}>
+            <div className={`flex ${message.type === 'user' ? 'justify-start' : 'justify-end'}`}> 
               <div
-                className={`relative max-w-[80%] rounded-lg px-4 py-2 ${
+                className={`relative max-w-[80%] px-3 py-1 text-xs font-mono tracking-tight ${
                   message.type === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-100'
+                    ? 'bg-blue-700 text-white'
+                    : 'bg-[#23232a] text-gray-200'
                 }`}
+                style={{ borderRadius: 4, boxShadow: 'none' }}
               >
                 {/* Message Icon */}
-                <div className={`absolute -left-3 top-2 w-6 h-6 rounded-full flex items-center justify-center ${
-                  message.type === 'user' ? 'bg-blue-500' : 'bg-gray-600'
-                }`}>
+                <div className={`absolute -left-3 top-1 w-6 h-6 flex items-center justify-center ${
+                  message.type === 'user' ? 'bg-blue-600' : 'bg-[#23232a]'
+                }`} style={{ borderRadius: 4 }}>
                   {message.type === 'user' ? (
                     <User className="w-3 h-3 text-white" />
                   ) : (
@@ -227,12 +241,13 @@ export default function ConversationFlowNode({
                       if (e.key === 'Enter') updateMessage(message.id, editText);
                       if (e.key === 'Escape') setEditingMessage(null);
                     }}
-                    className="bg-transparent border-b border-gray-400 outline-none w-full"
+                    className="bg-transparent border-b border-gray-500 outline-none w-full text-xs font-mono"
                     autoFocus
                     onClick={(e) => e.stopPropagation()}
+                    style={{ borderRadius: 4 }}
                   />
                 ) : (
-                  <div className="text-sm">{message.text}</div>
+                  <div className="text-xs font-mono">{message.text}</div>
                 )}
 
                 {/* Message Actions */}
@@ -243,7 +258,8 @@ export default function ConversationFlowNode({
                       setEditingMessage(message.id);
                       setEditText(message.text);
                     }}
-                    className="p-1 bg-gray-800 rounded hover:bg-gray-700 transition-colors"
+                    className="p-1 bg-[#23232a] rounded hover:bg-[#18181b] transition-colors"
+                    style={{ borderRadius: 4 }}
                   >
                     <Edit2 className="w-3 h-3 text-gray-400" />
                   </button>
@@ -252,7 +268,8 @@ export default function ConversationFlowNode({
                       e.stopPropagation();
                       deleteMessage(message.id);
                     }}
-                    className="p-1 bg-gray-800 rounded hover:bg-red-600 transition-colors"
+                    className="p-1 bg-[#23232a] rounded hover:bg-red-700 transition-colors"
+                    style={{ borderRadius: 4 }}
                   >
                     <Trash2 className="w-3 h-3 text-gray-400" />
                   </button>
@@ -267,8 +284,8 @@ export default function ConversationFlowNode({
                   <div key={branch.id} className="flex items-center gap-2 group/branch">
                     <GitBranch className="w-4 h-4 text-gray-500" />
                     <div
-                      className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-md border border-gray-600 hover:border-gray-500 transition-colors"
-                      style={{ borderLeftColor: branch.color, borderLeftWidth: 3 }}
+                      className="flex-1 flex items-center gap-2 px-2 py-1 rounded border border-[#23232a] hover:border-blue-500 transition-colors"
+                      style={{ borderLeftColor: branch.color, borderLeftWidth: 3, borderRadius: 4 }}
                     >
                       {editingMessage === `branch-${branch.id}` ? (
                         <input
@@ -286,14 +303,14 @@ export default function ConversationFlowNode({
                             }
                             if (e.key === 'Escape') setEditingMessage(null);
                           }}
-                          className="bg-transparent outline-none text-sm text-gray-300 flex-1"
+                          className="bg-transparent outline-none text-xs font-mono flex-1"
                           autoFocus
                           onClick={(e) => e.stopPropagation()}
+                          style={{ borderRadius: 4 }}
                         />
                       ) : (
-                        <span className="text-sm text-gray-300 flex-1">{branch.label}</span>
+                        <span className="text-xs font-mono flex-1">{branch.label}</span>
                       )}
-                      
                       {/* Branch Actions */}
                       <div className="opacity-0 group-hover/branch:opacity-100 transition-opacity flex gap-1">
                         <button
@@ -302,7 +319,8 @@ export default function ConversationFlowNode({
                             setEditingMessage(`branch-${branch.id}`);
                             setEditText(branch.label);
                           }}
-                          className="p-0.5 hover:bg-gray-700 rounded"
+                          className="p-0.5 hover:bg-[#23232a] rounded"
+                          style={{ borderRadius: 4 }}
                         >
                           <Edit2 className="w-3 h-3 text-gray-400" />
                         </button>
@@ -311,20 +329,21 @@ export default function ConversationFlowNode({
                             e.stopPropagation();
                             deleteBranch(message.id, branch.id);
                           }}
-                          className="p-0.5 hover:bg-red-600 rounded"
+                          className="p-0.5 hover:bg-red-700 rounded"
+                          style={{ borderRadius: 4 }}
                         >
                           <Trash2 className="w-3 h-3 text-gray-400" />
                         </button>
                       </div>
-
                       {/* Output Port */}
                       <div
-                        className="absolute -right-3 w-3 h-3 rounded-full border-2 cursor-pointer hover:scale-125 transition-transform"
+                        className="absolute -right-3 w-3 h-3 rounded border-2 cursor-pointer hover:scale-125 transition-transform"
                         style={{
                           backgroundColor: branch.color,
                           borderColor: branch.color,
                           top: '50%',
-                          transform: 'translateY(-50%)'
+                          transform: 'translateY(-50%)',
+                          borderRadius: 4
                         }}
                         onMouseDown={(e) => {
                           e.stopPropagation();
@@ -335,14 +354,14 @@ export default function ConversationFlowNode({
                     </div>
                   </div>
                 ))}
-                
                 {/* Add Branch Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     addBranch(message.id);
                   }}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-gray-300 hover:bg-gray-800 rounded transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-gray-300 hover:bg-[#23232a] rounded transition-colors"
+                  style={{ borderRadius: 4 }}
                 >
                   <Plus className="w-3 h-3" />
                   Add branch
@@ -355,10 +374,11 @@ export default function ConversationFlowNode({
 
       {/* Default Output Port */}
       <div
-        className="absolute -right-3 top-1/2 w-3 h-3 rounded-full border-2 cursor-pointer hover:scale-125 transition-transform bg-gray-600"
+        className="absolute -right-3 top-1/2 w-3 h-3 rounded border-2 cursor-pointer hover:scale-125 transition-transform bg-[#23232a]"
         style={{
-          borderColor: '#6b7280',
-          transform: 'translateY(-50%)'
+          borderColor: '#23232a',
+          transform: 'translateY(-50%)',
+          borderRadius: 4
         }}
         onMouseDown={(e) => {
           e.stopPropagation();
