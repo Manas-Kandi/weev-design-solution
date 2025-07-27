@@ -158,112 +158,65 @@ export default function PropertiesPanel({
 
   // Default properties panel for other node types
   return (
-    <div
-      className="w-96 h-full border-l flex flex-col"
-      style={{
-        backgroundColor: theme.sidebar,
-        borderColor: theme.border,
-      }}
+    <aside
+      className="bg-[#18181b] border border-[#23232a] rounded font-mono"
+      style={{ minWidth: 320, maxWidth: 400, height: '100%', boxShadow: 'none', display: 'flex', flexDirection: 'column' }}
     >
-      <div
-        className="h-12 border-b flex items-center justify-between px-4"
-        style={{ borderColor: theme.border }}
-      >
-        <h3 className="font-medium" style={{ color: theme.text }}>
-          Properties
-        </h3>
+      <div className="h-12 border-b flex items-center justify-between px-4" style={{ borderColor: '#23232a' }}>
+        <h3 className="text-white font-semibold text-sm">Properties</h3>
         <button
-          className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/10 transition-colors"
-          style={{ color: theme.textSecondary }}
+          className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-600/10 transition-colors"
+          style={{ color: '#60a5fa' }}
         >
           <Minimize2 className="w-4 h-4" />
         </button>
       </div>
-
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div>
-          <label className="text-sm" style={{ color: theme.textSecondary }}>
-            Node ID
-          </label>
-          <Input value={selectedNode.id} disabled className="mt-1" />
+          <label className="text-xs text-gray-400 font-mono">Node ID</label>
+          <Input value={selectedNode.id} disabled className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs" />
         </div>
-
         <div>
-          <label className="text-sm" style={{ color: theme.textSecondary }}>
-            Title
-          </label>
+          <label className="text-xs text-gray-400 font-mono">Title</label>
           <Input
             value={selectedNode.data.title || ''}
-            onChange={(e) =>
-              onChange({
-                ...selectedNode,
-                data: { ...selectedNode.data, title: e.target.value },
-              })
-            }
-            className="mt-1"
+            onChange={(e) => onChange({ ...selectedNode, data: { ...selectedNode.data, title: e.target.value } })}
+            className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
           />
         </div>
-
         <div>
-          <label className="text-sm" style={{ color: theme.textSecondary }}>
-            Description
-          </label>
+          <label className="text-xs text-gray-400 font-mono">Description</label>
           <textarea
             value={selectedNode.data.description || ''}
-            onChange={(e) =>
-              onChange({
-                ...selectedNode,
-                data: { ...selectedNode.data, description: e.target.value },
-              })
-            }
-            className="mt-1 w-full h-20 px-3 py-2 rounded border bg-transparent resize-none"
-            style={{
-              borderColor: theme.border,
-              color: theme.text,
-            }}
+            onChange={(e) => onChange({ ...selectedNode, data: { ...selectedNode.data, description: e.target.value } })}
+            className="mt-1 w-full h-16 px-2 py-1 rounded border bg-[#23232a] border-[#23232a] font-mono text-white text-xs resize-none"
           />
         </div>
-
         <Separator />
-
         <div>
-          <h4 className="text-sm font-medium mb-2" style={{ color: theme.text }}>
-            Position
-          </h4>
+          <h4 className="text-xs font-semibold text-white mb-2">Position</h4>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs" style={{ color: theme.textSecondary }}>
-                X
-              </label>
+              <label className="text-xs text-gray-400 font-mono">X</label>
               <Input
                 type="number"
                 value={Math.round(selectedNode.position.x)}
-                onChange={(e) =>
-                  onChange({
-                    ...selectedNode,
-                    position: { ...selectedNode.position, x: parseInt(e.target.value) || 0 },
-                  })
-                }
+                onChange={(e) => onChange({ ...selectedNode, position: { ...selectedNode.position, x: parseInt(e.target.value) || 0 } })}
+                className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
               />
             </div>
             <div>
-              <label className="text-xs" style={{ color: theme.textSecondary }}>
-                Y
-              </label>
+              <label className="text-xs text-gray-400 font-mono">Y</label>
               <Input
                 type="number"
                 value={Math.round(selectedNode.position.y)}
-                onChange={(e) =>
-                  onChange({
-                    ...selectedNode,
-                    position: { ...selectedNode.position, y: parseInt(e.target.value) || 0 },
-                  })
-                }
+                onChange={(e) => onChange({ ...selectedNode, position: { ...selectedNode.position, y: parseInt(e.target.value) || 0 } })}
+                className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
               />
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
