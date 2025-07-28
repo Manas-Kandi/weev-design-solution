@@ -540,6 +540,7 @@ export default function AgentFlowPage() {
         <DesignerCanvas
           nodes={nodes}
           connections={connections}
+          selectedNode={selectedNode}
           onNodeSelect={setSelectedNode}
           onNodeUpdate={(updatedNode) => {
             setNodes(

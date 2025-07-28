@@ -4,7 +4,13 @@ import { FlowEngine } from "./flow/FlowEngine";
 export async function runWorkflow(
   nodes: CanvasNode[],
   connections: Connection[],
-  startNodeId?: string | null
+  startNodeId?: string | null,
+  emitLog?: (
+    nodeId: string,
+    log: string,
+    output?: unknown,
+    error?: string
+  ) => void
 ) {
   const engine = new FlowEngine(nodes, connections);
 
@@ -20,5 +26,5 @@ export async function runWorkflow(
     }
   }
 
-  return await engine.execute();
+  return await engine.execute(emitLog);
 }

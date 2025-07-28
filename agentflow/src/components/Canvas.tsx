@@ -14,6 +14,9 @@ interface Props {
   onCreateConnection: (connectionData: Connection) => Promise<void>;
   selectedNodeId: string | null;
   onNodeUpdate: (node: CanvasNode) => void;
+  startNodeId: string | null; // NEW: controlled start node
+  onStartNodeChange: (id: string | null) => void; // NEW: propagate up
+  onNodeDelete?: (nodeId: string) => void; // <-- Add this line
 }
 
 export default function CanvasEngine(props: Props) {
@@ -26,6 +29,8 @@ export default function CanvasEngine(props: Props) {
     onCreateConnection,
     selectedNodeId,
     onNodeUpdate,
+    startNodeId,
+    onStartNodeChange,
   } = props;
 
   // Canvas state
@@ -60,7 +65,7 @@ export default function CanvasEngine(props: Props) {
     y: number;
     nodeId: string;
   } | null>(null);
-  const [startNodeId, setStartNodeId] = useState<string | null>(null);
+  const [startNodeIdLocal, setStartNodeIdLocal] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -391,10 +396,16 @@ export default function CanvasEngine(props: Props) {
   // Context menu actions
   const handleContextMenuAction = (action: string) => {
     if (!contextMenu) return;
-    if (action === "delete") {
-      setSelectedNodeIds((ids) =>
-        ids.filter((id) => id !== contextMenu.nodeId)
-      );
+    if (action === "set-start") {
+      onStartNodeChange(contextMenu.nodeId);
+    } else if (action === "remove-start") {
+      if (startNodeId === contextMenu.nodeId) {
+        onStartNodeChange(null);
+      }
+    } else if (action === "delete-node") {
+      if (props.onNodeDelete) {
+        props.onNodeDelete(contextMenu.nodeId);
+      }
     }
     setContextMenu(null);
   };
@@ -523,23 +534,21 @@ export default function CanvasEngine(props: Props) {
         >
           <button
             className="w-full px-4 py-2 text-left hover:bg-gray-700 text-sm text-white"
-            onClick={() => {
-              setStartNodeId(contextMenu.nodeId);
-              setContextMenu(null);
-            }}
+            onClick={() => handleContextMenuAction("set-start")}
           >
             Set as Start Node
           </button>
           <button
             className="w-full px-4 py-2 text-left hover:bg-gray-700 text-sm text-white"
-            onClick={() => {
-              if (startNodeId === contextMenu.nodeId) {
-                setStartNodeId(null);
-              }
-              setContextMenu(null);
-            }}
+            onClick={() => handleContextMenuAction("remove-start")}
           >
             Remove Start Node
+          </button>
+          <button
+            className="w-full px-4 py-2 text-left hover:bg-red-600 text-sm text-white"
+            onClick={() => handleContextMenuAction("delete-node")}
+          >
+            Delete Node
           </button>
         </div>
       )}
@@ -584,6 +593,7 @@ export default function CanvasEngine(props: Props) {
         {nodes.map((node) => {
           const IconComponent = getNodeIcon(node);
           const isSelected = selectedNodeIds.includes(node.id);
+          const isStart = node.id === startNodeId;
 
           // Chat Interface Node Rendering
           if (node.type === "ui" && node.subtype === "chat") {
@@ -609,49 +619,58 @@ export default function CanvasEngine(props: Props) {
               key={node.id}
               className={`absolute cursor-pointer pointer-events-auto ${
                 isSelected ? "ring-2 ring-blue-400" : ""
-              }`}
+              } ${isStart ? "border-2 border-green-500 shadow-lg" : ""}`}
               style={{
                 left: node.position.x,
                 top: node.position.y,
                 width: node.size.width,
                 height: node.size.height,
                 backgroundColor: theme.bgElevate,
-                border: `2px solid ${isSelected ? theme.accent : theme.border}`,
+                border: `2px solid ${
+                  isStart ? "#30d158" : isSelected ? theme.accent : theme.border
+                }`,
                 borderRadius: "8px",
                 boxShadow: isSelected
                   ? "0 0 0 2px rgba(59, 130, 246, 0.3)"
+                  : isStart
+                  ? "0 0 0 3px #30d15855"
                   : "0 1px 3px rgba(0, 0, 0, 0.1)",
-                zIndex: isSelected ? 10 : 1,
+                zIndex: isSelected ? 10 : isStart ? 9 : 1,
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
               onClick={(e) => handleNodeClick(e, node.id)}
               onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
             >
               {/* Start Node Indicator */}
-              {node.id === startNodeId && (
-                <svg
+              {isStart && (
+                <div
                   style={{
                     position: "absolute",
-                    left: -30,
-                    top: node.size.height / 2 - 8,
+                    left: -28,
+                    top: node.size.height / 2 - 12,
+                    width: 24,
+                    height: 24,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 20,
                   }}
-                  width="24"
-                  height="24"
                 >
-                  <circle
-                    cx={10}
-                    cy={8}
-                    r="8"
-                    fill="#30d158"
-                    stroke="white"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d="M 6 0 L 0 -3 L 0 3 Z"
-                    transform={`translate(13,8)`}
-                    fill="white"
-                  />
-                </svg>
+                  <svg width="24" height="24">
+                    <circle
+                      cx={12}
+                      cy={12}
+                      r={10}
+                      fill="#30d158"
+                      stroke="white"
+                      strokeWidth="2"
+                    />
+                    <polygon
+                      points="10,8 16,12 10,16"
+                      fill="white"
+                    />
+                  </svg>
+                </div>
               )}
               {/* Node Content */}
               <div className="w-full h-full p-3 flex flex-col justify-between">

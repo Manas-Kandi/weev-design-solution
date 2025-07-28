@@ -3,6 +3,8 @@ import CanvasEngine from "@/components/Canvas";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
 import ConversationTester from "@/components/ConversationTester";
+import PropertiesPanel from "./PropertiesPanel";
+import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
 
 interface DesignerCanvasProps {
   nodes: CanvasNode[];
@@ -17,6 +19,7 @@ interface DesignerCanvasProps {
   setShowTester: (show: boolean) => void;
   setTestFlowResult: (result: Record<string, unknown> | null) => void;
   setNodes?: (nodes: CanvasNode[]) => void; // Added optional setNodes prop
+  selectedNode: CanvasNode | null; // Add selectedNode as a prop
 }
 
 export default function DesignerCanvas(props: DesignerCanvasProps) {
@@ -32,41 +35,125 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     testFlowResult,
     setShowTester,
     setTestFlowResult,
+    setNodes,
+    selectedNode,
   } = props;
 
-  const handleNodeDrag = (id: string, pos: { x: number; y: number }) => {
-    const node = nodes.find((n) => n.id === id);
-    if (!node) return;
+  const [startNodeId, setStartNodeId] = React.useState<string | null>(null);
+  const [testLogs, setTestLogs] = React.useState<
+    Array<{
+      nodeId: string;
+      title: string;
+      type: string;
+      log: string;
+      output?: unknown;
+      error?: string;
+    }>
+  >([]);
+  const [isTestingState, setIsTestingState] = React.useState(false);
 
-    onNodeUpdate({ ...node, position: { x: pos.x, y: pos.y } });
+  // --- Node Deletion: Clear KnowledgeBaseNode cache ---
+  const handleNodeDelete = (nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (node && node.type === "logic" && node.subtype === "knowledge-base") {
+      KnowledgeBaseNode.clearCache(nodeId);
+    }
+    // Remove node and its connections
+    onConnectionsChange(
+      connections.filter(
+        (c) => c.sourceNode !== nodeId && c.targetNode !== nodeId
+      )
+    );
+    if (props.setNodes) props.setNodes(nodes.filter((n) => n.id !== nodeId));
   };
 
-  // Add handleTestFlow for running the workflow with startNodeId
+  // --- Real-time Test Flow Execution ---
   const handleTestFlow = async () => {
-    // Optionally, you can add a setTesting state if you want to show a loading spinner
     if (typeof window === "undefined") return;
     if (typeof document === "undefined") return;
     if (!nodes || !connections) return;
-    // Get startNodeId from Canvas component if available
-    const canvasElement = document.querySelector("[data-start-node-id]");
-    const startNodeId =
-      canvasElement?.getAttribute("data-start-node-id") || null;
+    setTestLogs([]);
+    setTestFlowResult(null);
+    setIsTestingState(true);
     try {
-      setTestFlowResult(null);
-      // Optionally set loading state here
-      const result = await runWorkflow(nodes, connections, startNodeId);
+      const result = await runWorkflow(
+        nodes,
+        connections,
+        startNodeId,
+        (
+          nodeId: string,
+          log: string,
+          output?: unknown,
+          error?: string
+        ) => {
+          const node = nodes.find((n) => n.id === nodeId);
+          setTestLogs((prev) => [
+            ...prev,
+            {
+              nodeId,
+              title: node?.data.title || nodeId,
+              type: node?.type || "",
+              log,
+              output,
+              error,
+            },
+          ]);
+        }
+      );
       setTestFlowResult(result);
     } catch (err) {
       setTestFlowResult({
         error: err instanceof Error ? err.message : "Unknown error",
       });
     } finally {
-      // Optionally unset loading state here
+      setIsTestingState(false);
     }
+  };
+
+  // Provide a default handleNodeDrag implementation
+  const handleNodeDrag = (id: string, pos: { x: number; y: number }) => {
+    const node = nodes.find((n) => n.id === id);
+    if (!node) return;
+    onNodeUpdate({ ...node, position: { x: pos.x, y: pos.y } });
   };
 
   return (
     <div className="flex-1 relative overflow-hidden">
+      {/* Real-time Test Flow Panel */}
+      {testLogs.length > 0 && (
+        <div className="absolute top-16 right-4 w-96 max-h-[60vh] overflow-auto bg-[#1e1e1e] text-vscode-text p-4 rounded shadow z-20 font-mono text-xs">
+          <div className="font-bold text-vscode-title mb-2">Test Flow Log</div>
+          {testLogs.map((log, i) => (
+            <div
+              key={i}
+              className={`mb-3 pb-2 border-b border-vscode-border ${
+                log.error ? "text-red-400" : ""
+              }`}
+            >
+              <div className="font-semibold">
+                {log.title}{" "}
+                <span className="text-xs text-gray-400">({log.type})</span>
+              </div>
+              <div className="whitespace-pre-wrap">{log.log}</div>
+              {log.output !== undefined && (
+                <div className="mt-1 text-green-400">
+                  Output:{" "}
+                  {typeof log.output === "string" || typeof log.output === "number"
+                    ? log.output
+                    : typeof log.output === "object"
+                    ? <span>{JSON.stringify(log.output)}</span>
+                    : String(log.output)}
+                </div>
+              )}
+              {log.error && (
+                <div className="mt-1 text-red-400">
+                  Error: {log.error}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
       {/* Conversation Tester Modal */}
       {showTester && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
@@ -205,7 +292,15 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         onConnectionsChange={onConnectionsChange}
         onCreateConnection={onCreateConnection}
         onNodeDrag={handleNodeDrag}
-        selectedNodeId={null}
+        selectedNodeId={selectedNode ? selectedNode.id : null}
+        startNodeId={startNodeId}
+        onStartNodeChange={setStartNodeId}
+        onNodeDelete={handleNodeDelete}
+      />
+      <PropertiesPanel
+        selectedNode={selectedNode}
+        onChange={onNodeUpdate}
+        isTesting={isTestingState}
       />
       {/* Pass the selected node id here if available */}
     </div>

@@ -64,7 +64,18 @@ export class FlowEngine {
   }
 
   // --- NEW: Dynamic, output-aware, input-ready execution ---
-  async execute(): Promise<Record<string, NodeOutput>> {
+  /**
+   * Executes the workflow from the start node(s), supporting real-time log emission.
+   * @param emitLog Optional callback: (nodeId, log, output, error) => void
+   */
+  async execute(
+    emitLog?: (
+      nodeId: string,
+      log: string,
+      output?: NodeOutput,
+      error?: string
+    ) => void
+  ): Promise<Record<string, NodeOutput>> {
     // Map: nodeId -> set of input nodeIds that have completed
     const inputReady: Record<string, Set<string>> = {};
     // Map: nodeId -> number of required inputs
@@ -207,15 +218,27 @@ export class FlowEngine {
 
       // Execute node
       let output: NodeOutput;
+      let errorMsg: string | undefined = undefined;
       try {
         output = await executor.execute(context);
       } catch (error) {
         output = {
           error: error instanceof Error ? error.message : "Unknown error",
         };
+        errorMsg = output.error as string;
       }
       this.nodeOutputs[node.id] = output;
       executed.add(node.id);
+
+      // Emit log for real-time panel
+      if (emitLog) {
+        emitLog(
+          node.id,
+          `[${node.type}${node.subtype ? ":" + node.subtype : ""}] Executed node: ${node.data?.title || node.id}`,
+          output,
+          errorMsg
+        );
+      }
 
       // Find outgoing connections
       const outgoing = this.connections.filter((c) => c.sourceNode === node.id);

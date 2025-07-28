@@ -1,1268 +1,405 @@
 "use client";
 
 import React from "react";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { theme } from "@/data/theme";
-import { CanvasNode } from "@/types";
-import { Minimize2 } from "lucide-react";
-import EnhancedAgentConfig from "./EnhancedAgentConfig";
-import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
-import { ComplexIfElseNodeData as ImportedComplexIfElseNodeData } from "@/types";
-
-// --- Enhanced If/Else Interfaces ---
-interface ConditionGroup {
-  id: string;
-  operator: "AND" | "OR";
-  conditions: Condition[];
-}
-
-interface DecisionRule {
-  condition: string;
-  outputPath: string;
-}
-interface Condition {
-  id: string;
-  field: string;
-  operator:
-    | "equals"
-    | "not_equals"
-    | "contains"
-    | "not_contains"
-    | "greater_than"
-    | "less_than"
-    | "greater_equal"
-    | "less_equal"
-    | "exists"
-    | "not_exists"
-    | "matches_regex"
-    | "in_array"
-    | "llm_evaluate";
-  value: string | number | boolean | string[];
-  dataType: "string" | "number" | "boolean" | "array" | "object" | "auto";
-  llmPrompt?: string;
-}
+import {
+  AgentNodeData,
+  ToolAgentNodeData,
+  PromptTemplateNodeData,
+  CanvasNode,
+} from "@/types";
 
 interface PropertiesPanelProps {
   selectedNode: CanvasNode | null;
   onChange: (updatedNode: CanvasNode) => void;
+  isTesting?: boolean;
 }
 
-// --- Main Component ---
-export default function PropertiesPanel({
-  selectedNode,
-  onChange,
-}: PropertiesPanelProps) {
-  // --- Local state for If/Else logic ---
-  const [localData, setLocalData] =
-    React.useState<ImportedComplexIfElseNodeData | null>(null);
-  const [testResult, setTestResult] = React.useState<string>("");
+const TOOL_PRESETS = [
+  { label: "Web Search", value: "web-search" },
+  { label: "Calculator", value: "calculator" },
+  { label: "Code Executor", value: "code-executor" },
+];
 
-  React.useEffect(() => {
-    if (
-      selectedNode &&
-      selectedNode.type === "logic" &&
-      selectedNode.subtype === "if-else"
-    ) {
-      setLocalData(
-        selectedNode.data as unknown as ImportedComplexIfElseNodeData
-      );
-    }
-  }, [selectedNode]);
+const labelClass =
+  "block text-xs font-semibold text-vscode-text mb-1 tracking-wide";
+const inputClass =
+  "w-full px-2 py-1 rounded bg-vscode-input border border-vscode-border text-vscode-text focus:outline-none focus:ring-2 focus:ring-vscode-focus transition disabled:opacity-60";
+const sectionClass =
+  "mb-6 pb-2 border-b border-vscode-border last:border-b-0 last:mb-0 last:pb-0";
+const panelClass =
+  "bg-[#23272e] p-6 rounded-xl shadow-lg text-vscode-text min-w-[320px] max-w-[400px] mx-auto mt-4 overflow-y-auto max-h-[90vh] border border-[#333]";
+const headerClass =
+  "text-lg font-bold mb-4 text-vscode-title tracking-wide";
+const noNodeClass =
+  "flex flex-col items-center justify-center h-full text-vscode-textSecondary text-base p-8";
 
-  // --- New If/Else Properties Panel ---
-  const renderIfElseProperties = () => {
-    if (!localData) return null;
-    const nodeData = localData;
-    const conditionGroups = nodeData.conditionGroups || [];
-
-    // Use the onChange prop to update node data
-    const handleFieldChange = (
-      field: keyof ImportedComplexIfElseNodeData,
-      value:
-        | string
-        | number
-        | boolean
-        | ConditionGroup[]
-        | { label: string; description: string }
-        | Record<string, unknown>
-        | undefined
-    ) => {
-      if (!selectedNode) return;
-      onChange({
-        ...selectedNode,
-        id: selectedNode.id ?? "",
-        type: selectedNode.type,
-        subtype: selectedNode.subtype,
-        position: selectedNode.position,
-        size: selectedNode.size ?? { width: 320, height: 180 },
-        data: {
-          ...nodeData,
-          [field]: value,
-          color: nodeData.color || "#ffffff",
-          icon: nodeData.icon || "settings",
-          title: typeof nodeData.title === "string" ? nodeData.title : "",
-          description:
-            typeof nodeData.description === "string"
-              ? nodeData.description
-              : "",
-        },
-      });
-    };
-
-    // Handler functions
-    const addConditionGroup = () => {
-      const newGroup: ConditionGroup = {
-        id: `group-${Date.now()}`,
-        operator: "AND",
-        conditions: [
-          {
-            id: `condition-${Date.now()}`,
-            field: "",
-            operator: "equals",
-            value: "",
-            dataType: "auto",
-          },
-        ],
-      };
-      handleFieldChange("conditionGroups", [...conditionGroups, newGroup]);
-    };
-    const updateConditionGroup = (
-      groupId: string,
-      updates: Partial<ConditionGroup>
-    ) => {
-      const updatedGroups = conditionGroups.map((group) =>
-        group.id === groupId ? { ...group, ...updates } : group
-      );
-      handleFieldChange("conditionGroups", updatedGroups);
-    };
-    const addConditionToGroup = (groupId: string) => {
-      const updatedGroups = conditionGroups.map((group) => {
-        if (group.id === groupId) {
-          const newCondition: Condition = {
-            id: `condition-${Date.now()}`,
-            field: "",
-            operator: "equals",
-            value: "",
-            dataType: "auto",
-          };
-          return { ...group, conditions: [...group.conditions, newCondition] };
-        }
-        return group;
-      });
-      handleFieldChange("conditionGroups", updatedGroups);
-    };
-    const updateCondition = (
-      groupId: string,
-      conditionId: string,
-      updates: Partial<Condition>
-    ) => {
-      const updatedGroups = conditionGroups.map((group) => {
-        if (group.id === groupId) {
-          const updatedConditions = group.conditions.map((condition) =>
-            condition.id === conditionId
-              ? { ...condition, ...updates }
-              : condition
-          );
-          return { ...group, conditions: updatedConditions };
-        }
-        return group;
-      });
-      handleFieldChange("conditionGroups", updatedGroups);
-    };
-    const removeCondition = (groupId: string, conditionId: string) => {
-      const updatedGroups = conditionGroups.map((group) => {
-        if (group.id === groupId) {
-          return {
-            ...group,
-            conditions: group.conditions.filter((c) => c.id !== conditionId),
-          };
-        }
-        return group;
-      });
-      handleFieldChange(
-        "conditionGroups",
-        updatedGroups.filter((group) => group.conditions.length > 0)
-      );
-    };
-    const handleRemoveConditionGroup = (groupId: string) => {
-      handleFieldChange(
-        "conditionGroups",
-        conditionGroups.filter((group) => group.id !== groupId)
-      );
-    };
-    const handleAddConditionGroup = () => {
-      addConditionGroup();
-    };
-    const handleConditionOperatorChange = (
-      groupId: string,
-      conditionId: string,
-      operator: Condition["operator"]
-    ) => {
-      updateCondition(groupId, conditionId, { operator });
-    };
-    const handleConditionValueChange = (
-      groupId: string,
-      conditionId: string,
-      value: string | number | boolean | string[]
-    ) => {
-      updateCondition(groupId, conditionId, { value });
-    };
-
-    // Test the If/Else conditions and show the result
-    const testIfElseConditions = () => {
-      if (!nodeData.testData) return;
-      const { testData, conditionGroups, truePath, falsePath } = nodeData;
-      let result = "Test Results:\n";
-
-      conditionGroups.forEach((group, groupIndex) => {
-        const groupResult = group.conditions.map((condition) => {
-          const fieldValue = testData[condition.field];
-          let conditionMet = false;
-
-          // Check condition based on operator
-          switch (condition.operator) {
-            case "equals":
-              conditionMet = fieldValue == condition.value;
-              break;
-            case "not_equals":
-              conditionMet = fieldValue != condition.value;
-              break;
-            case "contains":
-              conditionMet =
-                Array.isArray(fieldValue) &&
-                fieldValue.includes(condition.value);
-              break;
-            case "not_contains":
-              conditionMet =
-                Array.isArray(fieldValue) &&
-                !fieldValue.includes(condition.value);
-              break;
-            case "greater_than":
-              conditionMet =
-                typeof fieldValue === "number" &&
-                fieldValue > Number(condition.value);
-              break;
-            case "less_than":
-              conditionMet =
-                typeof fieldValue === "number" &&
-                fieldValue < Number(condition.value);
-              break;
-            case "greater_equal":
-              conditionMet =
-                typeof fieldValue === "number" &&
-                fieldValue >= Number(condition.value);
-              break;
-            case "less_equal":
-              conditionMet =
-                typeof fieldValue === "number" &&
-                fieldValue <= Number(condition.value);
-              break;
-            case "exists":
-              conditionMet = fieldValue !== undefined && fieldValue !== null;
-              break;
-            case "not_exists":
-              conditionMet = fieldValue === undefined || fieldValue === null;
-              break;
-            case "matches_regex":
-              conditionMet =
-                typeof fieldValue === "string" &&
-                new RegExp(String(condition.value)).test(fieldValue);
-              break;
-            case "in_array":
-              conditionMet =
-                Array.isArray(fieldValue) &&
-                fieldValue.some((v) => v == condition.value);
-              break;
-            case "llm_evaluate":
-              // For LLM evaluation, we would call the LLM API here
-              conditionMet = false; // Placeholder, set to false by default
-              break;
-            default:
-              conditionMet = false;
-          }
-
-          return conditionMet;
-        });
-
-        const groupOperator = group.operator === "AND" ? "all" : "any";
-        const groupConditionMet =
-          groupResult.length > 0 &&
-          groupResult.every((r) => r === (group.operator === "AND"));
-
-        result += `Group ${groupIndex + 1} (${groupOperator} conditions): ${
-          groupConditionMet ? "Met" : "Not Met"
-        }\n`;
-      });
-
-      // Check true/false path based on conditions
-      const allConditionsMet = conditionGroups.every((group) =>
-        group.conditions.every((condition) => {
-          const fieldValue = testData[condition.field];
-          let conditionMet = false;
-
-          // Check condition based on operator
-          switch (condition.operator) {
-            case "equals":
-              conditionMet = fieldValue == condition.value;
-              break;
-            case "not_equals":
-              conditionMet = fieldValue != condition.value;
-              break;
-            case "contains":
-              conditionMet =
-                Array.isArray(fieldValue) &&
-                fieldValue.includes(condition.value);
-              break;
-            case "not_contains":
-              conditionMet =
-                Array.isArray(fieldValue) &&
-                !fieldValue.includes(condition.value);
-              break;
-            case "greater_than":
-              conditionMet =
-                typeof fieldValue === "number" &&
-                fieldValue > Number(condition.value);
-              break;
-            case "less_than":
-              conditionMet =
-                typeof fieldValue === "number" &&
-                fieldValue < Number(condition.value);
-              break;
-            case "greater_equal":
-              conditionMet =
-                typeof fieldValue === "number" &&
-                fieldValue >= Number(condition.value);
-              break;
-            case "less_equal":
-              conditionMet =
-                typeof fieldValue === "number" &&
-                fieldValue <= Number(condition.value);
-              break;
-            case "exists":
-              conditionMet = fieldValue !== undefined && fieldValue !== null;
-              break;
-            case "not_exists":
-              conditionMet = fieldValue === undefined || fieldValue === null;
-              break;
-            case "matches_regex":
-              conditionMet =
-                typeof fieldValue === "string" &&
-                new RegExp(String(condition.value)).test(fieldValue);
-              break;
-            case "in_array":
-              conditionMet =
-                Array.isArray(fieldValue) &&
-                fieldValue.some((v) => v == condition.value);
-              break;
-            case "llm_evaluate":
-              // For LLM evaluation, we would call the LLM API here
-              conditionMet = false; // Placeholder, set to false by default
-              break;
-            default:
-              conditionMet = false;
-          }
-
-          return conditionMet;
-        })
-      );
-
-      result += `Overall: ${allConditionsMet ? "True Path" : "False Path"}\n`;
-      setTestResult(result);
-    };
-
-    return (
-      <div className="space-y-4">
-        <Separator style={{ backgroundColor: theme.border }} />
-        {/* Header */}
-        <div>
-          <span
-            className="text-xs font-semibold uppercase tracking-wide"
-            style={{ color: theme.textSecondary }}
-          >
-            If/Else Conditional Logic
-          </span>
-          <p className="text-xs mt-1" style={{ color: theme.textMute }}>
-            Define the conditions that determine the flow of the conversation.
-            Each group can have multiple conditions.
-          </p>
-        </div>
-
-        {/* Condition Groups */}
-        <div>
-          <h4
-            className="text-sm font-medium mb-2"
-            style={{ color: theme.text }}
-          >
-            Condition Groups
-          </h4>
-          <p className="text-xs" style={{ color: theme.textSecondary }}>
-            Define the conditions that determine the flow of the conversation.
-            Each group can have multiple conditions.
-          </p>
-        </div>
-
-        {/* Render condition groups */}
-        {conditionGroups.map((group: ConditionGroup, index: number) => (
-          <div
-            key={group.id}
-            className="p-4 rounded-lg"
-            style={{ backgroundColor: theme.bgElevate }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h5 className="text-sm font-medium" style={{ color: theme.text }}>
-                Condition Group {index + 1}
-              </h5>
-              <button
-                onClick={() => handleRemoveConditionGroup(group.id)}
-                className="text-red-500 hover:text-red-400 transition-colors"
-                title="Remove Condition Group"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Render conditions within the group */}
-            {group.conditions.map((condition: Condition) => (
-              <div
-                key={condition.id}
-                className="space-y-2 mb-3 p-2 rounded"
-                style={{ backgroundColor: theme.bg }}
-              >
-                <div className="flex items-center">
-                  <select
-                    value={condition.operator}
-                    onChange={(e) =>
-                      handleConditionOperatorChange(
-                        group.id,
-                        condition.id,
-                        e.target.value as Condition["operator"]
-                      )
-                    }
-                    className="mr-2 bg-transparent border rounded px-3 py-1 text-sm"
-                    style={{ borderColor: theme.border, color: theme.text }}
-                  >
-                    <option value="equals">Equals</option>
-                    <option value="not_equals">Does Not Equal</option>
-                    <option value="contains">Contains</option>
-                    <option value="not_contains">Does Not Contain</option>
-                    <option value="greater_than">Greater Than</option>
-                    <option value="less_than">Less Than</option>
-                    <option value="greater_equal">Greater Than or Equal</option>
-                    <option value="less_equal">Less Than or Equal</option>
-                    <option value="exists">Exists</option>
-                    <option value="not_exists">Does Not Exist</option>
-                    <option value="matches_regex">Matches Regex</option>
-                    <option value="in_array">In Array</option>
-                    <option value="llm_evaluate">LLM Evaluate</option>
-                  </select>
-
-                  <Input
-                    value={condition.value as string}
-                    onChange={(e) =>
-                      handleConditionValueChange(
-                        group.id,
-                        condition.id,
-                        e.target.value
-                      )
-                    }
-                    className="flex-1 bg-transparent border rounded px-3 py-1 text-sm"
-                    style={{ borderColor: theme.border, color: theme.text }}
-                    placeholder="Enter value..."
-                  />
-                </div>
-
-                {/* Field name input */}
-                <Input
-                  placeholder="Field name (e.g., user_message, confidence_score)"
-                  className="border-0 text-xs"
-                  style={{
-                    backgroundColor: theme.bgElevate,
-                    color: theme.text,
-                  }}
-                  value={condition.field}
-                  onChange={(e) =>
-                    updateCondition(group.id, condition.id, {
-                      field: e.target.value,
-                    })
-                  }
-                />
-
-                {/* Value input */}
-                <Input
-                  placeholder="Value to compare"
-                  className="border-0 text-xs"
-                  style={{
-                    backgroundColor: theme.bgElevate,
-                    color: theme.text,
-                  }}
-                  value={
-                    typeof condition.value === "string" ||
-                    typeof condition.value === "number"
-                      ? condition.value
-                      : String(condition.value)
-                  }
-                  onChange={(e) => {
-                    let value: string | number | boolean | string[] =
-                      e.target.value;
-                    if (condition.dataType === "number") value = Number(value);
-                    if (condition.dataType === "boolean")
-                      value = value === "true";
-                    if (condition.dataType === "array")
-                      value = (value as string)
-                        .split(",")
-                        .map((s: string) => s.trim());
-                    updateCondition(group.id, condition.id, { value });
-                  }}
-                />
-
-                {/* Remove Condition Button */}
-                <div className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeCondition(group.id, condition.id)}
-                    className="text-xs"
-                  >
-                    Remove
-                  </Button>
-                </div>
-              </div>
-            ))}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addConditionToGroup(group.id)}
-              className="w-full text-xs"
-            >
-              Add Condition to Group
-            </Button>
-          </div>
-        ))}
-
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAddConditionGroup}
-            className="text-sm"
-            style={{ color: theme.accent, borderColor: theme.accent }}
-          >
-            + Add Condition Group
-          </Button>
-        </div>
-
-        <Separator />
-
-        {/* Paths */}
-        <div>
-          <h4
-            className="text-sm font-medium mb-2"
-            style={{ color: theme.text }}
-          >
-            Paths
-          </h4>
-          <p className="text-xs" style={{ color: theme.textSecondary }}>
-            Define the actions to take when conditions are met or not met.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm" style={{ color: theme.textSecondary }}>
-              True Path Label
-            </label>
-            <Input
-              value={nodeData.truePath?.label || ""}
-              onChange={(e) =>
-                handleFieldChange("truePath", {
-                  ...nodeData.truePath,
-                  label: e.target.value,
-                })
-              }
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm" style={{ color: theme.textSecondary }}>
-              True Path Description
-            </label>
-            <textarea
-              value={nodeData.truePath?.description || ""}
-              onChange={(e) =>
-                handleFieldChange("truePath", {
-                  ...nodeData.truePath,
-                  description: e.target.value,
-                })
-              }
-              className="mt-1 w-full h-20 px-3 py-2 rounded border bg-transparent resize-none"
-              style={{
-                borderColor: theme.border,
-                color: theme.text,
-              }}
-              placeholder="Enter description for the true path..."
-            />
-          </div>
-
-          <div>
-            <label className="text-sm" style={{ color: theme.textSecondary }}>
-              False Path Label
-            </label>
-            <Input
-              value={nodeData.falsePath?.label || ""}
-              onChange={(e) =>
-                handleFieldChange("falsePath", {
-                  ...nodeData.falsePath,
-                  label: e.target.value,
-                })
-              }
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm" style={{ color: theme.textSecondary }}>
-              False Path Description
-            </label>
-            <textarea
-              value={nodeData.falsePath?.description || ""}
-              onChange={(e) =>
-                handleFieldChange("falsePath", {
-                  ...nodeData.falsePath,
-                  description: e.target.value,
-                })
-              }
-              className="mt-1 w-full h-20 px-3 py-2 rounded border bg-transparent resize-none"
-              style={{
-                borderColor: theme.border,
-                color: theme.text,
-              }}
-              placeholder="Enter description for the false path..."
-            />
-          </div>
-        </div>
-
-        {/* Test Data */}
-        <div>
-          <label className="text-sm" style={{ color: theme.textSecondary }}>
-            Test Data
-          </label>
-          <textarea
-            className="w-full px-3 py-2 text-sm rounded resize-none border-0"
-            style={{ backgroundColor: theme.bgElevate, color: theme.text }}
-            rows={4}
-            placeholder={`{\n  "user_message": "I need help with my order",\n  "confidence_score": 0.85,\n  "user_tier": "premium",\n  "sentiment": "neutral"\n}`}
-            value={JSON.stringify(nodeData.testData || {}, null, 2)}
-            onChange={(e) => {
-              try {
-                const parsed = JSON.parse(e.target.value);
-                handleFieldChange("testData", parsed);
-              } catch {
-                // Invalid JSON, keep the text but don't update
-              }
-            }}
-          />
-        </div>
-
-        {/* Evaluation Mode */}
-        <div>
-          <label className="text-sm" style={{ color: theme.textSecondary }}>
-            Evaluation Mode
-          </label>
-          <select
-            value={nodeData.evaluationMode}
-            onChange={(e) =>
-              handleFieldChange("evaluationMode", e.target.value)
-            }
-            className="mt-1 bg-transparent border rounded px-3 py-1 text-sm"
-            style={{ borderColor: theme.border, color: theme.text }}
-          >
-            <option value="strict">Strict</option>
-            <option value="fuzzy">Fuzzy</option>
-            <option value="llm_assisted">LLM Assisted</option>
-          </select>
-        </div>
-
-        {/* LLM Model */}
-        <div>
-          <label className="text-sm" style={{ color: theme.textSecondary }}>
-            LLM Model
-          </label>
-          <select
-            value={nodeData.llmModel}
-            onChange={(e) => handleFieldChange("llmModel", e.target.value)}
-            className="mt-1 bg-transparent border rounded px-3 py-1 text-sm"
-            style={{ borderColor: theme.border, color: theme.text }}
-          >
-            <option value="gemini-pro">Gemini Pro</option>
-            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
-          </select>
-        </div>
-
-        {/* Test Button and Result */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={testIfElseConditions}
-          disabled={conditionGroups.length === 0}
-        >
-          <Play className="w-4 h-4 mr-2" />
-          Test If/Else Logic
-        </Button>
-        {testResult && (
-          <div
-            className="mt-2 p-2 rounded bg-black/20 text-xs whitespace-pre-wrap"
-            style={{ color: theme.text }}
-          >
-            {testResult}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // --- Main Render ---
+export default function PropertiesPanel({ selectedNode, onChange, isTesting }: PropertiesPanelProps) {
   if (!selectedNode) {
     return (
-      <div
-        className="w-96 h-full border-l flex items-center justify-center"
-        style={{
-          backgroundColor: theme.sidebar,
-          borderColor: theme.border,
-        }}
-      >
-        <p style={{ color: theme.textSecondary }}>Select a node to edit</p>
+      <div className={panelClass + " " + noNodeClass}>
+        <div className="text-2xl mb-2">🛈</div>
+        <div>No node selected</div>
+        <div className="text-xs mt-2 text-vscode-textSecondary">Select a node to view and edit its properties.</div>
       </div>
     );
   }
 
-  // For agent nodes, show the enhanced configuration
-  if (selectedNode.type === "agent") {
-    // Define a type for toolConfig
-    interface ToolConfig {
-      toolType:
-        | "web-search"
-        | "calculator"
-        | "code-executor"
-        | "file-operations"
-        | "database-query"
-        | "custom-api";
-      endpoint?: string;
-      // Add other properties as needed
-    }
-
-    // Helper to get toolConfig safely
-    const agentToolConfig: ToolConfig | undefined =
-      (localData && (localData as { toolConfig?: ToolConfig }).toolConfig) ||
-      (selectedNode.data &&
-        (selectedNode.data as { toolConfig?: ToolConfig }).toolConfig);
-
-    return (
-      <div
-        className="w-96 h-full border-l flex flex-col"
-        style={{
-          backgroundColor: theme.sidebar,
-          borderColor: theme.border,
-        }}
-      >
-        <div
-          className="h-12 border-b flex items-center justify-between px-4"
-          style={{ borderColor: theme.border }}
-        >
-          <h3 className="font-medium" style={{ color: theme.text }}>
-            Agent Configuration
-          </h3>
-          <button
-            className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/10 transition-colors"
-            style={{ color: theme.textSecondary }}
-          >
-            <Minimize2 className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex-1 h-full overflow-hidden flex flex-col">
-          <EnhancedAgentConfig
-            node={{
-              data: selectedNode.data as import("@/types").AgentNodeData,
-            }}
-            onUpdate={(data) =>
-              onChange({
-                ...selectedNode,
-                data: { ...selectedNode.data, ...data },
-              })
-            }
-          />
-
-          {/* Tool Agent Configuration */}
-          {selectedNode.subtype === "tool-agent" && (
-            <>
-              <div>
-                <label
-                  className="block text-sm font-medium mb-2"
-                  style={{ color: theme.textMute }}
-                >
-                  Tool Type
-                </label>
-                <select
-                  className="w-full p-2 rounded text-sm"
-                  style={{
-                    backgroundColor: theme.bgElevate,
-                    color: theme.text,
-                    borderColor: theme.border,
-                  }}
-                  value={agentToolConfig?.toolType || "web-search"}
-                  onChange={(e) =>
-                    handleFieldChange("toolConfig", {
-                      ...agentToolConfig,
-                      toolType: e.target.value as ToolConfig["toolType"],
-                    })
-                  }
-                >
-                  <option value="web-search">Web Search</option>
-                  <option value="calculator">Calculator</option>
-                  <option value="code-executor">Code Executor</option>
-                  <option value="file-operations">File Operations</option>
-                  <option value="database-query">Database Query</option>
-                  <option value="custom-api">Custom API</option>
-                </select>
-              </div>
-              {agentToolConfig?.toolType === "custom-api" && (
-                <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: theme.textMute }}
-                  >
-                    API Endpoint
-                  </label>
-                  <Input
-                    value={agentToolConfig?.endpoint || ""}
-                    onChange={(e) =>
-                      handleFieldChange("toolConfig", {
-                        ...agentToolConfig,
-                        endpoint: e.target.value,
-                      })
-                    }
-                    placeholder="https://api.example.com/endpoint"
-                    style={{
-                      backgroundColor: theme.bgElevate,
-                      color: theme.text,
-                    }}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // If/Else Logic Configuration for logic/if-else nodes
-  if (selectedNode.type === "logic" && selectedNode.subtype === "if-else") {
-    return (
-      <aside
-        className="bg-[#18181b] border border-[#23232a] rounded font-mono"
-        style={{
-          minWidth: 320,
-          maxWidth: 400,
-          height: "100%",
-          boxShadow: "none",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div
-          className="h-12 border-b flex items-center justify-between px-4"
-          style={{ borderColor: "#23232a" }}
-        >
-          <h3 className="text-white font-semibold text-sm">
-            If/Else Properties
-          </h3>
-          <button
-            className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-600/10 transition-colors"
-            style={{ color: "#60a5fa" }}
-          >
-            <Minimize2 className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {renderIfElseProperties()}
-        </div>
-      </aside>
-    );
-  }
-
-  // --- Universal field change handler for all node types ---
   const handleFieldChange = (field: string, value: unknown) => {
     if (!selectedNode) return;
-    onChange({
-      ...selectedNode,
-      data: {
-        ...selectedNode.data,
-        [field]: value,
-      },
-    });
+    onChange({ ...selectedNode, data: { ...selectedNode.data, [field]: value } });
   };
 
-  // Helper function to check node type/subtype
-  const isNodeType = (type: string, subtype?: string) => {
-    if (!selectedNode) return false;
-    if (subtype) {
-      return selectedNode.type === type && selectedNode.subtype === subtype;
-    }
-    return selectedNode.type === type;
-  };
-
-  // Get node-specific data with proper typing
-  const getNodeData = () => {
-    if (!selectedNode) return null;
-    return selectedNode.data;
-  };
-
-  const nodeData = getNodeData();
-
-  // Default properties panel for all node types
-  return (
-    <aside
-      className="bg-[#18181b] border border-[#23232a] rounded font-mono"
-      style={{
-        minWidth: 320,
-        maxWidth: 400,
-        height: "100%",
-        boxShadow: "none",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <div
-        className="h-12 border-b flex items-center justify-between px-4"
-        style={{ borderColor: "#23232a" }}
-      >
-        <h3 className="text-white font-semibold text-sm">Properties</h3>
-        <button
-          className="w-6 h-6 rounded flex items-center justify-center hover:bg-blue-600/10 transition-colors"
-          style={{ color: "#60a5fa" }}
-        >
-          <Minimize2 className="w-4 h-4" />
-        </button>
-      </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Basic Properties */}
-        <div>
-          <label className="text-xs text-gray-400 font-mono">Node ID</label>
-          <Input
-            value={selectedNode.id || ""}
-            disabled
-            className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
-          />
+  // --- Tool Agent Node ---
+  if (selectedNode.type === "agent" && selectedNode.subtype === "tool-agent") {
+    const data = selectedNode.data as ToolAgentNodeData;
+    const toolConfig = data.toolConfig ?? { toolType: "" };
+    return (
+      <div className={panelClass}>
+        <div className={headerClass}>Tool Agent Properties</div>
+        <div className={sectionClass}>
+          <label className={labelClass}>Tool Preset</label>
+          <select
+            className={inputClass}
+            disabled={isTesting}
+            value={toolConfig.toolType || ""}
+            onChange={e => handleFieldChange("toolConfig", { ...toolConfig, toolType: e.target.value })}
+          >
+            <option value="">Select Tool</option>
+            {TOOL_PRESETS.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
         </div>
-        <div>
-          <label className="text-xs text-gray-400 font-mono">Title</label>
-          <Input
-            value={nodeData?.title || ""}
-            onChange={(e) => handleFieldChange("title", e.target.value)}
-            className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
-          />
-        </div>
-        <div>
-          <label className="text-xs text-gray-400 font-mono">Description</label>
-          <Input
-            value={nodeData?.description || ""}
-            onChange={(e) => handleFieldChange("description", e.target.value)}
-            className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
-          />
-        </div>
-
-        <Separator style={{ backgroundColor: theme.border }} />
-
-        {/* Position */}
-        <div>
-          <label className="text-xs text-gray-400 font-mono uppercase tracking-wider">
-            Position
-          </label>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <div>
-              <label className="text-xs text-gray-400 font-mono">X</label>
-              <Input
-                type="number"
-                value={Math.round(selectedNode.position.x)}
-                onChange={(e) =>
-                  onChange({
-                    ...selectedNode,
-                    position: {
-                      ...selectedNode.position,
-                      x: parseInt(e.target.value) || 0,
-                    },
-                  })
-                }
-                className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-400 font-mono">Y</label>
-              <Input
-                type="number"
-                value={Math.round(selectedNode.position.y)}
-                onChange={(e) =>
-                  onChange({
-                    ...selectedNode,
-                    position: {
-                      ...selectedNode.position,
-                      y: parseInt(e.target.value) || 0,
-                    },
-                  })
-                }
-                className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Agent-specific configuration */}
-        {isNodeType("agent") && (
-          <>
-            <Separator style={{ backgroundColor: theme.border }} />
-            <EnhancedAgentConfig
-              node={{
-                data: selectedNode.data as import("@/types").AgentNodeData,
-              }}
-              onUpdate={(data) =>
-                onChange({
-                  ...selectedNode,
-                  data: { ...selectedNode.data, ...data },
-                })
-              }
+        {toolConfig.toolType === "custom-api" && (
+          <div className={sectionClass}>
+            <label className={labelClass}>API Endpoint</label>
+            <input
+              className={inputClass}
+              disabled={isTesting}
+              value={toolConfig.endpoint || ""}
+              onChange={e => handleFieldChange("toolConfig", { ...toolConfig, endpoint: e.target.value })}
+              placeholder="API Endpoint"
             />
-          </>
-        )}
-
-        {/* Tool Agent Configuration */}
-        {isNodeType("agent", "tool-agent") && (
-          <>
-            <Separator style={{ backgroundColor: theme.border }} />
-            <div>
-              <label
-                className="block text-sm font-medium mb-2"
-                style={{ color: theme.textMute }}
-              >
-                Tool Type
-              </label>
-              <select
-                className="w-full p-2 rounded text-sm bg-[#23232a] text-white"
-                value={
-                  (nodeData && "toolConfig" in nodeData
-                    ? (nodeData as { toolConfig?: { toolType?: string } })
-                        .toolConfig?.toolType
-                    : "web-search") || "web-search"
-                }
-                onChange={(e) =>
-                  handleFieldChange("toolConfig", {
-                    ...((
-                      nodeData as {
-                        toolConfig?: { toolType?: string; endpoint?: string };
-                      }
-                    )?.toolConfig || {}),
-                    toolType: e.target.value,
-                  })
-                }
-              >
-                <option value="web-search">Web Search</option>
-                <option value="calculator">Calculator</option>
-                <option value="code-executor">Code Executor</option>
-                <option value="file-operations">File Operations</option>
-                <option value="database-query">Database Query</option>
-                <option value="custom-api">Custom API</option>
-              </select>
-            </div>
-          </>
-        )}
-
-        {/* Prompt Template Configuration */}
-        {(isNodeType("conversation", "prompt-template") ||
-          isNodeType("conversation", "template")) && (
-          <>
-            <Separator style={{ backgroundColor: theme.border }} />
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-400">
-                Template
-              </label>
-              <textarea
-                className="w-full p-2 rounded text-sm bg-[#23232a] text-white"
-                rows={4}
-                placeholder="Enter template with {{variables}}..."
-                value={(nodeData as { template?: string })?.template || ""}
-                onChange={(e) => handleFieldChange("template", e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-400">
-                Variables (JSON)
-              </label>
-              <textarea
-                className="w-full p-2 rounded text-sm bg-[#23232a] text-white"
-                rows={2}
-                placeholder='{"name": "John", "role": "user"}'
-                value={JSON.stringify(
-                  (nodeData as { variables?: Record<string, unknown> })
-                    ?.variables || {},
-                  null,
-                  2
-                )}
-                onChange={(e) => {
-                  try {
-                    const vars = JSON.parse(e.target.value);
-                    handleFieldChange("variables", vars);
-                  } catch {}
-                }}
-              />
-            </div>
-          </>
-        )}
-
-        {/* Decision Tree Configuration */}
-        {isNodeType("logic", "decision-tree") && (
-          <>
-            <Separator style={{ backgroundColor: theme.border }} />
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-400">
-                Decision Rules
-              </label>
-              <div className="space-y-2">
-                {nodeData &&
-                  "rules" in nodeData &&
-                  Array.isArray(
-                    (
-                      nodeData as {
-                        rules: { condition: string; outputPath: string }[];
-                      }
-                    ).rules
-                  ) &&
-                  (
-                    nodeData as {
-                      rules: { condition: string; outputPath: string }[];
-                    }
-                  ).rules.map((rule, index) => (
-                    <div
-                      key={index}
-                      className="p-2 border border-[#23232a] rounded"
-                    >
-                      <input
-                        className="w-full p-1 mb-1 rounded text-sm bg-[#23232a] text-white"
-                        placeholder="Condition"
-                        value={rule.condition || ""}
-                        onChange={(e) => {
-                          const newRules = [
-                            ...(
-                              nodeData as {
-                                rules: {
-                                  condition: string;
-                                  outputPath: string;
-                                }[];
-                              }
-                            ).rules,
-                          ];
-                          newRules[index] = {
-                            ...rule,
-                            condition: e.target.value,
-                          };
-                          handleFieldChange("rules", newRules);
-                        }}
-                      />
-                      <input
-                        className="w-full p-1 rounded text-sm bg-[#23232a] text-white"
-                        placeholder="Output Path"
-                        value={rule.outputPath || ""}
-                        onChange={(e) => {
-                          const newRules = [
-                            ...(
-                              nodeData as {
-                                rules: {
-                                  condition: string;
-                                  outputPath: string;
-                                }[];
-                              }
-                            ).rules,
-                          ];
-                          newRules[index] = {
-                            ...rule,
-                            outputPath: e.target.value,
-                          };
-                          handleFieldChange("rules", newRules);
-                        }}
-                      />
-                    </div>
-                  ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const rules =
-                      nodeData &&
-                      "rules" in nodeData &&
-                      Array.isArray(
-                        (
-                          nodeData as {
-                            rules: { condition: string; outputPath: string }[];
-                          }
-                        ).rules
-                      )
-                        ? (
-                            nodeData as {
-                              rules: {
-                                condition: string;
-                                outputPath: string;
-                              }[];
-                            }
-                          ).rules
-                        : [];
-                    handleFieldChange("rules", [
-                      ...rules,
-                      { condition: "", outputPath: "" },
-                    ]);
-                  }}
-                  className="w-full"
-                >
-                  Add Rule
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Test Button */}
-        {selectedNode && (
-          <div className="pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                console.log("Testing node:", selectedNode);
-                // Testing logic will be implemented
-              }}
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Test Component
-            </Button>
           </div>
         )}
+        <div className={sectionClass}>
+          <label className={labelClass}>User Prompt</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.prompt || ""}
+            onChange={e => handleFieldChange("prompt", e.target.value)}
+            placeholder="User Prompt"
+          />
+        </div>
       </div>
-    </aside>
+    );
+  }
+
+  // --- Agent Node ---
+  if (selectedNode.type === "agent" && selectedNode.subtype !== "tool-agent") {
+    const data = selectedNode.data as AgentNodeData;
+    return (
+      <div className={panelClass}>
+        <div className={headerClass}>Agent Properties</div>
+        <div className={sectionClass}>
+          <label className={labelClass}>Title</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.title || ""}
+            onChange={e => handleFieldChange("title", e.target.value)}
+            placeholder="Title"
+          />
+        </div>
+        <div className={sectionClass}>
+          <label className={labelClass}>Description</label>
+          <textarea
+            className={inputClass}
+            disabled={isTesting}
+            value={data.description || ""}
+            onChange={e => handleFieldChange("description", e.target.value)}
+            placeholder="Description"
+            rows={2}
+          />
+        </div>
+        <div className={sectionClass}>
+          <label className={labelClass}>System Prompt</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.systemPrompt || ""}
+            onChange={e => handleFieldChange("systemPrompt", e.target.value)}
+            placeholder="System Prompt"
+          />
+        </div>
+        <div className={sectionClass}>
+          <label className={labelClass}>Personality</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.personality || ""}
+            onChange={e => handleFieldChange("personality", e.target.value)}
+            placeholder="Personality"
+          />
+        </div>
+        <div className={sectionClass}>
+          <label className={labelClass}>Escalation Logic</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.escalationLogic || ""}
+            onChange={e => handleFieldChange("escalationLogic", e.target.value)}
+            placeholder="Escalation Logic"
+          />
+        </div>
+        <div className={sectionClass}>
+          <label className={labelClass}>Confidence Threshold</label>
+          <input
+            className={inputClass}
+            type="number"
+            disabled={isTesting}
+            value={data.confidenceThreshold ?? ""}
+            onChange={e => handleFieldChange("confidenceThreshold", Number(e.target.value))}
+            placeholder="Confidence Threshold"
+          />
+        </div>
+        <div className={sectionClass}>
+          <label className={labelClass}>User Prompt</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.prompt || ""}
+            onChange={e => handleFieldChange("prompt", e.target.value)}
+            placeholder="User Prompt"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Model</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.model || ""}
+            onChange={e => handleFieldChange("model", e.target.value)}
+            placeholder="Model (e.g. gemini-2.5-flash-lite)"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // --- Knowledge Base Node ---
+  if (selectedNode.type === "logic" && selectedNode.subtype === "knowledge-base") {
+    const data = selectedNode.data as { operation?: string };
+    return (
+      <div className={panelClass}>
+        <div className={headerClass}>Knowledge Base Properties</div>
+        <div>
+          <label className={labelClass}>Operation</label>
+          <select
+            className={inputClass}
+            disabled={isTesting}
+            value={data.operation || "retrieve"}
+            onChange={e => handleFieldChange("operation", e.target.value)}
+          >
+            <option value="store">Store</option>
+            <option value="retrieve">Retrieve</option>
+            <option value="search">Search</option>
+          </select>
+        </div>
+      </div>
+    );
+  }
+
+  // --- IfElse Logic Node ---
+  if (selectedNode.type === "logic" && selectedNode.subtype === "if-else") {
+    const data = selectedNode.data as { condition?: string };
+    return (
+      <div className={panelClass}>
+        <div className={headerClass}>If/Else Properties</div>
+        <div>
+          <label className={labelClass}>Condition</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.condition || ""}
+            onChange={e => handleFieldChange("condition", e.target.value)}
+            placeholder="Condition (e.g. input == 'yes')"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // --- State Machine Node ---
+  if (selectedNode.type === "logic" && selectedNode.subtype === "state-machine") {
+    const data = selectedNode.data as { states?: string[]; initialState?: string };
+    return (
+      <div className={panelClass}>
+        <div className={headerClass}>State Machine Properties</div>
+        <div className={sectionClass}>
+          <label className={labelClass}>Initial State</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.initialState || ""}
+            onChange={e => handleFieldChange("initialState", e.target.value)}
+            placeholder="Initial State"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>States</label>
+          <textarea
+            className={inputClass}
+            disabled={isTesting}
+            value={data.states?.join(", ") || ""}
+            onChange={e => handleFieldChange("states", e.target.value.split(",").map(s => s.trim()))}
+            placeholder="States (comma separated)"
+            rows={2}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // --- Decision Tree Node ---
+  if (selectedNode.type === "logic" && selectedNode.subtype === "decision-tree") {
+    const data = selectedNode.data as { rules?: { condition: string; outputPath: string }[] };
+    return (
+      <div className={panelClass}>
+        <div className={headerClass}>Decision Tree Properties</div>
+        {(data.rules || []).map((rule, i) => (
+          <div key={i} className="flex gap-2 items-center mb-2">
+            <input
+              className={inputClass + " flex-1"}
+              disabled={isTesting}
+              value={rule.condition}
+              onChange={e => {
+                const newRules = [...(data.rules || [])];
+                newRules[i] = { ...rule, condition: e.target.value };
+                handleFieldChange("rules", newRules);
+              }}
+              placeholder="Condition"
+            />
+            <input
+              className={inputClass + " flex-1"}
+              disabled={isTesting}
+              value={rule.outputPath}
+              onChange={e => {
+                const newRules = [...(data.rules || [])];
+                newRules[i] = { ...rule, outputPath: e.target.value };
+                handleFieldChange("rules", newRules);
+              }}
+              placeholder="Output Path"
+            />
+          </div>
+        ))}
+        <button
+          className="mt-2 px-3 py-1 rounded bg-vscode-button text-vscode-buttonText hover:bg-vscode-buttonHover transition"
+          disabled={isTesting}
+          onClick={() => handleFieldChange("rules", [...(data.rules || []), { condition: "", outputPath: "" }])}
+        >Add Rule</button>
+      </div>
+    );
+  }
+
+  // --- Prompt Template Node ---
+  if (selectedNode.type === "conversation" && selectedNode.subtype === "template") {
+    const data = selectedNode.data as PromptTemplateNodeData;
+    return (
+      <div className={panelClass}>
+        <div className={headerClass}>Prompt Template Properties</div>
+        <div className={sectionClass}>
+          <label className={labelClass}>Template</label>
+          <textarea
+            className={inputClass}
+            disabled={isTesting}
+            value={data.template || ""}
+            onChange={e => handleFieldChange("template", e.target.value)}
+            placeholder="Template (use {{variable}} syntax)"
+            rows={2}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Variables</label>
+          <textarea
+            className={inputClass}
+            disabled={isTesting}
+            value={Object.entries(data.variables || {}).map(([k, v]) => `${k}=${v}`).join("\n")}
+            onChange={e => {
+              const vars: Record<string, string> = {};
+              e.target.value.split("\n").forEach(line => {
+                const [k, ...rest] = line.split("=");
+                if (k) vars[k.trim()] = rest.join("=").trim();
+              });
+              handleFieldChange("variables", vars);
+            }}
+            placeholder="Variables (one per line: key=value)"
+            rows={2}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // --- Message Node ---
+  if (selectedNode.type === "conversation" && selectedNode.subtype === "message") {
+    const data = selectedNode.data as { content?: string; message?: string };
+    return (
+      <div className={panelClass}>
+        <div className={headerClass}>Message Node Properties</div>
+        <div>
+          <label className={labelClass}>Message Content</label>
+          <textarea
+            className={inputClass}
+            disabled={isTesting}
+            value={data.content || data.message || ""}
+            onChange={e => handleFieldChange("content", e.target.value)}
+            placeholder="Message Content"
+            rows={2}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // --- UI Node ---
+  if (selectedNode.type === "ui" || selectedNode.subtype === "ui") {
+    const data = selectedNode.data as { content?: string; message?: string; inputValue?: string };
+    return (
+      <div className={panelClass}>
+        <div className={headerClass}>UI Node Properties</div>
+        <div>
+          <label className={labelClass}>User Input</label>
+          <input
+            className={inputClass}
+            disabled={isTesting}
+            value={data.content || data.message || data.inputValue || ""}
+            onChange={e => handleFieldChange("content", e.target.value)}
+            placeholder="User Input"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // --- Default ---
+  return (
+    <div className={panelClass + " flex flex-col items-center justify-center h-full text-vscode-textSecondary"}>
+      <div className="text-2xl mb-2">🛈</div>
+      <div>No properties available for this node type.</div>
+    </div>
   );
 }
+
+// --- VS Code color variables (add to your global CSS or Tailwind config) ---
+// .bg-vscode-panel { background: #1e1e1e; }
+// .text-vscode-text { color: #d4d4d4; }
+// .text-vscode-title { color: #569cd6; }
+// .text-vscode-textSecondary { color: #808080; }
+// .bg-vscode-input { background: #232323; }
+// .border-vscode-border { border-color: #333333; }
+// .focus\:ring-vscode-focus:focus { box-shadow: 0 0 0 2px #007acc; }
+// .bg-vscode-button { background: #0e639c; }
+// .text-vscode-buttonText { color: #fff; }
+// .hover\:bg-vscode-buttonHover:hover { background: #1177bb; }
