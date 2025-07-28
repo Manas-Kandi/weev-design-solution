@@ -192,8 +192,15 @@ export default function CanvasEngine(props: Props) {
   const handleNodeContextMenu = useCallback(
     (e: React.MouseEvent, nodeId: string) => {
       e.preventDefault();
-      // Add menu with "Set as Start Node" option
-      setStartNodeId(nodeId);
+      e.stopPropagation();
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        setContextMenu({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+          nodeId: nodeId,
+        });
+      }
     },
     []
   );
@@ -449,6 +456,7 @@ export default function CanvasEngine(props: Props) {
       onClick={handleCanvasClick}
       onWheel={handleWheel}
       tabIndex={0}
+      data-start-node-id={startNodeId}
     >
       {/* Background Grid and Connections */}
       <svg
@@ -506,20 +514,32 @@ export default function CanvasEngine(props: Props) {
       {/* Context Menu */}
       {contextMenu && (
         <div
-          className="absolute bg-white border rounded shadow-lg z-50"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
+          className="absolute bg-gray-800 border border-gray-700 rounded shadow-lg py-1 z-50"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+          }}
+          onMouseLeave={() => setContextMenu(null)}
         >
           <button
-            className="block w-full px-4 py-2 text-left hover:bg-gray-100"
-            onClick={() => handleContextMenuAction("delete")}
+            className="w-full px-4 py-2 text-left hover:bg-gray-700 text-sm text-white"
+            onClick={() => {
+              setStartNodeId(contextMenu.nodeId);
+              setContextMenu(null);
+            }}
           >
-            Delete
+            Set as Start Node
           </button>
           <button
-            className="block w-full px-4 py-2 text-left hover:bg-gray-100"
-            onClick={() => handleContextMenuAction("duplicate")}
+            className="w-full px-4 py-2 text-left hover:bg-gray-700 text-sm text-white"
+            onClick={() => {
+              if (startNodeId === contextMenu.nodeId) {
+                setStartNodeId(null);
+              }
+              setContextMenu(null);
+            }}
           >
-            Duplicate
+            Remove Start Node
           </button>
         </div>
       )}

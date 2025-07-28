@@ -1,8 +1,8 @@
-import React from 'react';
-import CanvasEngine from '@/components/Canvas';
-import { CanvasNode, Connection } from '@/types';
-import { runWorkflow } from '@/lib/workflowRunner';
-import ConversationTester from '@/components/ConversationTester';
+import React from "react";
+import CanvasEngine from "@/components/Canvas";
+import { CanvasNode, Connection } from "@/types";
+import { runWorkflow } from "@/lib/workflowRunner";
+import ConversationTester from "@/components/ConversationTester";
 
 interface DesignerCanvasProps {
   nodes: CanvasNode[];
@@ -35,10 +35,34 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
   } = props;
 
   const handleNodeDrag = (id: string, pos: { x: number; y: number }) => {
-    const node = nodes.find(n => n.id === id);
+    const node = nodes.find((n) => n.id === id);
     if (!node) return;
-    
+
     onNodeUpdate({ ...node, position: { x: pos.x, y: pos.y } });
+  };
+
+  // Add handleTestFlow for running the workflow with startNodeId
+  const handleTestFlow = async () => {
+    // Optionally, you can add a setTesting state if you want to show a loading spinner
+    if (typeof window === "undefined") return;
+    if (typeof document === "undefined") return;
+    if (!nodes || !connections) return;
+    // Get startNodeId from Canvas component if available
+    const canvasElement = document.querySelector("[data-start-node-id]");
+    const startNodeId =
+      canvasElement?.getAttribute("data-start-node-id") || null;
+    try {
+      setTestFlowResult(null);
+      // Optionally set loading state here
+      const result = await runWorkflow(nodes, connections, startNodeId);
+      setTestFlowResult(result);
+    } catch (err) {
+      setTestFlowResult({
+        error: err instanceof Error ? err.message : "Unknown error",
+      });
+    } finally {
+      // Optionally unset loading state here
+    }
   };
 
   return (
@@ -49,7 +73,10 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
           <div className="bg-white rounded-lg shadow-lg w-[600px] max-w-full p-6 relative">
             <button
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-              onClick={() => { setShowTester(false); setTestFlowResult(null); }}
+              onClick={() => {
+                setShowTester(false);
+                setTestFlowResult(null);
+              }}
             >
               ✕
             </button>
@@ -62,7 +89,10 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
               <ConversationTester
                 nodes={nodes}
                 connections={connections}
-                onClose={() => { setShowTester(false); setTestFlowResult(null); }}
+                onClose={() => {
+                  setShowTester(false);
+                  setTestFlowResult(null);
+                }}
               />
             )}
           </div>
@@ -74,26 +104,42 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
           <h4 className="font-bold mb-2">Flow Results</h4>
           <div className="space-y-3">
             {Object.entries(testFlowResult).map(([nodeId, output]) => {
-              const node = nodes.find(n => n.id === nodeId);
+              const node = nodes.find((n) => n.id === nodeId);
               const title = node?.data.title || nodeId;
-              const type = node?.type || '';
+              const type = node?.type || "";
               let display;
               let isError = false;
               if (output === null) {
                 display = <span className="text-gray-400">No output</span>;
-              } else if (typeof output === 'string') {
+              } else if (typeof output === "string") {
                 display = <span>{output}</span>;
-                if (output.toLowerCase().includes('error')) isError = true;
-              } else if (output && typeof output === 'object' && 'error' in output) {
-                display = <span className="text-red-400">{String((output as { error: string }).error)}</span>;
+                if (output.toLowerCase().includes("error")) isError = true;
+              } else if (
+                output &&
+                typeof output === "object" &&
+                "error" in output
+              ) {
+                display = (
+                  <span className="text-red-400">
+                    {String((output as { error: string }).error)}
+                  </span>
+                );
                 isError = true;
               } else if (
                 output &&
-                typeof output === 'object' &&
-                'gemini' in output &&
+                typeof output === "object" &&
+                "gemini" in output &&
                 output.gemini &&
-                typeof output.gemini === 'object' &&
-                Array.isArray((output.gemini as { candidates?: { content?: { parts?: { text?: string }[] } }[] }).candidates)
+                typeof output.gemini === "object" &&
+                Array.isArray(
+                  (
+                    output.gemini as {
+                      candidates?: {
+                        content?: { parts?: { text?: string }[] };
+                      }[];
+                    }
+                  ).candidates
+                )
               ) {
                 type GeminiCandidate = {
                   content?: {
@@ -107,25 +153,50 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
                 };
                 const gemini = output.gemini as GeminiOutput;
                 const text = gemini.candidates?.[0]?.content?.parts?.[0]?.text;
-                display = <span>{text ? text : <span className="text-gray-400">No response</span>}</span>;
+                display = (
+                  <span>
+                    {text ? (
+                      text
+                    ) : (
+                      <span className="text-gray-400">No response</span>
+                    )}
+                  </span>
+                );
               } else {
                 display = <span>{JSON.stringify(output)}</span>;
               }
               return (
-                <div key={nodeId} className={`border-b pb-2 ${isError ? 'border-red-400' : 'border-gray-700'}`}>
+                <div
+                  key={nodeId}
+                  className={`border-b pb-2 ${
+                    isError ? "border-red-400" : "border-gray-700"
+                  }`}
+                >
                   <div className="font-semibold text-sm mb-1">
-                    {title} <span className="text-xs text-gray-400">({type})</span>
+                    {title}{" "}
+                    <span className="text-xs text-gray-400">({type})</span>
                   </div>
                   <div className="text-xs">{display}</div>
                 </div>
               );
             })}
           </div>
-          <button className="mt-2 w-full bg-blue-600 text-white px-4 py-2 rounded shadow" onClick={() => setTestFlowResult(null)}>
+          <button
+            className="mt-2 w-full bg-blue-600 text-white px-4 py-2 rounded shadow"
+            onClick={() => setTestFlowResult(null)}
+          >
             Close
           </button>
         </div>
       )}
+      <div className="absolute top-4 left-4 z-30">
+        <button
+          className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700"
+          onClick={handleTestFlow}
+        >
+          Test Flow
+        </button>
+      </div>
       <CanvasEngine
         nodes={nodes}
         connections={connections}
@@ -134,7 +205,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         onConnectionsChange={onConnectionsChange}
         onCreateConnection={onCreateConnection}
         onNodeDrag={handleNodeDrag}
-        selectedNodeId={null} 
+        selectedNodeId={null}
       />
       {/* Pass the selected node id here if available */}
     </div>
