@@ -31,9 +31,50 @@ export abstract class BaseNode implements NodeExecutor {
     const incoming = context.connections.filter(
       (c) => c.targetNode === this.node.id
     );
+    console.log('[DEBUG] getInputValues: node', this.node.id, 'incoming connections', incoming);
     return incoming
       .map((conn) => {
+        const upstreamNode = context.nodes.find(
+          (n) => n.id === conn.sourceNode
+        );
+        // --- PATCH: Always use nodeOutputs for UI nodes if available ---
+        if (
+          upstreamNode &&
+          (upstreamNode.type === "ui" || upstreamNode.subtype === "ui")
+        ) {
+          const output = context.nodeOutputs[conn.sourceNode];
+          console.log("[DEBUG] getInputValues (UI node)", {
+            currentNode: this.node.id,
+            upstreamNode: upstreamNode.id,
+            output,
+            data: upstreamNode.data,
+          });
+          if (typeof output === "string" && output) return output;
+          if (
+            output &&
+            typeof output === "object" &&
+            "message" in output &&
+            output.message
+          )
+            return output.message as string;
+          if (
+            output &&
+            typeof output === "object" &&
+            "content" in output &&
+            output.content
+          )
+            return output.content as string;
+          // Fallback to node data
+          type UIData = { content?: string; message?: string };
+          const data = upstreamNode.data as UIData;
+          return data?.content || data?.message || "";
+        }
         const output = context.nodeOutputs[conn.sourceNode];
+        console.log("[DEBUG] getInputValues (other node)", {
+          currentNode: this.node.id,
+          upstreamNode: upstreamNode?.id,
+          output,
+        });
         if (typeof output === "string") return output;
         if (output && typeof output === "object" && "gemini" in output) {
           type GeminiOutput = {
@@ -46,7 +87,12 @@ export abstract class BaseNode implements NodeExecutor {
             }>;
           };
           const geminiOutput = output.gemini as GeminiOutput;
-          return geminiOutput?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+          // Optionally extract text from Gemini output
+          if (
+            geminiOutput?.candidates?.[0]?.content?.parts?.[0]?.text
+          ) {
+            return geminiOutput.candidates[0].content.parts[0].text as string;
+          }
         }
         return JSON.stringify(output);
       })
@@ -56,6 +102,10 @@ export abstract class BaseNode implements NodeExecutor {
   // Helper to format all inputs as context
   protected formatInputContext(context: NodeContext): string {
     const inputs = this.getInputValues(context);
+    console.log("[DEBUG] formatInputContext", {
+      node: this.node.id,
+      inputs,
+    });
     return inputs.join("\n\n");
   }
 }

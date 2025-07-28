@@ -361,7 +361,7 @@ export default function AgentFlowPage() {
       if (error) {
         // Improved error logging for Supabase
         console.error("Supabase error creating node:", error);
-        if (typeof error === 'object') {
+        if (typeof error === "object") {
           console.error("Error details:", JSON.stringify(error, null, 2));
         }
         alert(

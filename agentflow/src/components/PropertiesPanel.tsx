@@ -767,17 +767,6 @@ export default function PropertiesPanel({
       // Add other properties as needed
     }
 
-    function handleFieldChange(field: string, value: unknown): void {
-      if (!selectedNode) return;
-      onChange({
-        ...selectedNode,
-        data: {
-          ...selectedNode.data,
-          [field]: value,
-        },
-      });
-    }
-
     // Helper to get toolConfig safely
     const agentToolConfig: ToolConfig | undefined =
       (localData && (localData as { toolConfig?: ToolConfig }).toolConfig) ||
@@ -919,7 +908,8 @@ export default function PropertiesPanel({
     );
   }
 
-  function handleFieldChange(field: string, value: unknown): void {
+  // --- Universal field change handler for all node types ---
+  const handleFieldChange = (field: string, value: unknown) => {
     if (!selectedNode) return;
     onChange({
       ...selectedNode,
@@ -928,8 +918,26 @@ export default function PropertiesPanel({
         [field]: value,
       },
     });
-  }
-  // Default properties panel for other node types
+  };
+
+  // Helper function to check node type/subtype
+  const isNodeType = (type: string, subtype?: string) => {
+    if (!selectedNode) return false;
+    if (subtype) {
+      return selectedNode.type === type && selectedNode.subtype === subtype;
+    }
+    return selectedNode.type === type;
+  };
+
+  // Get node-specific data with proper typing
+  const getNodeData = () => {
+    if (!selectedNode) return null;
+    return selectedNode.data;
+  };
+
+  const nodeData = getNodeData();
+
+  // Default properties panel for all node types
   return (
     <aside
       className="bg-[#18181b] border border-[#23232a] rounded font-mono"
@@ -955,6 +963,7 @@ export default function PropertiesPanel({
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Basic Properties */}
         <div>
           <label className="text-xs text-gray-400 font-mono">Node ID</label>
           <Input
@@ -966,33 +975,28 @@ export default function PropertiesPanel({
         <div>
           <label className="text-xs text-gray-400 font-mono">Title</label>
           <Input
-            value={selectedNode.data.title || ""}
-            onChange={(e) =>
-              onChange({
-                ...selectedNode,
-                data: { ...selectedNode.data, title: e.target.value },
-              })
-            }
+            value={nodeData?.title || ""}
+            onChange={(e) => handleFieldChange("title", e.target.value)}
             className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
           />
         </div>
         <div>
           <label className="text-xs text-gray-400 font-mono">Description</label>
-          <textarea
-            value={selectedNode.data.description || ""}
-            onChange={(e) =>
-              onChange({
-                ...selectedNode,
-                data: { ...selectedNode.data, description: e.target.value },
-              })
-            }
-            className="mt-1 w-full h-16 px-2 py-1 rounded border bg-[#23232a] border-[#23232a] font-mono text-white text-xs resize-none"
+          <Input
+            value={nodeData?.description || ""}
+            onChange={(e) => handleFieldChange("description", e.target.value)}
+            className="mt-1 bg-[#23232a] border-[#23232a] rounded font-mono text-white px-2 py-1 text-xs"
           />
         </div>
-        <Separator />
+
+        <Separator style={{ backgroundColor: theme.border }} />
+
+        {/* Position */}
         <div>
-          <h4 className="text-xs font-semibold text-white mb-2">Position</h4>
-          <div className="grid grid-cols-2 gap-2">
+          <label className="text-xs text-gray-400 font-mono uppercase tracking-wider">
+            Position
+          </label>
+          <div className="grid grid-cols-2 gap-2 mt-2">
             <div>
               <label className="text-xs text-gray-400 font-mono">X</label>
               <Input
@@ -1029,59 +1033,96 @@ export default function PropertiesPanel({
             </div>
           </div>
         </div>
-        {selectedNode && String(selectedNode.type) !== "agent" && (
-          <div className="pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                // Component-specific testing logic
-                console.log(
-                  "Testing component:",
-                  selectedNode.type,
-                  selectedNode.subtype
-                );
-                // Optionally show a toast or modal for feedback
+
+        {/* Agent-specific configuration */}
+        {isNodeType("agent") && (
+          <>
+            <Separator style={{ backgroundColor: theme.border }} />
+            <EnhancedAgentConfig
+              node={{
+                data: selectedNode.data as import("@/types").AgentNodeData,
               }}
-            >
-              <Play className="w-4 h-4 mr-2" />
-              Test Component
-            </Button>
-          </div>
+              onUpdate={(data) =>
+                onChange({
+                  ...selectedNode,
+                  data: { ...selectedNode.data, ...data },
+                })
+              }
+            />
+          </>
+        )}
+
+        {/* Tool Agent Configuration */}
+        {isNodeType("agent", "tool-agent") && (
+          <>
+            <Separator style={{ backgroundColor: theme.border }} />
+            <div>
+              <label
+                className="block text-sm font-medium mb-2"
+                style={{ color: theme.textMute }}
+              >
+                Tool Type
+              </label>
+              <select
+                className="w-full p-2 rounded text-sm bg-[#23232a] text-white"
+                value={
+                  (nodeData && "toolConfig" in nodeData
+                    ? (nodeData as { toolConfig?: { toolType?: string } })
+                        .toolConfig?.toolType
+                    : "web-search") || "web-search"
+                }
+                onChange={(e) =>
+                  handleFieldChange("toolConfig", {
+                    ...((
+                      nodeData as {
+                        toolConfig?: { toolType?: string; endpoint?: string };
+                      }
+                    )?.toolConfig || {}),
+                    toolType: e.target.value,
+                  })
+                }
+              >
+                <option value="web-search">Web Search</option>
+                <option value="calculator">Calculator</option>
+                <option value="code-executor">Code Executor</option>
+                <option value="file-operations">File Operations</option>
+                <option value="database-query">Database Query</option>
+                <option value="custom-api">Custom API</option>
+              </select>
+            </div>
+          </>
         )}
 
         {/* Prompt Template Configuration */}
-        {selectedNode.subtype === "prompt-template" && (
+        {(isNodeType("conversation", "prompt-template") ||
+          isNodeType("conversation", "template")) && (
           <>
+            <Separator style={{ backgroundColor: theme.border }} />
             <div>
-              <label className="block text-sm font-medium mb-2">Template</label>
+              <label className="block text-sm font-medium mb-2 text-gray-400">
+                Template
+              </label>
               <textarea
-                className="w-full p-2 rounded text-sm"
-                style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                className="w-full p-2 rounded text-sm bg-[#23232a] text-white"
                 rows={4}
                 placeholder="Enter template with {{variables}}..."
-                value={
-                  (localData && "template" in localData
-                    ? (localData as { template?: string }).template
-                    : "") || ""
-                }
+                value={(nodeData as { template?: string })?.template || ""}
                 onChange={(e) => handleFieldChange("template", e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Static Variables (JSON)
+              <label className="block text-sm font-medium mb-2 text-gray-400">
+                Variables (JSON)
               </label>
               <textarea
-                className="w-full p-2 rounded text-sm"
-                style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                className="w-full p-2 rounded text-sm bg-[#23232a] text-white"
                 rows={2}
                 placeholder='{"name": "John", "role": "user"}'
                 value={JSON.stringify(
-                  (localData && "variables" in localData
-                    ? (localData as { variables?: object }).variables
-                    : {}) || {}
+                  (nodeData as { variables?: Record<string, unknown> })
+                    ?.variables || {},
+                  null,
+                  2
                 )}
                 onChange={(e) => {
                   try {
@@ -1093,85 +1134,132 @@ export default function PropertiesPanel({
             </div>
           </>
         )}
+
         {/* Decision Tree Configuration */}
-        {selectedNode.subtype === "decision-tree" && (
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Decision Rules
-            </label>
-            <div className="space-y-2">
-              {(
-                (localData && "rules" in localData
-                  ? (localData as { rules?: DecisionRule[] }).rules
-                  : []) || []
-              ).map((rule: DecisionRule, index: number) => (
-                <div
-                  key={index}
-                  className="p-2 border rounded"
-                  style={{ borderColor: theme.border }}
+        {isNodeType("logic", "decision-tree") && (
+          <>
+            <Separator style={{ backgroundColor: theme.border }} />
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-400">
+                Decision Rules
+              </label>
+              <div className="space-y-2">
+                {nodeData &&
+                  "rules" in nodeData &&
+                  Array.isArray(
+                    (
+                      nodeData as {
+                        rules: { condition: string; outputPath: string }[];
+                      }
+                    ).rules
+                  ) &&
+                  (
+                    nodeData as {
+                      rules: { condition: string; outputPath: string }[];
+                    }
+                  ).rules.map((rule, index) => (
+                    <div
+                      key={index}
+                      className="p-2 border border-[#23232a] rounded"
+                    >
+                      <input
+                        className="w-full p-1 mb-1 rounded text-sm bg-[#23232a] text-white"
+                        placeholder="Condition"
+                        value={rule.condition || ""}
+                        onChange={(e) => {
+                          const newRules = [
+                            ...(
+                              nodeData as {
+                                rules: {
+                                  condition: string;
+                                  outputPath: string;
+                                }[];
+                              }
+                            ).rules,
+                          ];
+                          newRules[index] = {
+                            ...rule,
+                            condition: e.target.value,
+                          };
+                          handleFieldChange("rules", newRules);
+                        }}
+                      />
+                      <input
+                        className="w-full p-1 rounded text-sm bg-[#23232a] text-white"
+                        placeholder="Output Path"
+                        value={rule.outputPath || ""}
+                        onChange={(e) => {
+                          const newRules = [
+                            ...(
+                              nodeData as {
+                                rules: {
+                                  condition: string;
+                                  outputPath: string;
+                                }[];
+                              }
+                            ).rules,
+                          ];
+                          newRules[index] = {
+                            ...rule,
+                            outputPath: e.target.value,
+                          };
+                          handleFieldChange("rules", newRules);
+                        }}
+                      />
+                    </div>
+                  ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const rules =
+                      nodeData &&
+                      "rules" in nodeData &&
+                      Array.isArray(
+                        (
+                          nodeData as {
+                            rules: { condition: string; outputPath: string }[];
+                          }
+                        ).rules
+                      )
+                        ? (
+                            nodeData as {
+                              rules: {
+                                condition: string;
+                                outputPath: string;
+                              }[];
+                            }
+                          ).rules
+                        : [];
+                    handleFieldChange("rules", [
+                      ...rules,
+                      { condition: "", outputPath: "" },
+                    ]);
+                  }}
+                  className="w-full"
                 >
-                  <input
-                    className="w-full p-1 mb-1 rounded text-sm"
-                    style={{
-                      backgroundColor: theme.bgElevate,
-                      color: theme.text,
-                    }}
-                    placeholder="Condition"
-                    value={rule.condition}
-                    onChange={(e) => {
-                      const newRules = (
-                        (localData && "rules" in localData
-                          ? (localData as { rules?: DecisionRule[] }).rules
-                          : []) || []
-                      ).slice();
-                      newRules[index] = {
-                        ...rule,
-                        condition: e.target.value,
-                      };
-                      handleFieldChange("rules", newRules);
-                    }}
-                  />
-                  <input
-                    className="w-full p-1 rounded text-sm"
-                    style={{
-                      backgroundColor: theme.bgElevate,
-                      color: theme.text,
-                    }}
-                    placeholder="Output Path"
-                    value={rule.outputPath}
-                    onChange={(e) => {
-                      const newRules = (
-                        (localData && "rules" in localData
-                          ? (localData as { rules?: DecisionRule[] }).rules
-                          : []) || []
-                      ).slice();
-                      newRules[index] = {
-                        ...rule,
-                        outputPath: e.target.value,
-                      };
-                      handleFieldChange("rules", newRules);
-                    }}
-                  />
-                </div>
-              ))}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const rules = (
-                    (localData && "rules" in localData
-                      ? (localData as { rules?: DecisionRule[] }).rules
-                      : []) || []
-                  ).slice();
-                  handleFieldChange("rules", [
-                    ...rules,
-                    { condition: "", outputPath: "" },
-                  ]);
-                }}
-              >
-                Add Rule
-              </Button>
+                  Add Rule
+                </Button>
+              </div>
             </div>
+          </>
+        )}
+
+        {/* Test Button */}
+        {selectedNode && (
+          <div className="pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                console.log("Testing node:", selectedNode);
+                // Testing logic will be implemented
+              }}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              Test Component
+            </Button>
           </div>
         )}
       </div>

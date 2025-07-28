@@ -210,4 +210,5 @@ export type NodeOutput =
       message?: string;
       gemini?: unknown;
       error?: string;
+      info?: string; // Added for UI node info messages
     };
