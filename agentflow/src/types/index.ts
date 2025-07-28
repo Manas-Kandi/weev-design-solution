@@ -199,4 +199,15 @@ export interface Colors {
   green: string;
 }
 
-export type NodeOutput = string | { gemini: unknown } | { error: string };
+export type NodeOutput =
+  | string
+  | {
+      previousState?: string;
+      currentState?: string;
+      event?: string;
+      transition?: string;
+      output?: string;
+      message?: string;
+      gemini?: unknown;
+      error?: string;
+    };

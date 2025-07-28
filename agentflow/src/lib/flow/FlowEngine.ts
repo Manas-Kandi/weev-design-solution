@@ -9,6 +9,9 @@ import { KnowledgeBaseNode } from "../nodes/knowledge/KnowledgeBaseNode";
 import { MessageNode } from "../nodes/conversation/MessageNode";
 // Or, if the file does not exist, create MessageNode.ts in the expected directory.
 import { BaseNode } from "../nodes/base/BaseNode";
+import { PromptTemplateNode } from "../nodes/conversation/PromptTemplateNode";
+import { DecisionTreeNode } from "../nodes/logic/DecisionTreeNode";
+import { StateMachineNode } from "../nodes/logic/StateMachineNode";
 
 export class FlowEngine {
   private nodes: CanvasNode[];
@@ -38,6 +41,13 @@ export class FlowEngine {
         return new KnowledgeBaseNode(node);
       case "message":
         return new MessageNode(node);
+      case "prompt-template":
+      case "template":
+        return new PromptTemplateNode(node);
+      case "decision-tree":
+        return new DecisionTreeNode(node);
+      case "state-machine":
+        return new StateMachineNode(node);
       default:
         return null;
     }

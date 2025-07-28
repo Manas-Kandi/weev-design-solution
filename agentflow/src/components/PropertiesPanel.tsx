@@ -17,6 +17,11 @@ interface ConditionGroup {
   operator: "AND" | "OR";
   conditions: Condition[];
 }
+
+interface DecisionRule {
+  condition: string;
+  outputPath: string;
+}
 interface Condition {
   id: string;
   field: string;
@@ -914,6 +919,16 @@ export default function PropertiesPanel({
     );
   }
 
+  function handleFieldChange(field: string, value: unknown): void {
+    if (!selectedNode) return;
+    onChange({
+      ...selectedNode,
+      data: {
+        ...selectedNode.data,
+        [field]: value,
+      },
+    });
+  }
   // Default properties panel for other node types
   return (
     <aside
@@ -1033,6 +1048,130 @@ export default function PropertiesPanel({
               <Play className="w-4 h-4 mr-2" />
               Test Component
             </Button>
+          </div>
+        )}
+
+        {/* Prompt Template Configuration */}
+        {selectedNode.subtype === "prompt-template" && (
+          <>
+            <div>
+              <label className="block text-sm font-medium mb-2">Template</label>
+              <textarea
+                className="w-full p-2 rounded text-sm"
+                style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                rows={4}
+                placeholder="Enter template with {{variables}}..."
+                value={
+                  (localData && "template" in localData
+                    ? (localData as { template?: string }).template
+                    : "") || ""
+                }
+                onChange={(e) => handleFieldChange("template", e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Static Variables (JSON)
+              </label>
+              <textarea
+                className="w-full p-2 rounded text-sm"
+                style={{ backgroundColor: theme.bgElevate, color: theme.text }}
+                rows={2}
+                placeholder='{"name": "John", "role": "user"}'
+                value={JSON.stringify(
+                  (localData && "variables" in localData
+                    ? (localData as { variables?: object }).variables
+                    : {}) || {}
+                )}
+                onChange={(e) => {
+                  try {
+                    const vars = JSON.parse(e.target.value);
+                    handleFieldChange("variables", vars);
+                  } catch {}
+                }}
+              />
+            </div>
+          </>
+        )}
+        {/* Decision Tree Configuration */}
+        {selectedNode.subtype === "decision-tree" && (
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Decision Rules
+            </label>
+            <div className="space-y-2">
+              {(
+                (localData && "rules" in localData
+                  ? (localData as { rules?: DecisionRule[] }).rules
+                  : []) || []
+              ).map((rule: DecisionRule, index: number) => (
+                <div
+                  key={index}
+                  className="p-2 border rounded"
+                  style={{ borderColor: theme.border }}
+                >
+                  <input
+                    className="w-full p-1 mb-1 rounded text-sm"
+                    style={{
+                      backgroundColor: theme.bgElevate,
+                      color: theme.text,
+                    }}
+                    placeholder="Condition"
+                    value={rule.condition}
+                    onChange={(e) => {
+                      const newRules = (
+                        (localData && "rules" in localData
+                          ? (localData as { rules?: DecisionRule[] }).rules
+                          : []) || []
+                      ).slice();
+                      newRules[index] = {
+                        ...rule,
+                        condition: e.target.value,
+                      };
+                      handleFieldChange("rules", newRules);
+                    }}
+                  />
+                  <input
+                    className="w-full p-1 rounded text-sm"
+                    style={{
+                      backgroundColor: theme.bgElevate,
+                      color: theme.text,
+                    }}
+                    placeholder="Output Path"
+                    value={rule.outputPath}
+                    onChange={(e) => {
+                      const newRules = (
+                        (localData && "rules" in localData
+                          ? (localData as { rules?: DecisionRule[] }).rules
+                          : []) || []
+                      ).slice();
+                      newRules[index] = {
+                        ...rule,
+                        outputPath: e.target.value,
+                      };
+                      handleFieldChange("rules", newRules);
+                    }}
+                  />
+                </div>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const rules = (
+                    (localData && "rules" in localData
+                      ? (localData as { rules?: DecisionRule[] }).rules
+                      : []) || []
+                  ).slice();
+                  handleFieldChange("rules", [
+                    ...rules,
+                    { condition: "", outputPath: "" },
+                  ]);
+                }}
+              >
+                Add Rule
+              </Button>
+            </div>
           </div>
         )}
       </div>
