@@ -31,7 +31,12 @@ export abstract class BaseNode implements NodeExecutor {
     const incoming = context.connections.filter(
       (c) => c.targetNode === this.node.id
     );
-    console.log('[DEBUG] getInputValues: node', this.node.id, 'incoming connections', incoming);
+    console.log(
+      "[DEBUG] getInputValues: node",
+      this.node.id,
+      "incoming connections",
+      incoming
+    );
     return incoming
       .map((conn) => {
         const upstreamNode = context.nodes.find(
@@ -88,9 +93,7 @@ export abstract class BaseNode implements NodeExecutor {
           };
           const geminiOutput = output.gemini as GeminiOutput;
           // Optionally extract text from Gemini output
-          if (
-            geminiOutput?.candidates?.[0]?.content?.parts?.[0]?.text
-          ) {
+          if (geminiOutput?.candidates?.[0]?.content?.parts?.[0]?.text) {
             return geminiOutput.candidates[0].content.parts[0].text as string;
           }
         }
