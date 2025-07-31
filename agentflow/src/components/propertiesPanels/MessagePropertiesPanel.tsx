@@ -67,52 +67,48 @@ export default function MessagePropertiesPanel({ node, onChange }: MessageProper
     <div className="flex flex-col gap-6 p-1">
       {/* Required Fields */}
       <PanelSection title="Required" description="">
-        <h3 className="text-accent font-semibold mb-1">Required</h3>
-        <div className="mb-3">
-          <label className="block text-sm font-medium mb-1">
-            Title <span className="text-error">*</span>
-            <Input
-              className="w-full bg-panel border border-border rounded p-2 text-text mt-1"
-              value={safeData.title}
-              maxLength={TITLE_MAX}
-              placeholder="Message"
-              onChange={e => handleFieldChange("title", e.target.value)}
-              onBlur={() => setTouched(t => ({ ...t, title: true }))}
-            />
-            <span className="text-xs text-textMute">Max {TITLE_MAX} characters</span>
-            {touched.title && errors.title && <div className="text-error text-xs mt-1">{errors.title}</div>}
-          </label>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Message Content <span className="text-error">*</span>
-            <textarea
-              className="w-full min-h-[64px] bg-panel border border-border rounded p-2 text-text mt-1"
-              value={safeData.content}
-              maxLength={500}
-              placeholder="Message to send..."
-              onChange={e => handleFieldChange("content", e.target.value)}
-              onBlur={() => setTouched(t => ({ ...t, content: true }))}
-            />
-            <span className="text-xs text-textMute">Required. This will be sent as the message.</span>
-            {touched.content && errors.content && <div className="text-error text-xs mt-1">{errors.content}</div>}
-          </label>
-        </div>
-        <div className="mb-3">
-          <label className="block text-sm font-medium mb-1">
-            Message Type
-            <select
-              className="w-full bg-panel border border-border rounded p-2 text-text mt-1"
-              value={safeData.messageType}
-              onChange={e => handleFieldChange("messageType", e.target.value as MessageNodeData["messageType"])}
-            >
-              <option value="System">System</option>
-              <option value="User">User</option>
-              <option value="Assistant">Assistant</option>
-            </select>
-            <span className="text-xs text-textMute">Choose the role for this message.</span>
-          </label>
-        </div>
+        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          Title <span className="text-[var(--af-danger)]">*</span>
+        </label>
+        <input
+          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+          value={safeData.title}
+          maxLength={TITLE_MAX}
+          placeholder="Message"
+          onChange={e => handleFieldChange("title", e.target.value)}
+          onBlur={() => setTouched(t => ({ ...t, title: true }))}
+        />
+        <span className="text-[var(--af-helper-size)] text-[var(--af-text-helper)]">Max {TITLE_MAX} characters</span>
+        {touched.title && errors.title && <div className="text-[var(--af-danger)] text-xs mt-1">{errors.title}</div>}
+
+        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          Message Content <span className="text-[var(--af-danger)]">*</span>
+        </label>
+        <textarea
+          className="w-full min-h-[64px] rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+          value={safeData.content}
+          maxLength={500}
+          placeholder="Message to send..."
+          onChange={e => handleFieldChange("content", e.target.value)}
+          onBlur={() => setTouched(t => ({ ...t, content: true }))}
+        />
+        <span className="text-[var(--af-helper-size)] text-[var(--af-text-helper)]">Required. This will be sent as the message.</span>
+        {touched.content && errors.content && <div className="text-[var(--af-danger)] text-xs mt-1">{errors.content}</div>}
+
+        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          Message Type
+        </label>
+        <select
+          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+          value={safeData.messageType}
+          onChange={e => handleFieldChange("messageType", e.target.value as MessageNodeData["messageType"])}
+        >
+          <option value="System">System</option>
+          <option value="User">User</option>
+          <option value="Assistant">Assistant</option>
+        </select>
+        <span className="text-[var(--af-helper-size)] text-[var(--af-text-helper)]">Choose the role for this message.</span>
+
       </PanelSection>
       <PanelSection title="Advanced" description="Optional: pass input through">
         <div className="flex items-center gap-2 mt-2">
@@ -121,10 +117,11 @@ export default function MessagePropertiesPanel({ node, onChange }: MessageProper
             checked={!!safeData.passThrough}
             onChange={e => handleFieldChange("passThrough", e.target.checked)}
             id="passThrough"
+            className="accent-[var(--af-accent)] w-4 h-4 rounded-[var(--af-border-radius)] border border-[var(--af-border)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
           />
-          <label htmlFor="passThrough" className="text-sm">
+          <label htmlFor="passThrough" className="text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
             Pass Through Mode
-            <span className="block text-xs text-textMute">If enabled, this node will pass its input through instead of using the message content.</span>
+            <span className="block text-[var(--af-helper-size)] text-[var(--af-text-helper)]">If enabled, this node will pass its input through instead of using the message content.</span>
           </label>
         </div>
       </PanelSection>

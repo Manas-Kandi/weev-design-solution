@@ -45,40 +45,50 @@ export default function AgentPropertiesPanel({
   return (
     <div className="flex flex-col gap-4">
       {/* Basic Configuration */}
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Basic Configuration</h3>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-muted">Agent Name</span>
-          <Input
-            value={node.data?.name || ""}
-            onChange={(e) => handleFieldChange("name", e.target.value)}
-          />
+      <PanelSection
+        title="Basic Configuration"
+        description="Agent name and role"
+      >
+        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          Agent Name
         </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-muted">Role</span>
-          <Input
-            value={node.data?.role || ""}
-            onChange={(e) => handleFieldChange("role", e.target.value)}
-          />
+        <input
+          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+          value={node.data?.name || ""}
+          onChange={(e) => handleFieldChange("name", e.target.value)}
+        />
+        <label className="block mb-1 mt-3 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          Role
         </label>
-      </section>
+        <input
+          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+          value={node.data?.role || ""}
+          onChange={(e) => handleFieldChange("role", e.target.value)}
+        />
+      </PanelSection>
       {/* Agent Behavior */}
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Agent Behavior</h3>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-muted">Personality Tags</span>
-          <Input
-            value={personalityTags.join(", ")}
-            onChange={(e) => {
-              setPersonalityTags(e.target.value.split(",").map((t) => t.trim()));
-              handleFieldChange("personality", e.target.value);
-            }}
-            placeholder="e.g. friendly, concise, expert"
-          />
+      <PanelSection title="Agent Behavior" description="Personality and style">
+        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          Personality Tags
         </label>
-      </section>
+        <input
+          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+          value={personalityTags.join(", ")}
+          onChange={(e) => {
+            setPersonalityTags(e.target.value.split(",").map((t) => t.trim()));
+            handleFieldChange("personality", e.target.value);
+          }}
+          placeholder="e.g. friendly, concise, expert"
+        />
+        <div className="mt-1 text-[var(--af-helper-size)] text-[var(--af-text-helper)]">
+          Comma-separated. E.g. <code>friendly, concise, expert</code>
+        </div>
+      </PanelSection>
       {/* Now PanelSection blocks follow */}
-      <PanelSection title="System Prompt" description="Instructions for the agent's behavior">
+      <PanelSection
+        title="System Prompt"
+        description="Instructions for the agent's behavior"
+      >
         <label className="flex flex-col gap-1">
           <span className="text-xs text-muted">System Prompt</span>
           <Input
@@ -88,7 +98,10 @@ export default function AgentPropertiesPanel({
           />
         </label>
       </PanelSection>
-      <PanelSection title="Escalation" description="Configure escalation threshold (0-10)">
+      <PanelSection
+        title="Escalation"
+        description="Configure escalation threshold (0-10)"
+      >
         <label className="flex flex-col gap-1">
           <span className="text-xs text-muted">Escalation Threshold</span>
           <Input
@@ -97,11 +110,16 @@ export default function AgentPropertiesPanel({
             min={0}
             max={10}
             step={1}
-            onChange={(e) => handleFieldChange("escalationThreshold", Number(e.target.value))}
+            onChange={(e) =>
+              handleFieldChange("escalationThreshold", Number(e.target.value))
+            }
           />
         </label>
       </PanelSection>
-      <PanelSection title="LLM Settings" description="Model and temperature for agent reasoning">
+      <PanelSection
+        title="LLM Settings"
+        description="Model and temperature for agent reasoning"
+      >
         <label className="flex flex-col gap-1">
           <span className="text-xs text-muted">Model</span>
           <Input

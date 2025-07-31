@@ -20,14 +20,13 @@ const PanelSection: React.FC<PanelSectionProps> = ({
 
   return (
     <section
-      className={`border-b border-[#3e3e42] pb-2 mb-2 ${className}`}
-      style={{ background: "#232326", borderRadius: 6, padding: "12px 0 0 0" }}
+      className={`border-b border-[var(--af-border)] pb-0 mb-[var(--af-section-spacing)] bg-[var(--af-section-bg)] rounded-[var(--af-border-radius)] pt-[12px] ${className}`}
     >
       <button
         type="button"
-        className="flex items-center w-full text-left focus:outline-none group"
+        className="flex items-center w-full text-left focus:outline-none group px-4 py-2 transition-colors duration-200 rounded-t-[var(--af-border-radius)]"
         onClick={() => setCollapsed((prev) => !prev)}
-        style={{ color: "#cccccc", fontWeight: 600, fontSize: 15 }}
+        style={{ color: "var(--af-text-primary)", fontWeight: 600, fontSize: 'var(--af-section-header-size)' }}
         aria-expanded={!collapsed}
         aria-controls={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
       >
@@ -39,16 +38,15 @@ const PanelSection: React.FC<PanelSectionProps> = ({
         {title}
       </button>
       {description && (
-        <div className="ml-6 mt-1 text-xs text-[#858585]">{description}</div>
+        <div className="ml-8 mt-1 text-[var(--af-helper-size)] text-[var(--af-text-helper)] font-normal">{description}</div>
       )}
-      {!collapsed && (
-        <div
-          id={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
-          className="mt-2 ml-6"
-        >
-          {children}
-        </div>
-      )}
+      <div
+        id={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
+        className={`transition-all duration-200 overflow-hidden ${collapsed ? 'max-h-0 opacity-0' : 'max-h-[800px] opacity-100'} ml-8 mt-2 space-y-[var(--af-field-spacing)]`}
+        aria-hidden={collapsed}
+      >
+        {!collapsed && children}
+      </div>
     </section>
   );
 };

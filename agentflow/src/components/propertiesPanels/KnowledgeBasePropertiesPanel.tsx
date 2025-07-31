@@ -144,7 +144,9 @@ export default function KnowledgeBasePropertiesPanel({
   return (
     <div className="flex flex-col gap-4">
       <PanelSection title="Operation" description="Choose what this node does">
-        <label className="text-sm">Operation</label>
+        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          Operation
+        </label>
         <Select
           value={operation}
           onValueChange={(val) =>
@@ -154,12 +156,16 @@ export default function KnowledgeBasePropertiesPanel({
             )
           }
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200">
             <SelectValue placeholder="Select operation" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-[var(--af-panel-bg)] border border-[var(--af-border)] text-[var(--af-text-secondary)]">
             {operationOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
+              <SelectItem
+                key={opt.value}
+                value={opt.value}
+                className="hover:bg-[var(--af-section-bg)]"
+              >
                 {opt.label}
               </SelectItem>
             ))}
@@ -167,9 +173,11 @@ export default function KnowledgeBasePropertiesPanel({
         </Select>
       </PanelSection>
       <PanelSection title="Documents" description="JSON array of documents">
-        <label className="text-sm">Documents (JSON)</label>
+        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          Documents (JSON)
+        </label>
         <textarea
-          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
+          className="w-full min-h-[48px] rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] font-mono focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
           value={documents}
           onChange={(e) => {
             setDocuments(e.target.value);
@@ -183,9 +191,11 @@ export default function KnowledgeBasePropertiesPanel({
         />
       </PanelSection>
       <PanelSection title="Metadata" description="Additional metadata as JSON">
-        <h3 className="text-sm">Metadata (JSON)</h3>
+        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          Metadata (JSON)
+        </label>
         <textarea
-          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
+          className="w-full min-h-[48px] rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] font-mono focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
           value={metadata}
           onChange={(e) => {
             setMetadata(e.target.value);
@@ -193,7 +203,9 @@ export default function KnowledgeBasePropertiesPanel({
               handleFieldChange("metadata", JSON.parse(e.target.value));
             } catch {}
           }}
-          placeholder={`{\n  "source": "user"\n}`}
+          placeholder={`{
+  "source": "user"
+}`}
         />
       </PanelSection>
     </div>

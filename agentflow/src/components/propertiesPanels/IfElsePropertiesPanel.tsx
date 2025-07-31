@@ -1,6 +1,5 @@
 import React from "react";
 import { CanvasNode } from "@/types";
-import { Input } from "../ui/input";
 import PanelSection from "./PanelSection";
 
 interface Message {
@@ -52,29 +51,88 @@ export default function IfElsePropertiesPanel({
     }
   };
 
-  const ifElseData = isIfElseNodeData(node.data)
+  // FIX: Correct ternary assignment for ifElseData
+  const ifElseData: IfElseNodeData = isIfElseNodeData(node.data)
     ? node.data
-    : { condition: "", message: "", context: { flowId: "", nodeId: "", timestamp: Date.now(), metadata: {} }, history: [], state: {} };
+    : {
+        condition: "",
+        message: "",
+        context: { flowId: "", nodeId: "", timestamp: Date.now(), metadata: {} },
+        history: [],
+        state: {},
+      };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div
+      className="agentflow-properties-panel"
+      style={{
+        width: 360,
+        minWidth: 360,
+        maxWidth: 360,
+        height: "calc(100vh - 0px)", // adjust if header/footer present
+        background: "#23272e",
+        padding: 16,
+        boxSizing: "border-box",
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        borderLeft: "1px solid #252525",
+        position: "relative",
+      }}
+    >
+      {/* Custom Scrollbar Styles */}
+      <style>{`
+        .agentflow-properties-panel::-webkit-scrollbar {
+          width: 8px;
+          background: #1a1a1a;
+        }
+        .agentflow-properties-panel::-webkit-scrollbar-thumb {
+          background: #404040;
+          border-radius: 4px;
+          transition: background 0.2s;
+        }
+        .agentflow-properties-panel:hover::-webkit-scrollbar-thumb {
+          background: #4a4a4a;
+        }
+        .agentflow-properties-panel::-webkit-scrollbar-corner {
+          background: #23272e;
+        }
+      `}</style>
       <PanelSection title="Condition" description="Expression to evaluate for routing">
-        <Input
+        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
+          Condition
+        </label>
+        <input
+          className="rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 w-full"
           value={ifElseData.condition || ""}
           onChange={(e) => handleFieldChange("condition", e.target.value)}
           placeholder="e.g. input == 'yes'"
         />
+        <div className="mt-1 text-[12px] text-[#858585]">
+          Boolean/JS-like expression. Example: <code>input == &#39;yes&#39;</code>
+        </div>
       </PanelSection>
       <PanelSection title="Message" description="Optional message to emit if condition is met.">
-        <Input
+        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
+          Message
+        </label>
+        <input
+          className="rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 w-full"
           value={ifElseData.message || ""}
           onChange={(e) => handleFieldChange("message", e.target.value)}
           placeholder="e.g. Branch taken!"
         />
+        <div className="mt-1 text-[12px] text-[#858585]">
+          This message will be sent if the condition is true.
+        </div>
       </PanelSection>
       <PanelSection title="Context" description="Context and metadata (edit as JSON)">
+        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
+          Context
+        </label>
         <textarea
-          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
+          className="w-full min-h-[48px] rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] font-mono focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 resize-vertical"
           value={JSON.stringify(ifElseData.context ?? {}, null, 2)}
           onChange={e => {
             try {
@@ -83,17 +141,29 @@ export default function IfElsePropertiesPanel({
           }}
           placeholder='{"flowId": "...", "metadata": {}}'
         />
+        <div className="mt-1 text-[12px] text-[#858585]">
+          Edit the node context as JSON.
+        </div>
       </PanelSection>
       <PanelSection title="History" description="Execution history (read-only)">
+        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
+          History
+        </label>
         <textarea
-          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
+          className="w-full min-h-[48px] rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] font-mono focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 resize-vertical"
           value={JSON.stringify(ifElseData.history ?? [], null, 2)}
           readOnly
         />
+        <div className="mt-1 text-[12px] text-[#858585]">
+          Read-only execution history for this node.
+        </div>
       </PanelSection>
       <PanelSection title="State" description="Node state (edit as JSON)">
+        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
+          State
+        </label>
         <textarea
-          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
+          className="w-full min-h-[48px] rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] font-mono focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 resize-vertical"
           value={JSON.stringify(ifElseData.state ?? {}, null, 2)}
           onChange={e => {
             try {
@@ -104,6 +174,9 @@ export default function IfElsePropertiesPanel({
   "key": "value"
 }`}
         />
+        <div className="mt-1 text-[12px] text-[#858585]">
+          Edit the node state as JSON.
+        </div>
       </PanelSection>
     </div>
   );

@@ -1,6 +1,53 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* AgentFlow Properties Panel Design Tokens */
+:root {
+  --af-panel-bg: #23272e;
+  --af-section-bg: #232326;
+  --af-border: #252525;
+  --af-accent: #00c4ff;
+  --af-danger: #ff3b30;
+  --af-text-primary: #cccccc;
+  --af-text-secondary: #e6e6e6;
+  --af-text-helper: #858585;
+  --af-scrollbar-track: #1a1a1a;
+  --af-scrollbar-thumb: #404040;
+  --af-scrollbar-thumb-hover: #4a4a4a;
+  --af-panel-width: 360px;
+  --af-panel-padding: 16px;
+  --af-section-spacing: 12px;
+  --af-field-spacing: 8px;
+  --af-border-radius: 4px;
+  --af-btn-height: 32px;
+  --af-btn-small-height: 28px;
+  --af-btn-icon-size: 24px;
+  --af-section-header-size: 15px;
+  --af-label-size: 13px;
+  --af-helper-size: 12px;
+}
+
+/* AgentFlow Custom Scrollbar for Properties Panel */
+.agentflow-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--af-scrollbar-thumb) var(--af-scrollbar-track);
+}
+.agentflow-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.agentflow-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--af-scrollbar-thumb);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.agentflow-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--af-scrollbar-thumb-hover);
+}
+.agentflow-scrollbar::-webkit-scrollbar-track {
+  background: var(--af-scrollbar-track);
+}
+
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

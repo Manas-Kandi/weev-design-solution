@@ -11,12 +11,9 @@ import {
   isConversationFlowNodeData,
   isSimulatorNodeData,
   isDashboardNodeData,
-  isChatNodeData
+  isChatNodeData,
 } from "@/utils/typeGuards";
-import {
-  CanvasNode,
-  ConversationFlowNodeData
-} from "@/types";
+import { CanvasNode, ConversationFlowNodeData } from "@/types";
 import AgentPropertiesPanel from "./propertiesPanels/AgentPropertiesPanel";
 import MessagePropertiesPanel from "./propertiesPanels/MessagePropertiesPanel";
 import PromptTemplatePropertiesPanel from "./propertiesPanels/PromptTemplatePropertiesPanel";
@@ -36,10 +33,16 @@ interface PropertiesPanelProps {
 }
 
 const panelClass = `
-    h-full bg-vscode-sidebar border-l border-vscode-border 
-    overflow-y-auto scrollbar-thin scrollbar-thumb-vscode-scrollbarThumb 
-    scrollbar-track-transparent hover:scrollbar-thumb-vscode-scrollbarThumbHover
-  `;
+  w-[var(--af-panel-width)]
+  h-full
+  min-h-0
+  flex flex-col
+  bg-[var(--af-panel-bg)]
+  border-l border-[var(--af-border)]
+  p-[var(--af-panel-padding)]
+  agentflow-scrollbar
+  overflow-y-auto
+`;
 
 export default function PropertiesPanel({
   selectedNode,
@@ -47,7 +50,12 @@ export default function PropertiesPanel({
 }: PropertiesPanelProps) {
   if (!selectedNode) {
     return (
-      <div className={panelClass + " flex flex-col items-center justify-center h-full text-[#7f7f7f] text-base p-10 font-sans"}>
+      <div
+        className={
+          panelClass +
+          " flex flex-col items-center justify-center h-full text-[#7f7f7f] text-base p-10 font-sans"
+        }
+      >
         <div className="text-2xl mb-2">🛈</div>
         <div>No node selected</div>
         <div className="text-xs mt-2 text-vscode-textSecondary">
@@ -84,24 +92,38 @@ export default function PropertiesPanel({
         </div>
       );
     }
-    if (selectedNode.subtype === "prompt-template" || selectedNode.subtype === "template") {
+    if (
+      selectedNode.subtype === "prompt-template" ||
+      selectedNode.subtype === "template"
+    ) {
       return (
         <div className={panelClass}>
-          <PromptTemplatePropertiesPanel node={selectedNode} onChange={onChange} />
+          <PromptTemplatePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     }
     if (selectedNode.subtype === "knowledge-base") {
       return (
         <div className={panelClass}>
-          <KnowledgeBasePropertiesPanel node={selectedNode} onChange={onChange} />
+          <KnowledgeBasePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     }
     if (selectedNode.subtype === "conversation-flow") {
       return (
         <div className={panelClass}>
-          <ConversationFlowPropertiesPanel node={selectedNode as CanvasNode & { data: ConversationFlowNodeData }} onChange={onChange} />
+          <ConversationFlowPropertiesPanel
+            node={
+              selectedNode as CanvasNode & { data: ConversationFlowNodeData }
+            }
+            onChange={onChange}
+          />
         </div>
       );
     }
@@ -119,14 +141,20 @@ export default function PropertiesPanel({
     if (selectedNode.subtype === "decision-tree") {
       return (
         <div className={panelClass}>
-          <DecisionTreePropertiesPanel node={selectedNode} onChange={onChange} />
+          <DecisionTreePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     }
     if (selectedNode.subtype === "state-machine") {
       return (
         <div className={panelClass}>
-          <StateMachinePropertiesPanel node={selectedNode} onChange={onChange} />
+          <StateMachinePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     }
@@ -162,7 +190,10 @@ export default function PropertiesPanel({
     if (selectedNode.subtype === "chat-interface") {
       return (
         <div className={panelClass}>
-          <ChatInterfacePropertiesPanel node={selectedNode} onChange={onChange} />
+          <ChatInterfacePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     }
@@ -179,7 +210,10 @@ export default function PropertiesPanel({
   if (isPromptTemplateNodeData(selectedNode.data)) {
     return (
       <div className={panelClass}>
-        <PromptTemplatePropertiesPanel node={selectedNode} onChange={onChange} />
+        <PromptTemplatePropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+        />
       </div>
     );
   }
@@ -214,7 +248,10 @@ export default function PropertiesPanel({
   if (isConversationFlowNodeData(selectedNode.data)) {
     return (
       <div className={panelClass}>
-        <ConversationFlowPropertiesPanel node={selectedNode as CanvasNode & { data: ConversationFlowNodeData }} onChange={onChange} />
+        <ConversationFlowPropertiesPanel
+          node={selectedNode as CanvasNode & { data: ConversationFlowNodeData }}
+          onChange={onChange}
+        />
       </div>
     );
   }
@@ -250,8 +287,8 @@ export default function PropertiesPanel({
         Subtype: <span className="font-mono">{selectedNode.subtype}</span>
       </div>
       <div className="text-xs bg-vscode-panel p-3 rounded">
-        This node type doesn&apos;t have a properties panel yet. 
-        Add a panel for &quot;{selectedNode.subtype}&quot; nodes.
+        This node type doesn&apos;t have a properties panel yet. Add a panel for
+        &quot;{selectedNode.subtype}&quot; nodes.
       </div>
     </div>
   );
