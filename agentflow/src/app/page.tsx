@@ -395,80 +395,6 @@ export default function AgentFlowPage() {
     }
   };
 
-  const handleCreateConnection = async (connectionData: Connection) => {
-    if (!currentProject) {
-      console.error("No current project selected");
-      return;
-    }
-
-    try {
-      // Create payload that matches your existing schema
-      const connectionPayload = {
-        project_id: currentProject.id,
-        source_node: connectionData.sourceNode,
-        source_output: connectionData.sourceOutput,
-        target_node: connectionData.targetNode,
-        target_input: connectionData.targetInput,
-      };
-
-      console.log("Creating connection with payload:", connectionPayload);
-
-      const { data, error } = await supabase
-        .from("connections")
-        .insert([connectionPayload])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Supabase error creating connection:", {
-          error,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        });
-        // Don't return here - we might still want to add to local state
-        // or handle this gracefully
-        throw new Error(
-          `Failed to create connection in database: ${error.message}`
-        );
-      }
-
-      if (!data) {
-        console.error("No data returned from connection creation");
-        throw new Error("No data returned from connection creation");
-      }
-
-      console.log("Connection created in database:", data);
-
-      // Transform the response to match our Connection interface
-      const newConnection: Connection = {
-        id: data.id,
-        sourceNode: data.source_node,
-        sourceOutput: data.source_output,
-        targetNode: data.target_node,
-        targetInput: data.target_input,
-      };
-
-      console.log("Adding connection to local state:", newConnection);
-
-      // Update local state
-      setConnections((prev) => {
-        const updated = [...prev, newConnection];
-        console.log("Updated connections array:", updated);
-        return updated;
-      });
-
-      console.log("Connection successfully created and added to state!");
-    } catch (err) {
-      console.error("Unexpected error creating connection:", err);
-      // For now, let's still add it to local state even if DB fails
-      // This will at least show the connection visually while you debug
-      console.log("Adding connection to local state despite error...");
-      setConnections((prev) => [...prev, connectionData]);
-    }
-  };
-
   const handleNodeUpdate = (updatedNode: CanvasNode) => {
     console.log("handleNodeUpdate received:", updatedNode.data); // Debug log
     setNodes((prevNodes) => {
@@ -548,15 +474,14 @@ export default function AgentFlowPage() {
             );
           }}
           onConnectionsChange={setConnections}
-          onCreateConnection={async (connectionData) => {
-            // ...existing logic...
+          onCreateConnection={async () => {
+            // TODO: Implement connection creation logic if needed
           }}
           showTester={showTester}
           isTesting={isTesting}
           testFlowResult={testFlowResult}
           setShowTester={setShowTester}
           setTestFlowResult={setTestFlowResult}
-          setNodes={setNodes} // <-- Pass setNodes for node deletion
         />
       }
       right={

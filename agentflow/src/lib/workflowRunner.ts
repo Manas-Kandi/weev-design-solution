@@ -1,6 +1,21 @@
 import { CanvasNode, Connection } from "@/types";
 import { FlowEngine } from "./flow/FlowEngine";
 
+// Helper to safely get node title
+function getNodeTitle(node: CanvasNode): string {
+  if (!node) return "";
+  const data = node.data;
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "title" in data &&
+    typeof (data as { title?: unknown }).title === "string"
+  ) {
+    return (data as { title: string }).title;
+  }
+  return "";
+}
+
 export async function runWorkflow(
   nodes: CanvasNode[],
   connections: Connection[],
@@ -19,7 +34,7 @@ export async function runWorkflow(
     engine.setStartNode(startNodeId);
   } else {
     const startNode =
-      nodes.find((n) => n.data.title?.toLowerCase().includes("start")) ||
+      nodes.find((n) => getNodeTitle(n).toLowerCase().includes("start")) ||
       nodes[0];
     if (startNode) {
       engine.setStartNode(startNode.id);

@@ -8,7 +8,7 @@ interface DecisionRule {
   priority?: number;
 }
 
-interface DecisionTreeNodeData {
+export interface DecisionTreeNodeData {
   rules?: DecisionRule[];
   defaultPath?: string;
   evaluationMode?: "sequential" | "priority" | "llm";

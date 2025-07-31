@@ -234,7 +234,9 @@ export class FlowEngine {
       if (emitLog) {
         emitLog(
           node.id,
-          `[${node.type}${node.subtype ? ":" + node.subtype : ""}] Executed node: ${node.data?.title || node.id}`,
+          `[${node.type}${
+            node.subtype ? ":" + node.subtype : ""
+          }] Executed node: ${getNodeTitle(node)}`,
           output,
           errorMsg
         );
@@ -292,4 +294,28 @@ export class FlowEngine {
 
     return this.nodeOutputs;
   }
+}
+
+// Helper to safely get node title
+function getNodeTitle(node: CanvasNode): string {
+  if (!node) return "";
+  const data = node.data;
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "title" in data &&
+    typeof (data as { title?: unknown }).title === "string"
+  ) {
+    return (data as { title: string }).title;
+  }
+  // Optionally use description if present
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "description" in data &&
+    typeof (data as { description?: unknown }).description === "string"
+  ) {
+    return (data as { description: string }).description;
+  }
+  return node.id;
 }

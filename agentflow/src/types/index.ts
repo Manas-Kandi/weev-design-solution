@@ -1,4 +1,25 @@
 import React from "react";
+import type { KnowledgeBaseNodeData } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
+import type { DecisionTreeNodeData } from "@/lib/nodes/logic/DecisionTreeNode";
+
+// DashboardNodeData, TestCaseNodeData, ConversationFlowNodeData are defined in their respective panels, so we’ll define them here for type safety:
+export interface DashboardNodeData {
+  widgets: string[];
+  title: string;
+  layout: string;
+}
+export interface TestCaseNodeData {
+  input?: string;
+  expectedOutput?: string;
+  description?: string;
+  assertType?: string;
+}
+export interface ConversationFlowNodeData {
+  states: string[];
+  initialState: string;
+  persistState: boolean;
+  transitions: { from: string; to: string; condition: string }[];
+}
 
 export interface PersonalityTrait {
   id: string;
@@ -67,7 +88,8 @@ export interface PromptTemplateNodeData {
   color: string;
   icon: string;
   template: string;
-  variables: Record<string, string>; // e.g. { topic: "inflation" }
+  variables: Record<string, string>;
+  extractVariablesFromInput?: boolean; // <-- Add this line
 }
 
 export interface ConditionGroup {
@@ -110,6 +132,25 @@ export interface ComplexIfElseNodeData {
   llmModel: "gemini-pro" | "gemini-2.5-flash-lite";
 }
 
+export interface IfElseNodeData {
+  condition?: string;
+  message?: string;
+  context?: {
+    flowId: string;
+    nodeId: string;
+    timestamp: number;
+    metadata: Record<string, string>;
+  };
+  history?: Message[];
+  state?: Record<string, unknown>;
+}
+
+export interface Message {
+  content: string;
+  sender: string;
+  timestamp: number;
+}
+
 export interface CanvasNode {
   id: string;
   type: "agent" | "gui" | "logic" | "conversation" | "testing" | "ui";
@@ -118,14 +159,23 @@ export interface CanvasNode {
   size: { width: number; height: number };
   data:
     | AgentNodeData
+    | ToolAgentNodeData
     | ChatNodeData
     | PromptTemplateNodeData
-    | ComplexIfElseNodeData;
+    | ComplexIfElseNodeData
+    | KnowledgeBaseNodeData
+    | DecisionTreeNodeData
+    | DashboardNodeData
+    | TestCaseNodeData
+    | ConversationFlowNodeData
+    | IfElseNodeData;
   inputs: { id: string; label: string; type?: string }[];
   outputs: { id: string; label: string; type?: string }[];
   output?: NodeOutput; // Add output property for workflow results
   context?: Record<string, unknown>; // Add context property for workflow results
 }
+
+// TODO: Add unit tests for IfElse node type to ensure type safety and prevent regressions.
 
 export interface Connection {
   id: string;

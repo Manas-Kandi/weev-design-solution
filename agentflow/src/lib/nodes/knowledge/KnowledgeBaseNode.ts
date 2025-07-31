@@ -1,7 +1,7 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput } from "@/types";
 
-interface KnowledgeBaseNodeData {
+export interface KnowledgeBaseNodeData {
   operation?: "store" | "retrieve" | "search";
   documents?: unknown[];
   metadata?: Record<string, unknown>;

@@ -18,7 +18,6 @@ interface DesignerCanvasProps {
   testFlowResult: Record<string, unknown> | null;
   setShowTester: (show: boolean) => void;
   setTestFlowResult: (result: Record<string, unknown> | null) => void;
-  setNodes?: (nodes: CanvasNode[]) => void; // Added optional setNodes prop
   selectedNode: CanvasNode | null; // Add selectedNode as a prop
 }
 
@@ -35,7 +34,6 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     testFlowResult,
     setShowTester,
     setTestFlowResult,
-    setNodes,
     selectedNode,
   } = props;
 
@@ -64,7 +62,6 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         (c) => c.sourceNode !== nodeId && c.targetNode !== nodeId
       )
     );
-    if (props.setNodes) props.setNodes(nodes.filter((n) => n.id !== nodeId));
   };
 
   // --- Real-time Test Flow Execution ---
@@ -80,18 +77,13 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         nodes,
         connections,
         startNodeId,
-        (
-          nodeId: string,
-          log: string,
-          output?: unknown,
-          error?: string
-        ) => {
+        (nodeId: string, log: string, output?: unknown, error?: string) => {
           const node = nodes.find((n) => n.id === nodeId);
           setTestLogs((prev) => [
             ...prev,
             {
               nodeId,
-              title: node?.data.title || nodeId,
+              title: node ? getNodeTitle(node) : nodeId,
               type: node?.type || "",
               log,
               output,
@@ -117,6 +109,33 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     onNodeUpdate({ ...node, position: { x: pos.x, y: pos.y } });
   };
 
+  // Helper to safely get node title
+  function getNodeTitle(node: CanvasNode): string {
+    if (!node) return "";
+    const data = node.data;
+    // DashboardNodeData, DecisionTreeNodeData, ConversationFlowNodeData, ChatNodeData, etc.
+    if (
+      typeof data === "object" &&
+      data !== null &&
+      "title" in data &&
+      typeof (data as { title?: unknown }).title === "string"
+    ) {
+      return (data as { title: string }).title;
+    }
+    // DecisionTreeNodeData may have title
+    if (
+      typeof data === "object" &&
+      data !== null &&
+      "description" in data &&
+      typeof (data as { description?: unknown }).description === "string"
+    ) {
+      // Optionally use description if present
+      return (data as { description: string }).description;
+    }
+    // Fallback to node id
+    return node.id;
+  }
+
   return (
     <div className="flex-1 relative overflow-hidden">
       {/* Real-time Test Flow Panel */}
@@ -138,17 +157,18 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
               {log.output !== undefined && (
                 <div className="mt-1 text-green-400">
                   Output:{" "}
-                  {typeof log.output === "string" || typeof log.output === "number"
-                    ? log.output
-                    : typeof log.output === "object"
-                    ? <span>{JSON.stringify(log.output)}</span>
-                    : String(log.output)}
+                  {typeof log.output === "string" ||
+                  typeof log.output === "number" ? (
+                    log.output
+                  ) : typeof log.output === "object" ? (
+                    <span>{JSON.stringify(log.output)}</span>
+                  ) : (
+                    String(log.output)
+                  )}
                 </div>
               )}
               {log.error && (
-                <div className="mt-1 text-red-400">
-                  Error: {log.error}
-                </div>
+                <div className="mt-1 text-red-400">Error: {log.error}</div>
               )}
             </div>
           ))}
@@ -192,7 +212,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
           <div className="space-y-3">
             {Object.entries(testFlowResult).map(([nodeId, output]) => {
               const node = nodes.find((n) => n.id === nodeId);
-              const title = node?.data.title || nodeId;
+              const title = node ? getNodeTitle(node) : nodeId;
               const type = node?.type || "";
               let display;
               let isError = false;

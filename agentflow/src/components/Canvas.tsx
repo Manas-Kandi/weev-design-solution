@@ -112,14 +112,33 @@ export default function CanvasEngine(props: Props) {
   );
 
   const getNodeIcon = useCallback((node: CanvasNode) => {
+    // Type guard for icon property
+    const icon =
+      typeof node.data === "object" &&
+      node.data !== null &&
+      "icon" in node.data
+        ? (node.data as { icon?: string }).icon
+        : undefined;
     for (const category of nodeCategories) {
       const found = category.nodes.find(
-        (n) => n.id === node.data.icon || n.id === node.subtype
+        (n) => n.id === icon || n.id === node.subtype
       );
       if (found) return found.icon;
     }
     return null;
   }, []);
+
+  // Type guard for title and description
+  const getNodeTitle = (node: CanvasNode) => {
+    return typeof node.data === "object" && node.data !== null && "title" in node.data
+      ? (node.data as { title?: string }).title || ""
+      : "";
+  };
+  const getNodeDescription = (node: CanvasNode) => {
+    return typeof node.data === "object" && node.data !== null && "description" in node.data
+      ? (node.data as { description?: string }).description || ""
+      : "";
+  };
 
   // Event handlers
   const handleCanvasMouseDown = useCallback(
@@ -665,10 +684,7 @@ export default function CanvasEngine(props: Props) {
                       stroke="white"
                       strokeWidth="2"
                     />
-                    <polygon
-                      points="10,8 16,12 10,16"
-                      fill="white"
-                    />
+                    <polygon points="10,8 16,12 10,16" fill="white" />
                   </svg>
                 </div>
               )}
@@ -689,7 +705,7 @@ export default function CanvasEngine(props: Props) {
                         fontWeight: "500",
                       }}
                     >
-                      {node.data.title}
+                      {getNodeTitle(node)}
                     </div>
                   </div>
                 </div>
@@ -700,7 +716,7 @@ export default function CanvasEngine(props: Props) {
                     marginTop: "8px",
                   }}
                 >
-                  {node.data.description}
+                  {getNodeDescription(node)}
                 </div>
               </div>
 
