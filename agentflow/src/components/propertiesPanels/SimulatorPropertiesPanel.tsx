@@ -30,7 +30,10 @@ export default function SimulatorPropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <PanelSection title="Test Input" description="Provide input data for simulation.">
+      <PanelSection
+        title="Test Input"
+        description="Provide input data for simulation."
+      >
         <textarea
           className="w-full min-h-[48px] bg-panel border border-border rounded p-2 text-text"
           value={testInput}
@@ -41,7 +44,10 @@ export default function SimulatorPropertiesPanel({
           placeholder="Input for simulation..."
         />
       </PanelSection>
-      <PanelSection title="Expected Output" description="Define the expected output for this test case.">
+      <PanelSection
+        title="Expected Output"
+        description="Define the expected output for this test case."
+      >
         <textarea
           className="w-full min-h-[48px] bg-panel border border-border rounded p-2 text-text"
           value={expectedOutput}
@@ -52,7 +58,10 @@ export default function SimulatorPropertiesPanel({
           placeholder="Expected output..."
         />
       </PanelSection>
-      <PanelSection title="Simulation Controls" description="Run or reset the simulation.">
+      <PanelSection
+        title="Simulation Controls"
+        description="Run or reset the simulation."
+      >
         <button
           className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
           type="button"
