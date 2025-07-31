@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
+import PanelSection from "./PanelSection";
 
 interface ChatInterfacePropertiesPanelProps {
   node: CanvasNode;
@@ -56,8 +57,7 @@ export default function ChatInterfacePropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Title</h3>
+      <PanelSection title="Title" description="Set a title for the chat interface.">
         <Input
           value={title}
           onChange={(e) => {
@@ -66,9 +66,8 @@ export default function ChatInterfacePropertiesPanel({
           }}
           placeholder="Chat interface title..."
         />
-      </section>
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Placeholder</h3>
+      </PanelSection>
+      <PanelSection title="Placeholder" description="Set a placeholder for the input field.">
         <Input
           value={placeholder}
           onChange={(e) => {
@@ -77,8 +76,8 @@ export default function ChatInterfacePropertiesPanel({
           }}
           placeholder="Type your message..."
         />
-      </section>
-      <section>
+      </PanelSection>
+      <PanelSection title="File Upload" description="Allow users to upload files in chat.">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -90,8 +89,8 @@ export default function ChatInterfacePropertiesPanel({
           />
           <span>Enable File Upload</span>
         </label>
-      </section>
-      <section>
+      </PanelSection>
+      <PanelSection title="History" description="Show previous conversation history.">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -103,7 +102,7 @@ export default function ChatInterfacePropertiesPanel({
           />
           <span>Show History</span>
         </label>
-      </section>
+      </PanelSection>
       {/* TODO: Add unit tests for this panel to ensure type safety and prevent regressions. */}
     </div>
   );

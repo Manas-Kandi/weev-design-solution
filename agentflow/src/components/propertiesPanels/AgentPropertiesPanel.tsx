@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { CanvasNode } from "@/types";
 import { Input } from "@/components/ui/input";
+import PanelSection from "./PanelSection";
 
 // TODO: Add unit tests for this panel to ensure type safety and prevent regressions.
 
@@ -64,60 +65,43 @@ export default function AgentPropertiesPanel({
       {/* Agent Behavior */}
       <section>
         <h3 className="text-accent font-semibold mb-2">Agent Behavior</h3>
-        <div className="flex flex-wrap gap-2 mb-2">
-          {personalityTags.map((tag, idx) => (
-            <span
-              key={idx}
-              className="bg-accent/20 text-accent px-2 py-1 rounded text-xs flex items-center"
-            >
-              {tag}
-              <button
-                className="ml-1 text-error hover:underline"
-                onClick={() => {
-                  const next = personalityTags.filter((t, i) => i !== idx);
-                  setPersonalityTags(next);
-                  handleFieldChange("personality", next.join(", "));
-                }}
-                aria-label="Remove tag"
-              >
-                ×
-              </button>
-            </span>
-          ))}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-muted">Personality Tags</span>
           <Input
-            placeholder="Add tag"
-            value={""}
+            value={personalityTags.join(", ")}
             onChange={(e) => {
-              const val = e.target.value.trim();
-              if (val && !personalityTags.includes(val)) {
-                const next = [...personalityTags, val];
-                setPersonalityTags(next);
-                handleFieldChange("personality", next.join(", "));
-              }
+              setPersonalityTags(e.target.value.split(",").map((t) => t.trim()));
+              handleFieldChange("personality", e.target.value);
             }}
-            className="w-24"
+            placeholder="e.g. friendly, concise, expert"
           />
-        </div>
+        </label>
       </section>
-      {/* System Instructions */}
-      <section>
-        <h3 className="text-accent font-semibold mb-2">System Instructions</h3>
-        <textarea
-          className="w-full min-h-[64px] bg-panel border border-border rounded p-2 text-text"
-          value={node.data?.systemPrompt || ""}
-          onChange={(e) => handleFieldChange("systemPrompt", e.target.value)}
-          placeholder="System prompt for this agent..."
-        />
+      {/* Now PanelSection blocks follow */}
+      <PanelSection title="System Prompt" description="Instructions for the agent's behavior">
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-muted">System Prompt</span>
+          <Input
+            value={node.data?.systemPrompt || ""}
+            onChange={(e) => handleFieldChange("systemPrompt", e.target.value)}
+            placeholder="You are a helpful assistant..."
+          />
+        </label>
+      </PanelSection>
+      <PanelSection title="Escalation" description="Configure escalation threshold (0-10)">
         <label className="flex flex-col gap-1">
           <span className="text-xs text-muted">Escalation Threshold</span>
           <Input
             type="number"
-            value={node.data?.escalationThreshold || 0}
-            onChange={(e) =>
-              handleFieldChange("escalationThreshold", Number(e.target.value))
-            }
+            value={node.data?.escalationThreshold ?? 0}
+            min={0}
+            max={10}
+            step={1}
+            onChange={(e) => handleFieldChange("escalationThreshold", Number(e.target.value))}
           />
         </label>
+      </PanelSection>
+      <PanelSection title="LLM Settings" description="Model and temperature for agent reasoning">
         <label className="flex flex-col gap-1">
           <span className="text-xs text-muted">Model</span>
           <Input
@@ -125,7 +109,7 @@ export default function AgentPropertiesPanel({
             onChange={(e) => handleFieldChange("model", e.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1 mt-2">
           <span className="text-xs text-muted">Temperature</span>
           <Input
             type="number"
@@ -138,7 +122,7 @@ export default function AgentPropertiesPanel({
             }
           />
         </label>
-      </section>
+      </PanelSection>
     </div>
   );
 }

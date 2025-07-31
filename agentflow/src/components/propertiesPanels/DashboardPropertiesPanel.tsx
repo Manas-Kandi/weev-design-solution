@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
+import PanelSection from "./PanelSection";
 import {
   Select,
   SelectTrigger,
@@ -70,8 +71,7 @@ export default function DashboardPropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Title</h3>
+      <PanelSection title="Title" description="Set a title for your dashboard.">
         <Input
           value={title}
           onChange={(e) => {
@@ -79,9 +79,8 @@ export default function DashboardPropertiesPanel({
           }}
           placeholder="Dashboard title..."
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Layout</h3>
+      </PanelSection>
+      <PanelSection title="Layout" description="Choose the layout style for widgets.">
         <Select
           value={layout}
           onValueChange={(v) => {
@@ -99,9 +98,8 @@ export default function DashboardPropertiesPanel({
             ))}
           </SelectContent>
         </Select>
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Widgets</h3>
+      </PanelSection>
+      <PanelSection title="Widgets" description="Manage the widgets displayed on your dashboard.">
         <div className="flex flex-col gap-1">
           {widgets.map((widget, idx) => (
             <div key={idx} className="flex items-center gap-2">
@@ -137,7 +135,7 @@ export default function DashboardPropertiesPanel({
             Add Widget
           </Button>
         </div>
-      </section>
+      </PanelSection>
       {/* TODO: Add unit tests for this panel to ensure type safety and prevent regressions. */}
     </div>
   );

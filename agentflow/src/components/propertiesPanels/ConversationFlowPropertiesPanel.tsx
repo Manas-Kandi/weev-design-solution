@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import PanelSection from "./PanelSection";
 
 interface ConversationFlowNodeData {
   states: string[];
@@ -101,8 +102,7 @@ export default function ConversationFlowPropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
-      <section>
-        <label className="text-vscode-title font-semibold mb-2">States</label>
+      <PanelSection title="States" description="Comma-separated list of all possible states.">
         <Input
           value={states.join(", ")}
           onChange={(e) => {
@@ -115,11 +115,8 @@ export default function ConversationFlowPropertiesPanel({
           }}
           placeholder="Comma separated states"
         />
-      </section>
-      <section>
-        <label className="text-vscode-title font-semibold mb-2">
-          Initial State
-        </label>
+      </PanelSection>
+      <PanelSection title="Initial State" description="The starting state for the conversation flow.">
         <Input
           value={initialState}
           onChange={(e) => {
@@ -128,11 +125,8 @@ export default function ConversationFlowPropertiesPanel({
           }}
           placeholder="Initial state"
         />
-      </section>
-      <section>
-        <label className="text-vscode-title font-semibold mb-2">
-          Transitions
-        </label>
+      </PanelSection>
+      <PanelSection title="Transitions" description="Define transitions between states and their conditions.">
         <div className="flex flex-col gap-1">
           {transitions.map((tr, idx) => (
             <TransitionInput
@@ -158,8 +152,8 @@ export default function ConversationFlowPropertiesPanel({
             Add Transition
           </Button>
         </div>
-      </section>
-      <section>
+      </PanelSection>
+      <PanelSection title="Persistence" description="Optionally persist the state across executions.">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -171,7 +165,7 @@ export default function ConversationFlowPropertiesPanel({
           />
           <span>Persist State</span>
         </label>
-      </section>
+      </PanelSection>
       {/* TODO: Add unit tests for this panel to ensure type safety and prevent regressions. */}
     </div>
   );

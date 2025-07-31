@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "../ui/button";
+import PanelSection from "./PanelSection";
 
 interface DecisionTreeNodeData {
   title: string;
@@ -125,44 +126,44 @@ export default function DecisionTreePropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Title</h3>
+      <div className="flex flex-col gap-2">
+        <label className="font-semibold text-vscode-title">Title</label>
         <Input
           value={title}
           onChange={(e) => handleFieldChange("title", e.target.value)}
-          className="w-40"
+          className="w-full"
           placeholder="Node Title"
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Description</h3>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="font-semibold text-vscode-title">Description</label>
         <Input
           value={description}
           onChange={(e) => handleFieldChange("description", e.target.value)}
-          className="w-40"
+          className="w-full"
           placeholder="Node Description"
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Color</h3>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="font-semibold text-vscode-title">Color</label>
         <Input
           value={color}
           onChange={(e) => handleFieldChange("color", e.target.value)}
           className="w-32"
           placeholder="#4B5563"
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Icon</h3>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="font-semibold text-vscode-title">Icon</label>
         <Input
           value={icon}
           onChange={(e) => handleFieldChange("icon", e.target.value)}
           className="w-32"
           placeholder="decision-tree"
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Rules</h3>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="font-semibold text-vscode-title">Rules</label>
         <div className="flex flex-col gap-1">
           {rules.map((rule, idx) => (
             <div key={idx} className="flex items-center gap-2">
@@ -209,19 +210,17 @@ export default function DecisionTreePropertiesPanel({
             Add Rule
           </Button>
         </div>
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Default Path</h3>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="font-semibold text-vscode-title">Default Path</label>
         <Input
           value={defaultPath}
           onChange={(e) => handleFieldChange("defaultPath", e.target.value)}
           className="w-32"
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">
-          Evaluation Mode
-        </h3>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="font-semibold text-vscode-title">Evaluation Mode</label>
         <Select
           value={evaluationMode}
           onValueChange={(v) => handleFieldChange("evaluationMode", v)}
@@ -237,8 +236,7 @@ export default function DecisionTreePropertiesPanel({
             ))}
           </SelectContent>
         </Select>
-      </section>
-      {/* TODO: Add unit tests for this panel to ensure type safety and prevent regressions. */}
+      </div>
     </div>
   );
 }

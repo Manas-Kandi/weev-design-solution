@@ -1,12 +1,6 @@
 import React, { useState } from "react";
 import { CanvasNode } from "@/types";
-import { Button } from "@/components/ui/button"; // <-- changed casing to 'button'
-
-// Extend node.data for simulation panel
-type SimulatorNodeData = CanvasNode["data"] & {
-  testInput?: string;
-  expectedOutput?: string;
-};
+import PanelSection from "./PanelSection";
 
 interface SimulatorPropertiesPanelProps {
   node: CanvasNode;
@@ -17,27 +11,26 @@ export default function SimulatorPropertiesPanel({
   node,
   onChange,
 }: SimulatorPropertiesPanelProps) {
-  // Use type assertion to access simulation fields safely
-  const simData = node.data as SimulatorNodeData;
+  // Use type assertion to allow testInput/expectedOutput as optional fields
+  const data = node.data as typeof node.data & {
+    testInput?: string;
+    expectedOutput?: string;
+  };
 
   const [testInput, setTestInput] = useState<string>(
-    () => simData.testInput || ""
+    () => data.testInput || ""
   );
   const [expectedOutput, setExpectedOutput] = useState<string>(
-    () => simData.expectedOutput || ""
+    () => data.expectedOutput || ""
   );
 
-  const handleFieldChange = (
-    field: keyof SimulatorNodeData,
-    value: unknown
-  ) => {
+  const handleFieldChange = (field: string, value: unknown) => {
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Test Input</h3>
+      <PanelSection title="Test Input" description="Provide input data for simulation.">
         <textarea
           className="w-full min-h-[48px] bg-panel border border-border rounded p-2 text-text"
           value={testInput}
@@ -47,9 +40,8 @@ export default function SimulatorPropertiesPanel({
           }}
           placeholder="Input for simulation..."
         />
-      </section>
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Expected Output</h3>
+      </PanelSection>
+      <PanelSection title="Expected Output" description="Define the expected output for this test case.">
         <textarea
           className="w-full min-h-[48px] bg-panel border border-border rounded p-2 text-text"
           value={expectedOutput}
@@ -59,18 +51,18 @@ export default function SimulatorPropertiesPanel({
           }}
           placeholder="Expected output..."
         />
-      </section>
-      <section>
-        <Button
-          variant="default"
+      </PanelSection>
+      <PanelSection title="Simulation Controls" description="Run or reset the simulation.">
+        <button
+          className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
+          type="button"
           onClick={() => {
-            /* Trigger simulation logic here */
+            // Simulation logic here
           }}
         >
-          Run Test
-        </Button>
-      </section>
-      {/* TODO: Add unit tests for this panel to ensure type safety and prevent regressions. */}
+          Run Simulation
+        </button>
+      </PanelSection>
     </div>
   );
 }

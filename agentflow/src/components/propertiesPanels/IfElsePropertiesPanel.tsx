@@ -1,7 +1,7 @@
 import React from "react";
 import { CanvasNode } from "@/types";
-// Define NodeData inline according to the project spec
 import { Input } from "../ui/input";
+import PanelSection from "./PanelSection";
 
 interface Message {
   // Define minimal Message structure if needed
@@ -52,21 +52,59 @@ export default function IfElsePropertiesPanel({
     }
   };
 
+  const ifElseData = isIfElseNodeData(node.data)
+    ? node.data
+    : { condition: "", message: "", context: { flowId: "", nodeId: "", timestamp: Date.now(), metadata: {} }, history: [], state: {} };
+
   return (
     <div className="flex flex-col gap-4">
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Condition Expression</h3>
+      <PanelSection title="Condition" description="Expression to evaluate for routing">
         <Input
-          value={
-            isIfElseNodeData(node.data)
-              ? node.data.condition || ""
-              : ""
-          }
+          value={ifElseData.condition || ""}
           onChange={(e) => handleFieldChange("condition", e.target.value)}
           placeholder="e.g. input == 'yes'"
         />
-      </section>
-      {/* Output path selection can be enhanced with dropdowns if connection info is available */}
+      </PanelSection>
+      <PanelSection title="Message" description="Optional message to emit if condition is met.">
+        <Input
+          value={ifElseData.message || ""}
+          onChange={(e) => handleFieldChange("message", e.target.value)}
+          placeholder="e.g. Branch taken!"
+        />
+      </PanelSection>
+      <PanelSection title="Context" description="Context and metadata (edit as JSON)">
+        <textarea
+          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
+          value={JSON.stringify(ifElseData.context ?? {}, null, 2)}
+          onChange={e => {
+            try {
+              handleFieldChange("context", JSON.parse(e.target.value));
+            } catch {}
+          }}
+          placeholder='{"flowId": "...", "metadata": {}}'
+        />
+      </PanelSection>
+      <PanelSection title="History" description="Execution history (read-only)">
+        <textarea
+          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
+          value={JSON.stringify(ifElseData.history ?? [], null, 2)}
+          readOnly
+        />
+      </PanelSection>
+      <PanelSection title="State" description="Node state (edit as JSON)">
+        <textarea
+          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
+          value={JSON.stringify(ifElseData.state ?? {}, null, 2)}
+          onChange={e => {
+            try {
+              handleFieldChange("state", JSON.parse(e.target.value));
+            } catch {}
+          }}
+          placeholder={`{
+  "key": "value"
+}`}
+        />
+      </PanelSection>
     </div>
   );
 }

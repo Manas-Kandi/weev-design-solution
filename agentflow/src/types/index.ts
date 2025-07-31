@@ -1,6 +1,4 @@
 import React from "react";
-import type { KnowledgeBaseNodeData } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
-import type { DecisionTreeNodeData } from "@/lib/nodes/logic/DecisionTreeNode";
 
 // DashboardNodeData, TestCaseNodeData, ConversationFlowNodeData are defined in their respective panels, so we’ll define them here for type safety:
 export interface DashboardNodeData {
@@ -8,69 +6,25 @@ export interface DashboardNodeData {
   title: string;
   layout: string;
 }
+
+export interface MessageNodeData {
+  title?: string;
+  content?: string;
+  passThrough?: boolean;
+}
+
 export interface TestCaseNodeData {
   input?: string;
   expectedOutput?: string;
   description?: string;
   assertType?: string;
 }
+
 export interface ConversationFlowNodeData {
   states: string[];
   initialState: string;
   persistState: boolean;
   transitions: { from: string; to: string; condition: string }[];
-}
-
-export interface PersonalityTrait {
-  id: string;
-  name: string;
-  icon?: React.ElementType;
-  value: number;
-  color?: string;
-  description?: string;
-}
-
-export interface BehaviorRule {
-  id: string;
-  trigger: string;
-  action: string;
-  enabled: boolean;
-}
-
-export interface AgentNodeData {
-  title: string;
-  description: string;
-  color: string;
-  icon: string;
-  content?: string;
-  config?: Record<string, unknown>;
-  prompt?: string;
-  model?: string; // Added model property for agent nodes
-  condition?: string; // Optional: conditional logic for agent nodes
-  systemPrompt?: string; // Guardrail/system prompt for agent nodes
-  personality?: string; // Agent personality traits
-  escalationLogic?: string; // Escalation logic instructions
-  confidenceThreshold?: number; // Confidence threshold for escalation
-  preset?: string; // Agent preset selection
-  temperature?: number; // Temperature for model sampling
-  personalityTraits?: PersonalityTrait[];
-  behaviorRules?: BehaviorRule[];
-  knowledge?: string;
-}
-
-export interface ToolAgentNodeData extends AgentNodeData {
-  toolConfig?: {
-    toolType:
-      | "web-search"
-      | "calculator"
-      | "code-executor"
-      | "file-operations"
-      | "database-query"
-      | "custom-api";
-    endpoint?: string;
-    apiKey?: string;
-    parameters?: Record<string, unknown>;
-  };
 }
 
 export interface ChatNodeData {
@@ -79,7 +33,7 @@ export interface ChatNodeData {
   color: string;
   icon: string;
   messages: { sender: "user" | "agent"; text: string }[];
-  inputValue?: string; // <-- Add this line
+  inputValue?: string;
 }
 
 export interface PromptTemplateNodeData {
@@ -89,7 +43,38 @@ export interface PromptTemplateNodeData {
   icon: string;
   template: string;
   variables: Record<string, string>;
-  extractVariablesFromInput?: boolean; // <-- Add this line
+  extractVariablesFromInput?: boolean;
+}
+
+export interface KnowledgeBaseNodeData {
+  operation: "store" | "retrieve" | "search";
+  documents: string[];
+  metadata: Record<string, unknown>;
+}
+
+export interface DecisionTreeNodeData {
+  rules: Array<{ condition: string; outputPath: string }>;
+  defaultPath: string;
+  evaluationMode: string;
+  [key: string]: unknown;
+}
+
+export interface StateMachineNodeData {
+  states: string[];
+  initialState: string;
+  persistState: boolean;
+  transitions: { from: string; to: string; condition: string }[];
+}
+
+export interface SimulatorNodeData {
+  testInput?: string;
+  expectedOutput?: string;
+}
+
+export interface DashboardNodeData {
+  widgets: string[];
+  title: string;
+  layout: string;
 }
 
 export interface ConditionGroup {
@@ -149,6 +134,58 @@ export interface Message {
   content: string;
   sender: string;
   timestamp: number;
+}
+
+export interface PersonalityTrait {
+  id: string;
+  name: string;
+  icon?: React.ElementType;
+  value: number;
+  color?: string;
+  description?: string;
+}
+
+export interface BehaviorRule {
+  id: string;
+  trigger: string;
+  action: string;
+  enabled: boolean;
+}
+
+export interface AgentNodeData {
+  title: string;
+  description: string;
+  color: string;
+  icon: string;
+  content?: string;
+  config?: Record<string, unknown>;
+  prompt?: string;
+  model?: string;
+  condition?: string;
+  systemPrompt?: string;
+  personality?: string;
+  escalationLogic?: string;
+  confidenceThreshold?: number;
+  preset?: string;
+  temperature?: number;
+  personalityTraits?: PersonalityTrait[];
+  behaviorRules?: BehaviorRule[];
+  knowledge?: string;
+}
+
+export interface ToolAgentNodeData extends AgentNodeData {
+  toolConfig?: {
+    toolType:
+      | "web-search"
+      | "calculator"
+      | "code-executor"
+      | "file-operations"
+      | "database-query"
+      | "custom-api";
+    endpoint?: string;
+    apiKey?: string;
+    parameters?: Record<string, unknown>;
+  };
 }
 
 export interface CanvasNode {

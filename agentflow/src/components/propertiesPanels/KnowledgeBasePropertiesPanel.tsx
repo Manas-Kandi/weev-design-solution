@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { CanvasNode } from "@/types";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "../ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "../ui/select";
+import PanelSection from "./PanelSection";
 
 interface KnowledgeBaseNodeData {
   operation?: "store" | "retrieve" | "search";
@@ -27,6 +34,25 @@ function isKnowledgeBaseNodeData(data: unknown): data is KnowledgeBaseNodeData {
       (data as KnowledgeBaseNodeData).operation || "retrieve"
     )
   );
+}
+
+// Define NodeData locally as per the project spec
+interface Message {
+  role: string;
+  content: string;
+  timestamp?: number;
+}
+
+interface NodeData {
+  message: string;
+  context: {
+    flowId: string;
+    nodeId: string;
+    timestamp: number;
+    metadata: Record<string, unknown>;
+  };
+  history?: Message[];
+  state?: unknown;
 }
 
 export default function KnowledgeBasePropertiesPanel({
@@ -57,23 +83,52 @@ export default function KnowledgeBasePropertiesPanel({
     field: keyof KnowledgeBaseNodeData,
     value: unknown
   ) => {
+    // Convert metadata values to strings for compatibility
+    const safeMetadata =
+      field === "metadata"
+        ? Object.fromEntries(
+            Object.entries(value as Record<string, unknown>).map(([k, v]) => [
+              k,
+              typeof v === "string" ? v : JSON.stringify(v),
+            ])
+          )
+        : Object.fromEntries(
+            Object.entries(knowledgeData.metadata || {}).map(([k, v]) => [
+              k,
+              typeof v === "string" ? v : JSON.stringify(v),
+            ])
+          );
+
     const updated: KnowledgeBaseNodeData = {
       operation,
       documents:
         field === "documents"
           ? (value as unknown[])
           : knowledgeData.documents || [],
-      metadata:
-        field === "metadata"
-          ? (value as Record<string, unknown>)
-          : knowledgeData.metadata || {},
+      metadata: safeMetadata,
     };
     if (field === "operation")
       setOperation(value as "store" | "retrieve" | "search");
     if (field === "documents") setDocuments(JSON.stringify(value, null, 2));
     if (field === "metadata") setMetadata(JSON.stringify(value, null, 2));
     if (isKnowledgeBaseNodeData(updated)) {
-      onChange({ ...node, data: updated });
+      onChange({
+        ...node,
+        type: "logic",
+        data: {
+          // Ensure context.metadata is Record<string, string>
+          message: "",
+          context: {
+            flowId: node.id,
+            nodeId: node.id,
+            timestamp: Date.now(),
+            metadata: safeMetadata,
+          },
+          history: [],
+          state: undefined,
+          ...updated,
+        },
+      });
     }
   };
 
@@ -87,17 +142,20 @@ export default function KnowledgeBasePropertiesPanel({
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Operation</h3>
+    <div className="flex flex-col gap-4">
+      <PanelSection title="Operation" description="Choose what this node does">
+        <label className="text-sm">Operation</label>
         <Select
           value={operation}
-          onValueChange={(v) =>
-            handleFieldChange("operation", v as "store" | "retrieve" | "search")
+          onValueChange={(val) =>
+            handleFieldChange(
+              "operation",
+              val as "store" | "retrieve" | "search"
+            )
           }
         >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Choose operation" />
+          <SelectTrigger>
+            <SelectValue placeholder="Select operation" />
           </SelectTrigger>
           <SelectContent>
             {operationOptions.map((opt) => (
@@ -107,13 +165,11 @@ export default function KnowledgeBasePropertiesPanel({
             ))}
           </SelectContent>
         </Select>
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">
-          Documents (JSON)
-        </h3>
+      </PanelSection>
+      <PanelSection title="Documents" description="JSON array of documents">
+        <label className="text-sm">Documents (JSON)</label>
         <textarea
-          className="w-full min-h-[64px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
+          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
           value={documents}
           onChange={(e) => {
             setDocuments(e.target.value);
@@ -121,13 +177,13 @@ export default function KnowledgeBasePropertiesPanel({
               handleFieldChange("documents", JSON.parse(e.target.value));
             } catch {}
           }}
-          placeholder={`[\n  {"title": "Doc 1"}, ...\n]`}
+          placeholder={`[
+  {"id": 1, "content": "..."}
+]`}
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">
-          Metadata (JSON)
-        </h3>
+      </PanelSection>
+      <PanelSection title="Metadata" description="Additional metadata as JSON">
+        <h3 className="text-sm">Metadata (JSON)</h3>
         <textarea
           className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text font-mono"
           value={metadata}
@@ -139,8 +195,7 @@ export default function KnowledgeBasePropertiesPanel({
           }}
           placeholder={`{\n  "source": "user"\n}`}
         />
-      </section>
-      {/* TODO: Add unit tests for this panel to ensure type safety and prevent regressions. */}
+      </PanelSection>
     </div>
   );
 }

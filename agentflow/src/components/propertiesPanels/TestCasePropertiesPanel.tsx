@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
+import PanelSection from "./PanelSection";
 import {
   Select,
   SelectTrigger,
@@ -66,8 +67,7 @@ export default function TestCasePropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Description</h3>
+      <PanelSection title="Description" description="Describe what this test case should validate.">
         <Input
           value={description}
           onChange={(e) => {
@@ -77,9 +77,8 @@ export default function TestCasePropertiesPanel({
           placeholder="Test case description..."
           disabled={false}
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Input</h3>
+      </PanelSection>
+      <PanelSection title="Input" description="Input data for the test case.">
         <textarea
           className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text"
           value={input}
@@ -90,11 +89,8 @@ export default function TestCasePropertiesPanel({
           placeholder="Test input..."
           disabled={false}
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">
-          Expected Output
-        </h3>
+      </PanelSection>
+      <PanelSection title="Expected Output" description="Expected output for the test case.">
         <textarea
           className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text"
           value={expectedOutput}
@@ -105,9 +101,8 @@ export default function TestCasePropertiesPanel({
           placeholder="Expected output..."
           disabled={false}
         />
-      </section>
-      <section>
-        <h3 className="text-vscode-title font-semibold mb-2">Assert Type</h3>
+      </PanelSection>
+      <PanelSection title="Assert Type" description="How should the output be validated?">
         <Select
           value={assertType}
           onValueChange={(v) => {
@@ -126,8 +121,8 @@ export default function TestCasePropertiesPanel({
             ))}
           </SelectContent>
         </Select>
-      </section>
-      <section>
+      </PanelSection>
+      <PanelSection title="Run Test" description="Execute this test case.">
         <Button
           variant="default"
           onClick={() => {
@@ -136,7 +131,7 @@ export default function TestCasePropertiesPanel({
         >
           Run Test
         </Button>
-      </section>
+      </PanelSection>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import PanelSection from "./PanelSection";
 
 interface StateMachinePropertiesPanelProps {
   node: CanvasNode;
@@ -17,9 +18,7 @@ interface StateMachineNodeData {
 }
 
 // Type guard for StateMachineNodeData
-function isStateMachineNodeData(
-  data: unknown
-): data is StateMachineNodeData {
+function isStateMachineNodeData(data: unknown): data is StateMachineNodeData {
   return (
     typeof data === "object" &&
     data !== null &&
@@ -36,15 +35,15 @@ export default function StateMachinePropertiesPanel({
   const [states, setStates] = useState<string[]>(() =>
     isStateMachineNodeData(node.data) ? node.data.states : []
   );
-  const [initialState, setInitialState] = useState<string>(
-    () => (isStateMachineNodeData(node.data) ? node.data.initialState : "")
+  const [initialState, setInitialState] = useState<string>(() =>
+    isStateMachineNodeData(node.data) ? node.data.initialState : ""
   );
-  const [persistState, setPersistState] = useState<boolean>(
-    () => (isStateMachineNodeData(node.data) ? node.data.persistState ?? false : false)
+  const [persistState, setPersistState] = useState<boolean>(() =>
+    isStateMachineNodeData(node.data) ? node.data.persistState ?? false : false
   );
-  const [transitions, setTransitions] = useState<{ from: string; to: string; condition: string }[]>(() =>
-    isStateMachineNodeData(node.data) ? node.data.transitions : []
-  );
+  const [transitions, setTransitions] = useState<
+    { from: string; to: string; condition: string }[]
+  >(() => (isStateMachineNodeData(node.data) ? node.data.transitions : []));
 
   const handleFieldChange = (field: string, value: unknown) => {
     onChange({ ...node, data: { ...node.data, [field]: value } });
@@ -52,8 +51,7 @@ export default function StateMachinePropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <section>
-        <h3 className="text-accent font-semibold mb-2">States</h3>
+      <PanelSection title="States" description="Define all possible states for this state machine.">
         <div className="flex flex-col gap-1">
           {states.map((state, idx) => (
             <div key={idx} className="flex items-center gap-2">
@@ -91,9 +89,8 @@ export default function StateMachinePropertiesPanel({
             Add State
           </Button>
         </div>
-      </section>
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Initial State</h3>
+      </PanelSection>
+      <PanelSection title="Initial State" description="Set the starting state for this machine.">
         <Input
           value={initialState}
           onChange={(e) => {
@@ -102,9 +99,8 @@ export default function StateMachinePropertiesPanel({
           }}
           className="w-32"
         />
-      </section>
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Transitions</h3>
+      </PanelSection>
+      <PanelSection title="Transitions" description="Define allowed transitions between states and their conditions.">
         <div className="flex flex-col gap-1">
           {transitions.map((tr, idx) => (
             <div key={idx} className="flex items-center gap-2">
@@ -169,8 +165,8 @@ export default function StateMachinePropertiesPanel({
             Add Transition
           </Button>
         </div>
-      </section>
-      <section>
+      </PanelSection>
+      <PanelSection title="Persistence" description="Optionally persist the state across executions.">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -182,7 +178,7 @@ export default function StateMachinePropertiesPanel({
           />
           <span>Persist State</span>
         </label>
-      </section>
+      </PanelSection>
       {/* TODO: Add unit tests for this panel to ensure type safety and prevent regressions. */}
     </div>
   );

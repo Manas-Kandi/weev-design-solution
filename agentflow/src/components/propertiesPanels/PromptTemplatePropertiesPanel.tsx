@@ -2,13 +2,16 @@ import React, { useState } from "react";
 import { CanvasNode, PromptTemplateNodeData } from "@/types";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import PanelSection from "./PanelSection";
 
 interface PromptTemplatePropertiesPanelProps {
   node: CanvasNode;
   onChange: (node: CanvasNode) => void;
 }
 
-function isPromptTemplateNodeData(data: unknown): data is PromptTemplateNodeData {
+function isPromptTemplateNodeData(
+  data: unknown
+): data is PromptTemplateNodeData {
   return (
     typeof data === "object" &&
     data !== null &&
@@ -36,7 +39,10 @@ export default function PromptTemplatePropertiesPanel({
     () => safeData.variables || {}
   );
 
-  const handleFieldChange = (field: keyof PromptTemplateNodeData, value: unknown) => {
+  const handleFieldChange = (
+    field: keyof PromptTemplateNodeData,
+    value: unknown
+  ) => {
     if (isPromptTemplateNodeData(node.data)) {
       const updatedData: PromptTemplateNodeData = {
         ...node.data,
@@ -74,16 +80,16 @@ export default function PromptTemplatePropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Prompt Template</h3>
+      <PanelSection title="Prompt Template" description="Define the main prompt template for this node.">
         <Input
           value={safeData.template || ""}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFieldChange("template", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("template", e.target.value)
+          }
           placeholder="Enter prompt template..."
         />
-      </section>
-      <section>
-        <h3 className="text-accent font-semibold mb-2">Variables</h3>
+      </PanelSection>
+      <PanelSection title="Variables" description="Define and map prompt variables.">
         {Object.entries(variables).map(([key, value]) => (
           <div key={key} className="flex gap-2 mb-2">
             <Input
@@ -100,24 +106,28 @@ export default function PromptTemplatePropertiesPanel({
             />
             <Input
               value={value}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleVariableChange(key, e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleVariableChange(key, e.target.value)
+              }
               placeholder="Value"
             />
             <Button onClick={() => handleRemoveVariable(key)}>-</Button>
           </div>
         ))}
         <Button onClick={handleAddVariable}>Add Variable</Button>
-      </section>
-      <section>
-        <label className="text-sm">
+      </PanelSection>
+      <PanelSection title="Advanced Options" description="Optional advanced settings.">
+        <label className="text-sm flex items-center gap-2">
           <input
             type="checkbox"
             checked={!!safeData.extractVariablesFromInput}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFieldChange("extractVariablesFromInput", e.target.checked)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleFieldChange("extractVariablesFromInput", e.target.checked)
+            }
           />
           Extract variables from input
         </label>
-      </section>
+      </PanelSection>
     </div>
   );
 }
