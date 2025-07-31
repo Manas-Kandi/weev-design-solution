@@ -34,11 +34,7 @@ export default function IfElsePropertiesPanel({
 }: IfElsePropertiesPanelProps) {
   // Type guard for NodeData with condition
   function isIfElseNodeData(data: unknown): data is IfElseNodeData {
-    return (
-      typeof data === "object" &&
-      data !== null &&
-      ("condition" in data)
-    );
+    return typeof data === "object" && data !== null && "condition" in data;
   }
 
   const handleFieldChange = (field: keyof IfElseNodeData, value: unknown) => {
@@ -57,7 +53,12 @@ export default function IfElsePropertiesPanel({
     : {
         condition: "",
         message: "",
-        context: { flowId: "", nodeId: "", timestamp: Date.now(), metadata: {} },
+        context: {
+          flowId: "",
+          nodeId: "",
+          timestamp: Date.now(),
+          metadata: {},
+        },
         history: [],
         state: {},
       };
@@ -99,7 +100,10 @@ export default function IfElsePropertiesPanel({
           background: #23272e;
         }
       `}</style>
-      <PanelSection title="Condition" description="Expression to evaluate for routing">
+      <PanelSection
+        title="Condition"
+        description="Expression to evaluate for routing"
+      >
         <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
           Condition
         </label>
@@ -110,10 +114,14 @@ export default function IfElsePropertiesPanel({
           placeholder="e.g. input == 'yes'"
         />
         <div className="mt-1 text-[12px] text-[#858585]">
-          Boolean/JS-like expression. Example: <code>input == &#39;yes&#39;</code>
+          Boolean/JS-like expression. Example:{" "}
+          <code>input == &#39;yes&#39;</code>
         </div>
       </PanelSection>
-      <PanelSection title="Message" description="Optional message to emit if condition is met.">
+      <PanelSection
+        title="Message"
+        description="Optional message to emit if condition is met."
+      >
         <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
           Message
         </label>
@@ -127,14 +135,17 @@ export default function IfElsePropertiesPanel({
           This message will be sent if the condition is true.
         </div>
       </PanelSection>
-      <PanelSection title="Context" description="Context and metadata (edit as JSON)">
+      <PanelSection
+        title="Context"
+        description="Context and metadata (edit as JSON)"
+      >
         <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
           Context
         </label>
         <textarea
           className="w-full min-h-[48px] rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] font-mono focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 resize-vertical"
           value={JSON.stringify(ifElseData.context ?? {}, null, 2)}
-          onChange={e => {
+          onChange={(e) => {
             try {
               handleFieldChange("context", JSON.parse(e.target.value));
             } catch {}
@@ -165,7 +176,7 @@ export default function IfElsePropertiesPanel({
         <textarea
           className="w-full min-h-[48px] rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] font-mono focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 resize-vertical"
           value={JSON.stringify(ifElseData.state ?? {}, null, 2)}
-          onChange={e => {
+          onChange={(e) => {
             try {
               handleFieldChange("state", JSON.parse(e.target.value));
             } catch {}

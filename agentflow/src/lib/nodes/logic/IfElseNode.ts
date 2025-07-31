@@ -32,7 +32,7 @@ Condition: ${condition}
 Input: ${typeof input === "string" ? input : JSON.stringify(input)}
 Context: ${JSON.stringify(nodeContext)}
 ---
-Remember: Only output TRUE or FALSE along with the input value.
+Remember: Only output TRUE or FALSE.
 `;
 
     try {
@@ -58,7 +58,7 @@ Remember: Only output TRUE or FALSE along with the input value.
           context: nodeContext,
           result: resultText,
           value: input // included in info for downstream use
-        }),
+        })
       };
     } catch (error) {
       return {
