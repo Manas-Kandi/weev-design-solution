@@ -220,7 +220,9 @@ export default function DecisionTreePropertiesPanel({
         />
       </div>
       <div className="flex flex-col gap-2">
-        <label className="font-semibold text-vscode-title">Evaluation Mode</label>
+        <label className="font-semibold text-vscode-title">
+          Evaluation Mode
+        </label>
         <Select
           value={evaluationMode}
           onValueChange={(v) => handleFieldChange("evaluationMode", v)}

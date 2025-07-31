@@ -80,7 +80,10 @@ export default function DashboardPropertiesPanel({
           placeholder="Dashboard title..."
         />
       </PanelSection>
-      <PanelSection title="Layout" description="Choose the layout style for widgets.">
+      <PanelSection
+        title="Layout"
+        description="Choose the layout style for widgets."
+      >
         <Select
           value={layout}
           onValueChange={(v) => {
@@ -99,7 +102,10 @@ export default function DashboardPropertiesPanel({
           </SelectContent>
         </Select>
       </PanelSection>
-      <PanelSection title="Widgets" description="Manage the widgets displayed on your dashboard.">
+      <PanelSection
+        title="Widgets"
+        description="Manage the widgets displayed on your dashboard."
+      >
         <div className="flex flex-col gap-1">
           {widgets.map((widget, idx) => (
             <div key={idx} className="flex items-center gap-2">

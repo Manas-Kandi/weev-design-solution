@@ -67,7 +67,10 @@ export default function TestCasePropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
-      <PanelSection title="Description" description="Describe what this test case should validate.">
+      <PanelSection
+        title="Description"
+        description="Describe what this test case should validate."
+      >
         <Input
           value={description}
           onChange={(e) => {
@@ -90,7 +93,10 @@ export default function TestCasePropertiesPanel({
           disabled={false}
         />
       </PanelSection>
-      <PanelSection title="Expected Output" description="Expected output for the test case.">
+      <PanelSection
+        title="Expected Output"
+        description="Expected output for the test case."
+      >
         <textarea
           className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text"
           value={expectedOutput}
@@ -102,7 +108,10 @@ export default function TestCasePropertiesPanel({
           disabled={false}
         />
       </PanelSection>
-      <PanelSection title="Assert Type" description="How should the output be validated?">
+      <PanelSection
+        title="Assert Type"
+        description="How should the output be validated?"
+      >
         <Select
           value={assertType}
           onValueChange={(v) => {

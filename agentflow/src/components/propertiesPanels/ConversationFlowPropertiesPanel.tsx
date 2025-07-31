@@ -102,7 +102,10 @@ export default function ConversationFlowPropertiesPanel({
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
-      <PanelSection title="States" description="Comma-separated list of all possible states.">
+      <PanelSection
+        title="States"
+        description="Comma-separated list of all possible states."
+      >
         <Input
           value={states.join(", ")}
           onChange={(e) => {
@@ -116,7 +119,10 @@ export default function ConversationFlowPropertiesPanel({
           placeholder="Comma separated states"
         />
       </PanelSection>
-      <PanelSection title="Initial State" description="The starting state for the conversation flow.">
+      <PanelSection
+        title="Initial State"
+        description="The starting state for the conversation flow."
+      >
         <Input
           value={initialState}
           onChange={(e) => {
@@ -126,7 +132,10 @@ export default function ConversationFlowPropertiesPanel({
           placeholder="Initial state"
         />
       </PanelSection>
-      <PanelSection title="Transitions" description="Define transitions between states and their conditions.">
+      <PanelSection
+        title="Transitions"
+        description="Define transitions between states and their conditions."
+      >
         <div className="flex flex-col gap-1">
           {transitions.map((tr, idx) => (
             <TransitionInput
@@ -153,7 +162,10 @@ export default function ConversationFlowPropertiesPanel({
           </Button>
         </div>
       </PanelSection>
-      <PanelSection title="Persistence" description="Optionally persist the state across executions.">
+      <PanelSection
+        title="Persistence"
+        description="Optionally persist the state across executions."
+      >
         <label className="flex items-center gap-2">
           <input
             type="checkbox"

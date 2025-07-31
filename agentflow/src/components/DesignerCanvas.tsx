@@ -317,11 +317,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         onStartNodeChange={setStartNodeId}
         onNodeDelete={handleNodeDelete}
       />
-      <PropertiesPanel
-        selectedNode={selectedNode}
-        onChange={onNodeUpdate}
-        isTesting={isTestingState}
-      />
+      <PropertiesPanel selectedNode={selectedNode} onChange={onNodeUpdate} />
       {/* Pass the selected node id here if available */}
     </div>
   );
