@@ -10,12 +10,33 @@ export async function callGemini(prompt: string, params: Record<string, unknown>
   // Use passed-in contents array if provided
   const contents = params.contents || [{ role: 'user', parts: [{ text: prompt }] }];
 
-  // Build body without re-including `contents` in the root of `params`
+  // Only allow Gemini-accepted fields in the payload
+  const ALLOWED_FIELDS = [
+    "model",
+    "contents",
+    "temperature",
+    "topK",
+    "topP",
+    "candidateCount",
+    "stopSequences",
+    "safetySettings",
+  ];
   const { contents: _, ...rest } = params;
+  const filtered = Object.fromEntries(
+    Object.entries(rest).filter(([k]) => ALLOWED_FIELDS.includes(k))
+  );
   const body = {
     contents,
-    ...rest,
+    ...filtered,
   };
+  // DEBUG: Log the outgoing Gemini request body
+  if (typeof window !== "undefined" && window?.localStorage) {
+    window.localStorage.setItem("__gemini_debug_body__", JSON.stringify(body, null, 2));
+  }
+  // Also log to console (Node or browser)
+  // eslint-disable-next-line no-console
+  console.log("[Gemini Debug] Outgoing Gemini payload:", body);
+
 
   const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
