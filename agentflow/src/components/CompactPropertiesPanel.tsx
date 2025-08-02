@@ -67,7 +67,7 @@ export default function CompactPropertiesPanel({
   // Empty state when no node is selected
   if (!selectedNode) {
     return (
-      <div style={panelStyle}>
+      <div style={panelStyle} className="figma-scrollbar">
         <div
           style={{
             padding: "24px 16px",
@@ -158,7 +158,7 @@ export default function CompactPropertiesPanel({
 
   // Unknown node type fallback with compact, theme-driven styling
   const renderUnknownNodePanel = () => (
-    <div style={panelStyle}>
+    <div style={panelStyle} className="figma-scrollbar">
       {/* Header */}
       <div
         style={{
@@ -320,7 +320,7 @@ export default function CompactPropertiesPanel({
     const nodeType = selectedNode.subtype || selectedNode.type;
     // Wrap existing panels with compact styling
     const wrapPanel = (PanelComponent: React.ComponentType<any>) => (
-      <div style={panelStyle}>
+      <div style={panelStyle} className="figma-scrollbar">
         <PanelComponent node={selectedNode} onChange={onChange} />
       </div>
     );

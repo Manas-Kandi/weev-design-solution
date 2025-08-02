@@ -52,7 +52,7 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
         </button>
       </div>
       {/* Node Library - minimalist explorer */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto figma-scrollbar p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold text-white">Components</span>
         </div>

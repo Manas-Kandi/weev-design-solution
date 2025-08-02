@@ -201,7 +201,7 @@ export default function ConversationFlowNode({
       </div>
 
       {/* Messages */}
-      <div className="p-3 space-y-2 max-h-[500px] overflow-y-auto">
+      <div className="p-3 space-y-2 max-h-[500px] overflow-y-auto figma-scrollbar">
         {messages.map((message, index) => (
           <div key={message.id} className="relative group">
             {/* Connection Line */}

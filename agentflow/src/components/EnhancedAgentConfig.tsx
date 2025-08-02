@@ -120,7 +120,7 @@ export default function EnhancedAgentConfig({ node, onUpdate }: AgentConfigProps
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto figma-scrollbar p-4 space-y-4">
         {/* Personality Tab */}
         {activeTab === 'personality' && (
           <div className="space-y-4">

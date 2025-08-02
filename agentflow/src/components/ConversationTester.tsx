@@ -20,7 +20,7 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
               <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto figma-scrollbar p-6 space-y-4">
             {nodes && nodes.length > 0 ? (
               nodes.map(node => (
                 <div key={node.id} className={`flex ${node.type === 'agent' ? 'justify-start' : node.type === 'ui' ? 'justify-end' : 'justify-center'}`}>
