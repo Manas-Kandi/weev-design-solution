@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, CSSProperties } from "react";
 import TabBar from "@/components/TabBar";
 import {
   MousePointer,
@@ -12,6 +12,32 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+
+const toolbarStyle: CSSProperties = {
+  height: "48px",
+  width: "100%",
+  borderBottom: "1px solid var(--figma-border)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "0 12px",
+  backgroundColor: "var(--figma-surface)",
+};
+
+const toolButtonStyle: CSSProperties = {
+  width: "28px",
+  height: "28px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "var(--figma-radius)",
+  border: "1px solid var(--figma-border)",
+  backgroundColor: "var(--figma-surface)",
+  color: "var(--figma-text-secondary)",
+  cursor: "pointer",
+  padding: 0,
+  transition: "background-color 0.15s ease, color 0.15s ease",
+};
 
 interface DesignerLayoutProps {
   left: ReactNode;
@@ -37,7 +63,7 @@ export default function DesignerLayout({
       <div className="flex-1 flex flex-col">
         <TabBar />
         {/* Toolbar */}
-        <div className="h-12 border-b flex items-center justify-between px-3 bg-[var(--figma-surface)] border-[var(--figma-border)]">
+        <div style={toolbarStyle}>
           <div className="flex items-center gap-1">
             {[
               { id: "select", name: "Select", icon: MousePointer, shortcut: "V" },
@@ -47,8 +73,8 @@ export default function DesignerLayout({
             ].map((tool) => (
               <button
                 key={tool.id}
-                className="w-7 h-7 flex items-center justify-center transition-colors text-[var(--figma-text-secondary)] hover:bg-[var(--figma-bg)]"
-                style={{ borderRadius: "var(--figma-radius)" }}
+                style={toolButtonStyle}
+                className="hover:bg-[var(--figma-bg)] active:bg-[var(--figma-border)]"
                 title={`${tool.name} (${tool.shortcut})`}
               >
                 <tool.icon className="w-4 h-4" />
@@ -59,14 +85,14 @@ export default function DesignerLayout({
           <div className="flex items-center gap-2">
             <span className="text-xs text-[var(--figma-text-secondary)] font-mono">100%</span>
             <button
-              className="w-7 h-7 flex items-center justify-center text-[var(--figma-text-secondary)] hover:bg-[var(--figma-bg)] transition-colors"
-              style={{ borderRadius: "var(--figma-radius)" }}
+              style={toolButtonStyle}
+              className="hover:bg-[var(--figma-bg)] active:bg-[var(--figma-border)]"
             >
               <ZoomOut className="w-4 h-4" />
             </button>
             <button
-              className="w-7 h-7 flex items-center justify-center text-[var(--figma-text-secondary)] hover:bg-[var(--figma-bg)] transition-colors"
-              style={{ borderRadius: "var(--figma-radius)" }}
+              style={toolButtonStyle}
+              className="hover:bg-[var(--figma-bg)] active:bg-[var(--figma-border)]"
             >
               <ZoomIn className="w-4 h-4" />
             </button>
