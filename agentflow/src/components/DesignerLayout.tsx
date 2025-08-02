@@ -54,8 +54,15 @@ export default function DesignerLayout({
   onTestFlow,
   testButtonDisabled = false,
 }: DesignerLayoutProps) {
+  const layoutStyle: React.CSSProperties = {
+    "--toolbar-height": "calc(var(--space-xl) + 48px)",
+  } as React.CSSProperties;
+
   return (
-    <div className="h-screen w-full flex overflow-hidden bg-[var(--figma-bg)]">
+    <div
+      className="h-screen w-full flex overflow-hidden bg-[var(--figma-bg)]"
+      style={layoutStyle}
+    >
       {/* Left Sidebar */}
       {left}
 
