@@ -1,4 +1,6 @@
+// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
+import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
 import PanelSection from "./PanelSection";
@@ -50,7 +52,6 @@ export default function MessagePropertiesPanel({ node, onChange }: MessageProper
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
-
   // Validation logic
   const errors: { [key: string]: string } = {};
   if (!safeData.title || safeData.title.trim().length === 0) {
@@ -62,44 +63,82 @@ export default function MessagePropertiesPanel({ node, onChange }: MessageProper
     errors.content = "Message content is required.";
   }
 
+  // Compose panel style from theme
+  const panelStyle: React.CSSProperties = {
+    background: theme.colors.background,
+    borderLeft: `1px solid ${theme.colors.border}`,
+    padding: theme.spacing.sectionPadding,
+    borderRadius: theme.borderRadius.section,
+    minHeight: 0,
+    height: '100%',
+    width: 360,
+    minWidth: 360,
+    maxWidth: 360,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.fieldGap,
+    boxSizing: 'border-box',
+    overflowY: 'auto',
+  };
+
   // UI
   return (
-    <div className="flex flex-col gap-6 p-1">
+    <div style={panelStyle}>
       {/* Required Fields */}
       <PanelSection title="Required" description="">
-        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
-          Title <span className="text-[var(--af-danger)]">*</span>
+        <label style={{ display: 'block', marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+          Title <span style={{ color: theme.colors.error }}>*</span>
         </label>
-        <input
-          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+        <Input
           value={safeData.title}
           maxLength={TITLE_MAX}
           placeholder="Message"
           onChange={e => handleFieldChange("title", e.target.value)}
           onBlur={() => setTouched(t => ({ ...t, title: true }))}
         />
-        <span className="text-[var(--af-helper-size)] text-[var(--af-text-helper)]">Max {TITLE_MAX} characters</span>
-        {touched.title && errors.title && <div className="text-[var(--af-danger)] text-xs mt-1">{errors.title}</div>}
+        <span style={{ color: theme.colors.inputText, fontSize: 12 }}>Max {TITLE_MAX} characters</span>
+        {touched.title && errors.title && <div style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}>{errors.title}</div>}
 
-        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
-          Message Content <span className="text-[var(--af-danger)]">*</span>
+        <label style={{ display: 'block', marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+          Message Content <span style={{ color: theme.colors.error }}>*</span>
         </label>
         <textarea
-          className="w-full min-h-[64px] rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+          style={{
+            width: '100%',
+            minHeight: 64,
+            borderRadius: theme.borderRadius.input,
+            background: theme.colors.inputBackground,
+            color: theme.colors.inputText,
+            border: `1px solid ${theme.colors.border}`,
+            padding: theme.spacing.inputPadding,
+            marginBottom: theme.spacing.fieldGap,
+            transition: 'all 0.2s',
+            font: theme.font.input,
+            resize: 'vertical',
+          }}
           value={safeData.content}
           maxLength={500}
           placeholder="Message to send..."
           onChange={e => handleFieldChange("content", e.target.value)}
           onBlur={() => setTouched(t => ({ ...t, content: true }))}
         />
-        <span className="text-[var(--af-helper-size)] text-[var(--af-text-helper)]">Required. This will be sent as the message.</span>
-        {touched.content && errors.content && <div className="text-[var(--af-danger)] text-xs mt-1">{errors.content}</div>}
+        <span style={{ color: theme.colors.inputText, fontSize: 12 }}>Required. This will be sent as the message.</span>
+        {touched.content && errors.content && <div style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}>{errors.content}</div>}
 
-        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+        <label style={{ display: 'block', marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
           Message Type
         </label>
         <select
-          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+          style={{
+            width: '100%',
+            borderRadius: theme.borderRadius.input,
+            background: theme.colors.inputBackground,
+            color: theme.colors.inputText,
+            border: `1px solid ${theme.colors.border}`,
+            padding: theme.spacing.inputPadding,
+            marginBottom: theme.spacing.fieldGap,
+            transition: 'all 0.2s',
+          }}
           value={safeData.messageType}
           onChange={e => handleFieldChange("messageType", e.target.value as MessageNodeData["messageType"])}
         >
@@ -107,21 +146,20 @@ export default function MessagePropertiesPanel({ node, onChange }: MessageProper
           <option value="User">User</option>
           <option value="Assistant">Assistant</option>
         </select>
-        <span className="text-[var(--af-helper-size)] text-[var(--af-text-helper)]">Choose the role for this message.</span>
-
+        <span style={{ color: theme.colors.inputText, fontSize: 12 }}>Choose the role for this message.</span>
       </PanelSection>
       <PanelSection title="Advanced" description="Optional: pass input through">
-        <div className="flex items-center gap-2 mt-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
           <input
             type="checkbox"
             checked={!!safeData.passThrough}
             onChange={e => handleFieldChange("passThrough", e.target.checked)}
             id="passThrough"
-            className="accent-[var(--af-accent)] w-4 h-4 rounded-[var(--af-border-radius)] border border-[var(--af-border)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+            style={{ accentColor: theme.colors.accent, width: 16, height: 16, borderRadius: theme.borderRadius.input, border: `1px solid ${theme.colors.border}` }}
           />
-          <label htmlFor="passThrough" className="text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+          <label htmlFor="passThrough" style={{ color: theme.colors.label, font: theme.font.label }}>
             Pass Through Mode
-            <span className="block text-[var(--af-helper-size)] text-[var(--af-text-helper)]">If enabled, this node will pass its input through instead of using the message content.</span>
+            <span style={{ display: 'block', color: theme.colors.inputText, fontSize: 12 }}>If enabled, this node will pass its input through instead of using the message content.</span>
           </label>
         </div>
       </PanelSection>

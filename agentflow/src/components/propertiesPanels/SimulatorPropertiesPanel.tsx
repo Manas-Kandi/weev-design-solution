@@ -1,4 +1,6 @@
+// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
+import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import PanelSection from "./PanelSection";
 
@@ -28,14 +30,55 @@ export default function SimulatorPropertiesPanel({
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
+  // Compose panel style from theme
+  const panelStyle: React.CSSProperties = {
+    background: theme.colors.background,
+    borderLeft: `1px solid ${theme.colors.border}`,
+    padding: theme.spacing.sectionPadding,
+    borderRadius: theme.borderRadius.section,
+    minHeight: 0,
+    height: "100%",
+    width: 360,
+    minWidth: 360,
+    maxWidth: 360,
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.fieldGap,
+    boxSizing: "border-box",
+    overflowY: "auto",
+  };
+  const textareaStyle: React.CSSProperties = {
+    width: "100%",
+    minHeight: 48,
+    background: theme.colors.inputBackground,
+    color: theme.colors.inputText,
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.input,
+    padding: theme.spacing.inputPadding,
+    font: theme.font.input,
+    resize: "vertical",
+    marginBottom: theme.spacing.fieldGap,
+  };
+  const buttonStyle: React.CSSProperties = {
+    background: theme.colors.accent,
+    color: "#fff",
+    padding: "8px 16px",
+    borderRadius: theme.borderRadius.input,
+    border: "none",
+    cursor: "pointer",
+    fontWeight: 600,
+    fontSize: 15,
+    transition: "background 0.2s",
+  };
+
   return (
-    <div className="flex flex-col gap-4">
+    <div style={panelStyle}>
       <PanelSection
         title="Test Input"
         description="Provide input data for simulation."
       >
         <textarea
-          className="w-full min-h-[48px] bg-panel border border-border rounded p-2 text-text"
+          style={textareaStyle}
           value={testInput}
           onChange={(e) => {
             setTestInput(e.target.value);
@@ -49,7 +92,7 @@ export default function SimulatorPropertiesPanel({
         description="Define the expected output for this test case."
       >
         <textarea
-          className="w-full min-h-[48px] bg-panel border border-border rounded p-2 text-text"
+          style={textareaStyle}
           value={expectedOutput}
           onChange={(e) => {
             setExpectedOutput(e.target.value);
@@ -63,7 +106,7 @@ export default function SimulatorPropertiesPanel({
         description="Run or reset the simulation."
       >
         <button
-          className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark transition"
+          style={buttonStyle}
           type="button"
           onClick={() => {
             // Simulation logic here

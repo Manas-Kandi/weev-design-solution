@@ -1,4 +1,6 @@
+// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
+import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -100,8 +102,26 @@ export default function ConversationFlowPropertiesPanel({
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
+  // Compose panel style from theme
+  const panelStyle: React.CSSProperties = {
+    background: theme.colors.background,
+    borderLeft: `1px solid ${theme.colors.border}`,
+    padding: theme.spacing.sectionPadding,
+    borderRadius: theme.borderRadius.section,
+    minHeight: 0,
+    height: '100%',
+    width: 360,
+    minWidth: 360,
+    maxWidth: 360,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.fieldGap,
+    boxSizing: 'border-box',
+    overflowY: 'auto',
+  };
+
   return (
-    <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
+    <div style={panelStyle}>
       <PanelSection
         title="States"
         description="Comma-separated list of all possible states."

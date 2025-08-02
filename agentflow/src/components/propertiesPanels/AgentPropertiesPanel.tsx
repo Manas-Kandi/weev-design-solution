@@ -1,4 +1,6 @@
+// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
+import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Input } from "@/components/ui/input";
 import PanelSection from "./PanelSection";
@@ -40,39 +42,54 @@ export default function AgentPropertiesPanel({
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
-  // ... (Add more handlers as needed)
+  // Compose panel style from theme
+  const panelStyle: React.CSSProperties = {
+    background: theme.colors.background,
+    borderLeft: `1px solid ${theme.colors.border}`,
+    padding: theme.spacing.sectionPadding,
+    borderRadius: theme.borderRadius.section,
+    minHeight: 0,
+    height: "100%",
+    width: 360,
+    minWidth: 360,
+    maxWidth: 360,
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.fieldGap,
+    boxSizing: "border-box",
+    overflowY: "auto",
+  };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div style={panelStyle}>
       {/* Basic Configuration */}
       <PanelSection
         title="Basic Configuration"
         description="Agent name and role"
       >
-        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
           Agent Name
         </label>
-        <input
-          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+        <Input
           value={node.data?.name || ""}
           onChange={(e) => handleFieldChange("name", e.target.value)}
+          placeholder="Agent name"
         />
-        <label className="block mb-1 mt-3 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+        <label style={{ display: "block", marginBottom: 4, marginTop: 12, color: theme.colors.label, font: theme.font.label }}>
           Role
         </label>
-        <input
-          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+        <Input
           value={node.data?.role || ""}
           onChange={(e) => handleFieldChange("role", e.target.value)}
+          placeholder="Agent role"
         />
       </PanelSection>
       {/* Agent Behavior */}
       <PanelSection title="Agent Behavior" description="Personality and style">
-        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
+        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
           Personality Tags
         </label>
-        <input
-          className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+        <Input
           value={personalityTags.join(", ")}
           onChange={(e) => {
             setPersonalityTags(e.target.value.split(",").map((t) => t.trim()));
@@ -80,8 +97,9 @@ export default function AgentPropertiesPanel({
           }}
           placeholder="e.g. friendly, concise, expert"
         />
-        <div className="mt-1 text-[var(--af-helper-size)] text-[var(--af-text-helper)]">
-          Comma-separated. E.g. <code>friendly, concise, expert</code>
+        <div style={{ marginTop: 4, color: theme.colors.inputText, fontSize: 12 }}>
+          Comma-separated. E.g.{" "}
+          <code>friendly, concise, expert</code>
         </div>
       </PanelSection>
       {/* Now PanelSection blocks follow */}
@@ -89,57 +107,57 @@ export default function AgentPropertiesPanel({
         title="System Prompt"
         description="Instructions for the agent's behavior"
       >
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-muted">System Prompt</span>
-          <Input
-            value={node.data?.systemPrompt || ""}
-            onChange={(e) => handleFieldChange("systemPrompt", e.target.value)}
-            placeholder="You are a helpful assistant..."
-          />
+        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+          System Prompt
         </label>
+        <Input
+          value={node.data?.systemPrompt || ""}
+          onChange={(e) => handleFieldChange("systemPrompt", e.target.value)}
+          placeholder="You are a helpful assistant..."
+        />
       </PanelSection>
       <PanelSection
         title="Escalation"
         description="Configure escalation threshold (0-10)"
       >
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-muted">Escalation Threshold</span>
-          <Input
-            type="number"
-            value={node.data?.escalationThreshold ?? 0}
-            min={0}
-            max={10}
-            step={1}
-            onChange={(e) =>
-              handleFieldChange("escalationThreshold", Number(e.target.value))
-            }
-          />
+        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+          Escalation Threshold
         </label>
+        <Input
+          type="number"
+          value={node.data?.escalationThreshold ?? 0}
+          min={0}
+          max={10}
+          step={1}
+          onChange={(e) =>
+            handleFieldChange("escalationThreshold", Number(e.target.value))
+          }
+        />
       </PanelSection>
       <PanelSection
         title="LLM Settings"
         description="Model and temperature for agent reasoning"
       >
-        <label className="flex flex-col gap-1">
-          <span className="text-xs text-muted">Model</span>
-          <Input
-            value={node.data?.model || "gemini-2.5-flash-lite"}
-            onChange={(e) => handleFieldChange("model", e.target.value)}
-          />
+        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+          Model
         </label>
-        <label className="flex flex-col gap-1 mt-2">
-          <span className="text-xs text-muted">Temperature</span>
-          <Input
-            type="number"
-            value={node.data?.temperature ?? 0.7}
-            min={0}
-            max={1}
-            step={0.01}
-            onChange={(e) =>
-              handleFieldChange("temperature", Number(e.target.value))
-            }
-          />
+        <Input
+          value={node.data?.model || "gemini-2.5-flash-lite"}
+          onChange={(e) => handleFieldChange("model", e.target.value)}
+        />
+        <label style={{ display: "block", marginBottom: 4, marginTop: 8, color: theme.colors.label, font: theme.font.label }}>
+          Temperature
         </label>
+        <Input
+          type="number"
+          value={node.data?.temperature ?? 0.7}
+          min={0}
+          max={1}
+          step={0.01}
+          onChange={(e) =>
+            handleFieldChange("temperature", Number(e.target.value))
+          }
+        />
       </PanelSection>
     </div>
   );

@@ -1,4 +1,6 @@
+// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React from "react";
+import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import PanelSection from "./PanelSection";
 

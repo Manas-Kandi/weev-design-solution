@@ -1,4 +1,6 @@
+// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
+import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode, PromptTemplateNodeData } from "@/types";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -78,8 +80,26 @@ export default function PromptTemplatePropertiesPanel({
     handleFieldChange("variables", next);
   };
 
+  // Compose panel style from theme
+  const panelStyle: React.CSSProperties = {
+    background: theme.colors.background,
+    borderLeft: `1px solid ${theme.colors.border}`,
+    padding: theme.spacing.sectionPadding,
+    borderRadius: theme.borderRadius.section,
+    minHeight: 0,
+    height: '100%',
+    width: 360,
+    minWidth: 360,
+    maxWidth: 360,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.fieldGap,
+    boxSizing: 'border-box',
+    overflowY: 'auto',
+  };
+
   return (
-    <div className="flex flex-col gap-4">
+    <div style={panelStyle}>
       <PanelSection title="Prompt Template" description="Define the main prompt template for this node.">
         <Input
           value={safeData.template || ""}
@@ -91,7 +111,7 @@ export default function PromptTemplatePropertiesPanel({
       </PanelSection>
       <PanelSection title="Variables" description="Define and map prompt variables.">
         {Object.entries(variables).map(([key, value]) => (
-          <div key={key} className="flex gap-2 mb-2">
+          <div key={key} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <Input
               value={key}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,19 +131,20 @@ export default function PromptTemplatePropertiesPanel({
               }
               placeholder="Value"
             />
-            <Button onClick={() => handleRemoveVariable(key)}>-</Button>
+            <Button style={{ minWidth: 32 }} onClick={() => handleRemoveVariable(key)}>-</Button>
           </div>
         ))}
-        <Button onClick={handleAddVariable}>Add Variable</Button>
+        <Button style={{ marginTop: 8 }} onClick={handleAddVariable}>Add Variable</Button>
       </PanelSection>
       <PanelSection title="Advanced Options" description="Optional advanced settings.">
-        <label className="text-sm flex items-center gap-2">
+        <label style={{ fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
           <input
             type="checkbox"
             checked={!!safeData.extractVariablesFromInput}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleFieldChange("extractVariablesFromInput", e.target.checked)
             }
+            style={{ accentColor: theme.colors.accent, width: 16, height: 16, borderRadius: theme.borderRadius.input, border: `1px solid ${theme.colors.border}` }}
           />
           Extract variables from input
         </label>

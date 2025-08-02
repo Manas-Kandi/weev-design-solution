@@ -1,4 +1,6 @@
+// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
+import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -49,12 +51,76 @@ export default function StateMachinePropertiesPanel({
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
+  // Theme-based container style
+  const containerStyle: React.CSSProperties = {
+    width: "360px",
+    height: "100%",
+    background: theme.colors.background,
+    color: theme.colors.inputText,
+    borderRadius: theme.borderRadius.section,
+    padding: theme.spacing.sectionPadding,
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.fieldGap,
+    boxSizing: "border-box",
+  };
+
+  // Theme-based label style for checkbox
+  const labelStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing.fieldGap,
+    font: theme.font.label,
+    color: theme.colors.label,
+    margin: theme.spacing.labelMargin,
+  };
+
+  // Theme-based input style for checkbox
+  const checkboxStyle: React.CSSProperties = {
+    accentColor: theme.colors.accent,
+    width: 18,
+    height: 18,
+  };
+
+  // Theme-based input style for Input fields
+  const inputStyle: React.CSSProperties = {
+    background: theme.colors.inputBackground,
+    color: theme.colors.inputText,
+    borderRadius: theme.borderRadius.input,
+    padding: theme.spacing.inputPadding,
+    font: theme.font.input,
+    border: `1px solid ${theme.colors.border}`,
+    width: "100%",
+    boxSizing: "border-box",
+  };
+
+  // Button style for destructive and primary
+  const buttonDestructive: React.CSSProperties = {
+    background: theme.colors.error,
+    color: "#fff",
+    borderRadius: theme.borderRadius.input,
+    font: theme.font.input,
+    padding: theme.spacing.inputPadding,
+    border: "none",
+    cursor: "pointer",
+  };
+  const buttonPrimary: React.CSSProperties = {
+    background: theme.colors.accent,
+    color: "#fff",
+    borderRadius: theme.borderRadius.input,
+    font: theme.font.input,
+    padding: theme.spacing.inputPadding,
+    border: "none",
+    cursor: "pointer",
+  };
+
   return (
-    <div className="flex flex-col gap-4">
+    <div style={containerStyle}>
       <PanelSection title="States" description="Define all possible states for this state machine.">
-        <div className="flex flex-col gap-1">
+        <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.fieldGap }}>
           {states.map((state, idx) => (
-            <div key={idx} className="flex items-center gap-2">
+            <div key={idx} style={{ display: "flex", alignItems: "center", gap: theme.spacing.fieldGap }}>
               <Input
                 value={state}
                 onChange={(e) => {
@@ -63,11 +129,12 @@ export default function StateMachinePropertiesPanel({
                   setStates(next);
                   handleFieldChange("states", next);
                 }}
-                className="w-32"
+                style={{ ...inputStyle, maxWidth: 160 }}
               />
               <Button
                 size="sm"
                 variant="destructive"
+                style={buttonDestructive}
                 onClick={() => {
                   const next = states.filter((_, i) => i !== idx);
                   setStates(next);
@@ -80,6 +147,7 @@ export default function StateMachinePropertiesPanel({
           ))}
           <Button
             size="sm"
+            style={buttonPrimary}
             onClick={() => {
               const next = [...states, "newState"];
               setStates(next);
@@ -97,13 +165,13 @@ export default function StateMachinePropertiesPanel({
             setInitialState(e.target.value);
             handleFieldChange("initialState", e.target.value);
           }}
-          className="w-32"
+          style={{ ...inputStyle, maxWidth: 160 }}
         />
       </PanelSection>
       <PanelSection title="Transitions" description="Define allowed transitions between states and their conditions.">
-        <div className="flex flex-col gap-1">
+        <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.fieldGap }}>
           {transitions.map((tr, idx) => (
-            <div key={idx} className="flex items-center gap-2">
+            <div key={idx} style={{ display: "flex", alignItems: "center", gap: theme.spacing.fieldGap }}>
               <Input
                 value={tr.from || ""}
                 onChange={(e) => {
@@ -112,7 +180,7 @@ export default function StateMachinePropertiesPanel({
                   setTransitions(next);
                   handleFieldChange("transitions", next);
                 }}
-                className="w-24"
+                style={{ ...inputStyle, maxWidth: 100 }}
                 placeholder="From"
               />
               <Input
@@ -123,7 +191,7 @@ export default function StateMachinePropertiesPanel({
                   setTransitions(next);
                   handleFieldChange("transitions", next);
                 }}
-                className="w-24"
+                style={{ ...inputStyle, maxWidth: 100 }}
                 placeholder="To"
               />
               <Input
@@ -134,12 +202,13 @@ export default function StateMachinePropertiesPanel({
                   setTransitions(next);
                   handleFieldChange("transitions", next);
                 }}
-                className="w-32"
+                style={{ ...inputStyle, maxWidth: 160 }}
                 placeholder="Condition"
               />
               <Button
                 size="sm"
                 variant="destructive"
+                style={buttonDestructive}
                 onClick={() => {
                   const next = transitions.filter((_, i) => i !== idx);
                   setTransitions(next);
@@ -152,7 +221,7 @@ export default function StateMachinePropertiesPanel({
           ))}
           <Button
             size="sm"
-            variant="destructive"
+            style={buttonPrimary}
             onClick={() => {
               const next = [
                 ...transitions,
@@ -167,10 +236,11 @@ export default function StateMachinePropertiesPanel({
         </div>
       </PanelSection>
       <PanelSection title="Persistence" description="Optionally persist the state across executions.">
-        <label className="flex items-center gap-2">
+        <label style={labelStyle}>
           <input
             type="checkbox"
             checked={persistState}
+            style={checkboxStyle}
             onChange={(e) => {
               setPersistState(e.target.checked);
               handleFieldChange("persistState", e.target.checked);

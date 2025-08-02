@@ -1,4 +1,6 @@
+// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
+import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
 import PanelSection from "./PanelSection";
@@ -65,8 +67,50 @@ export default function TestCasePropertiesPanel({
     onChange({ ...node, data: updatedData });
   }
 
+  // Theme-based container style
+  const containerStyle: React.CSSProperties = {
+    width: "360px",
+    minWidth: "360px",
+    maxWidth: "360px",
+    height: "100%",
+    background: theme.colors.background,
+    color: theme.colors.inputText,
+    borderRadius: theme.borderRadius.section,
+    padding: theme.spacing.sectionPadding,
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.fieldGap,
+    boxSizing: "border-box",
+  };
+
+  // Theme-based textarea style
+  const textareaStyle: React.CSSProperties = {
+    width: "100%",
+    minHeight: 48,
+    background: theme.colors.inputBackground,
+    color: theme.colors.inputText,
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.input,
+    padding: theme.spacing.inputPadding,
+    font: theme.font.input,
+    resize: "vertical",
+    boxSizing: "border-box",
+  };
+
+  // Theme-based button style
+  const buttonStyle: React.CSSProperties = {
+    background: theme.colors.accent,
+    color: "#fff",
+    borderRadius: theme.borderRadius.input,
+    font: theme.font.input,
+    padding: theme.spacing.inputPadding,
+    border: "none",
+    cursor: "pointer",
+  };
+
   return (
-    <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
+    <div style={containerStyle}>
       <PanelSection
         title="Description"
         description="Describe what this test case should validate."
@@ -79,11 +123,12 @@ export default function TestCasePropertiesPanel({
           }}
           placeholder="Test case description..."
           disabled={false}
+          style={{ width: "100%" }}
         />
       </PanelSection>
       <PanelSection title="Input" description="Input data for the test case.">
         <textarea
-          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text"
+          style={textareaStyle}
           value={input}
           onChange={(e) => {
             setInput(e.target.value);
@@ -98,7 +143,7 @@ export default function TestCasePropertiesPanel({
         description="Expected output for the test case."
       >
         <textarea
-          className="w-full min-h-[48px] bg-vscode-panel border border-vscode-border rounded p-2 text-vscode-text"
+          style={textareaStyle}
           value={expectedOutput}
           onChange={(e) => {
             setExpectedOutput(e.target.value);
@@ -119,7 +164,7 @@ export default function TestCasePropertiesPanel({
             handleFieldChange("assertType", v);
           }}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger style={{ width: "100%" }}>
             <SelectValue placeholder="Choose assertion type" />
           </SelectTrigger>
           <SelectContent>
@@ -134,6 +179,7 @@ export default function TestCasePropertiesPanel({
       <PanelSection title="Run Test" description="Execute this test case.">
         <Button
           variant="default"
+          style={buttonStyle}
           onClick={() => {
             /* TODO: Trigger test logic here */
           }}

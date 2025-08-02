@@ -1,4 +1,6 @@
+// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
+import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
 import {
@@ -115,58 +117,79 @@ export default function DecisionTreePropertiesPanel({
     onChange({ ...node, data: updated });
   };
 
+  // Compose panel style from theme
+  const panelStyle: React.CSSProperties = {
+    background: theme.colors.background,
+    borderLeft: `1px solid ${theme.colors.border}`,
+    padding: theme.spacing.sectionPadding,
+    borderRadius: theme.borderRadius.section,
+    minHeight: 0,
+    height: "100%",
+    width: 360,
+    minWidth: 360,
+    maxWidth: 360,
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.fieldGap,
+    boxSizing: "border-box",
+    overflowY: "auto",
+  };
+
   // Only render the panel if the node is a decision-tree node
   if (!isDecisionTreeNodeData(node.data)) {
     return (
-      <div className="p-4 text-vscode-textSecondary">
-        This properties panel is only for decision tree nodes.
+      <div style={panelStyle}>
+        <div style={{ color: theme.colors.inputText }}>
+          This properties panel is only for decision tree nodes.
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-[#23272e] rounded-xl shadow-lg min-w-[320px] max-w-[400px]">
-      <div className="flex flex-col gap-2">
-        <label className="font-semibold text-vscode-title">Title</label>
+    <div style={panelStyle}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>Title</label>
         <Input
           value={title}
           onChange={(e) => handleFieldChange("title", e.target.value)}
-          className="w-full"
           placeholder="Node Title"
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="font-semibold text-vscode-title">Description</label>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>
+          Description
+        </label>
         <Input
           value={description}
           onChange={(e) => handleFieldChange("description", e.target.value)}
-          className="w-full"
           placeholder="Node Description"
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="font-semibold text-vscode-title">Color</label>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>Color</label>
         <Input
           value={color}
           onChange={(e) => handleFieldChange("color", e.target.value)}
-          className="w-32"
           placeholder="#4B5563"
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="font-semibold text-vscode-title">Icon</label>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>Icon</label>
         <Input
           value={icon}
           onChange={(e) => handleFieldChange("icon", e.target.value)}
-          className="w-32"
           placeholder="decision-tree"
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="font-semibold text-vscode-title">Rules</label>
-        <div className="flex flex-col gap-1">
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>Rules</label>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {rules.map((rule, idx) => (
-            <div key={idx} className="flex items-center gap-2">
+            <div
+              key={idx}
+              style={{ display: "flex", alignItems: "center", gap: 8 }}
+            >
               <Input
                 value={rule.condition || ""}
                 onChange={(e) => {
@@ -174,7 +197,6 @@ export default function DecisionTreePropertiesPanel({
                   next[idx] = { ...next[idx], condition: e.target.value };
                   handleFieldChange("rules", next);
                 }}
-                className="w-40"
                 placeholder="Condition"
               />
               <Input
@@ -184,7 +206,6 @@ export default function DecisionTreePropertiesPanel({
                   next[idx] = { ...next[idx], outputPath: e.target.value };
                   handleFieldChange("rules", next);
                 }}
-                className="w-32"
                 placeholder="Output Path"
               />
               <Button
@@ -211,23 +232,24 @@ export default function DecisionTreePropertiesPanel({
           </Button>
         </div>
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="font-semibold text-vscode-title">Default Path</label>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>
+          Default Path
+        </label>
         <Input
           value={defaultPath}
           onChange={(e) => handleFieldChange("defaultPath", e.target.value)}
-          className="w-32"
         />
       </div>
-      <div className="flex flex-col gap-2">
-        <label className="font-semibold text-vscode-title">
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>
           Evaluation Mode
         </label>
         <Select
           value={evaluationMode}
           onValueChange={(v) => handleFieldChange("evaluationMode", v)}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger style={{ width: "100%" }}>
             <SelectValue placeholder="Choose evaluation mode" />
           </SelectTrigger>
           <SelectContent>
