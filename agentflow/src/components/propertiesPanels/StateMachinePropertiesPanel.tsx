@@ -117,10 +117,26 @@ export default function StateMachinePropertiesPanel({
 
   return (
     <div style={containerStyle}>
-      <PanelSection title="States" description="Define all possible states for this state machine.">
-        <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.fieldGap }}>
+      <PanelSection
+        title="States"
+        description="Define all possible states for this state machine."
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: theme.spacing.fieldGap,
+          }}
+        >
           {states.map((state, idx) => (
-            <div key={idx} style={{ display: "flex", alignItems: "center", gap: theme.spacing.fieldGap }}>
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: theme.spacing.fieldGap,
+              }}
+            >
               <Input
                 value={state}
                 onChange={(e) => {
@@ -158,7 +174,10 @@ export default function StateMachinePropertiesPanel({
           </Button>
         </div>
       </PanelSection>
-      <PanelSection title="Initial State" description="Set the starting state for this machine.">
+      <PanelSection
+        title="Initial State"
+        description="Set the starting state for this machine."
+      >
         <Input
           value={initialState}
           onChange={(e) => {
@@ -168,10 +187,26 @@ export default function StateMachinePropertiesPanel({
           style={{ ...inputStyle, maxWidth: 160 }}
         />
       </PanelSection>
-      <PanelSection title="Transitions" description="Define allowed transitions between states and their conditions.">
-        <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.fieldGap }}>
+      <PanelSection
+        title="Transitions"
+        description="Define allowed transitions between states and their conditions."
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: theme.spacing.fieldGap,
+          }}
+        >
           {transitions.map((tr, idx) => (
-            <div key={idx} style={{ display: "flex", alignItems: "center", gap: theme.spacing.fieldGap }}>
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: theme.spacing.fieldGap,
+              }}
+            >
               <Input
                 value={tr.from || ""}
                 onChange={(e) => {
@@ -235,7 +270,10 @@ export default function StateMachinePropertiesPanel({
           </Button>
         </div>
       </PanelSection>
-      <PanelSection title="Persistence" description="Optionally persist the state across executions.">
+      <PanelSection
+        title="Persistence"
+        description="Optionally persist the state across executions."
+      >
         <label style={labelStyle}>
           <input
             type="checkbox"

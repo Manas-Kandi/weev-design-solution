@@ -149,7 +149,9 @@ export default function DecisionTreePropertiesPanel({
   return (
     <div style={panelStyle}>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>Title</label>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>
+          Title
+        </label>
         <Input
           value={title}
           onChange={(e) => handleFieldChange("title", e.target.value)}
@@ -167,7 +169,9 @@ export default function DecisionTreePropertiesPanel({
         />
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>Color</label>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>
+          Color
+        </label>
         <Input
           value={color}
           onChange={(e) => handleFieldChange("color", e.target.value)}
@@ -175,7 +179,9 @@ export default function DecisionTreePropertiesPanel({
         />
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>Icon</label>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>
+          Icon
+        </label>
         <Input
           value={icon}
           onChange={(e) => handleFieldChange("icon", e.target.value)}
@@ -183,7 +189,9 @@ export default function DecisionTreePropertiesPanel({
         />
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>Rules</label>
+        <label style={{ fontWeight: 600, color: theme.colors.label }}>
+          Rules
+        </label>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {rules.map((rule, idx) => (
             <div

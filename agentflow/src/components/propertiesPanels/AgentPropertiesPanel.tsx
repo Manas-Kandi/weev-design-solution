@@ -67,7 +67,14 @@ export default function AgentPropertiesPanel({
         title="Basic Configuration"
         description="Agent name and role"
       >
-        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: 4,
+            color: theme.colors.label,
+            font: theme.font.label,
+          }}
+        >
           Agent Name
         </label>
         <Input
@@ -75,7 +82,15 @@ export default function AgentPropertiesPanel({
           onChange={(e) => handleFieldChange("name", e.target.value)}
           placeholder="Agent name"
         />
-        <label style={{ display: "block", marginBottom: 4, marginTop: 12, color: theme.colors.label, font: theme.font.label }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: 4,
+            marginTop: 12,
+            color: theme.colors.label,
+            font: theme.font.label,
+          }}
+        >
           Role
         </label>
         <Input
@@ -86,7 +101,14 @@ export default function AgentPropertiesPanel({
       </PanelSection>
       {/* Agent Behavior */}
       <PanelSection title="Agent Behavior" description="Personality and style">
-        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: 4,
+            color: theme.colors.label,
+            font: theme.font.label,
+          }}
+        >
           Personality Tags
         </label>
         <Input
@@ -97,9 +119,10 @@ export default function AgentPropertiesPanel({
           }}
           placeholder="e.g. friendly, concise, expert"
         />
-        <div style={{ marginTop: 4, color: theme.colors.inputText, fontSize: 12 }}>
-          Comma-separated. E.g.{" "}
-          <code>friendly, concise, expert</code>
+        <div
+          style={{ marginTop: 4, color: theme.colors.inputText, fontSize: 12 }}
+        >
+          Comma-separated. E.g. <code>friendly, concise, expert</code>
         </div>
       </PanelSection>
       {/* Now PanelSection blocks follow */}
@@ -107,7 +130,14 @@ export default function AgentPropertiesPanel({
         title="System Prompt"
         description="Instructions for the agent's behavior"
       >
-        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: 4,
+            color: theme.colors.label,
+            font: theme.font.label,
+          }}
+        >
           System Prompt
         </label>
         <Input
@@ -120,7 +150,14 @@ export default function AgentPropertiesPanel({
         title="Escalation"
         description="Configure escalation threshold (0-10)"
       >
-        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: 4,
+            color: theme.colors.label,
+            font: theme.font.label,
+          }}
+        >
           Escalation Threshold
         </label>
         <Input
@@ -138,14 +175,29 @@ export default function AgentPropertiesPanel({
         title="LLM Settings"
         description="Model and temperature for agent reasoning"
       >
-        <label style={{ display: "block", marginBottom: 4, color: theme.colors.label, font: theme.font.label }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: 4,
+            color: theme.colors.label,
+            font: theme.font.label,
+          }}
+        >
           Model
         </label>
         <Input
           value={node.data?.model || "gemini-2.5-flash-lite"}
           onChange={(e) => handleFieldChange("model", e.target.value)}
         />
-        <label style={{ display: "block", marginBottom: 4, marginTop: 8, color: theme.colors.label, font: theme.font.label }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: 4,
+            marginTop: 8,
+            color: theme.colors.label,
+            font: theme.font.label,
+          }}
+        >
           Temperature
         </label>
         <Input

@@ -109,15 +109,15 @@ export default function ConversationFlowPropertiesPanel({
     padding: theme.spacing.sectionPadding,
     borderRadius: theme.borderRadius.section,
     minHeight: 0,
-    height: '100%',
+    height: "100%",
     width: 360,
     minWidth: 360,
     maxWidth: 360,
-    display: 'flex',
-    flexDirection: 'column',
+    display: "flex",
+    flexDirection: "column",
     gap: theme.spacing.fieldGap,
-    boxSizing: 'border-box',
-    overflowY: 'auto',
+    boxSizing: "border-box",
+    overflowY: "auto",
   };
 
   return (

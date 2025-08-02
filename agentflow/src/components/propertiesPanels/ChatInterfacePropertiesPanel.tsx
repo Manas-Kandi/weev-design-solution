@@ -24,20 +24,19 @@ export default function ChatInterfacePropertiesPanel({
 
   const data = node.data as ChatNodeData | undefined;
 
-  const [title, setTitle] = useState<string>(
-    () => (data && typeof data.title === "string" ? data.title : "")
+  const [title, setTitle] = useState<string>(() =>
+    data && typeof data.title === "string" ? data.title : ""
   );
-  const [placeholder, setPlaceholder] = useState<string>(
-    () => (data && typeof data.placeholder === "string" ? data.placeholder : "")
+  const [placeholder, setPlaceholder] = useState<string>(() =>
+    data && typeof data.placeholder === "string" ? data.placeholder : ""
   );
-  const [enableFileUpload, setEnableFileUpload] = useState<boolean>(
-    () =>
-      (data && typeof data.enableFileUpload === "boolean"
-        ? data.enableFileUpload
-        : false)
+  const [enableFileUpload, setEnableFileUpload] = useState<boolean>(() =>
+    data && typeof data.enableFileUpload === "boolean"
+      ? data.enableFileUpload
+      : false
   );
-  const [showHistory, setShowHistory] = useState<boolean>(
-    () => (data && typeof data.showHistory === "boolean" ? data.showHistory : false)
+  const [showHistory, setShowHistory] = useState<boolean>(() =>
+    data && typeof data.showHistory === "boolean" ? data.showHistory : false
   );
 
   // Only update known fields, preserve extra fields
@@ -56,9 +55,9 @@ export default function ChatInterfacePropertiesPanel({
     padding: theme.spacing.sectionPadding,
     borderRadius: theme.borderRadius.section,
     minHeight: 0,
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
     gap: theme.spacing.fieldGap,
   };
   const labelStyle: React.CSSProperties = {
@@ -72,18 +71,21 @@ export default function ChatInterfacePropertiesPanel({
     border: `1px solid ${theme.colors.border}`,
     borderRadius: theme.borderRadius.input,
     padding: theme.spacing.inputPadding,
-    width: '100%',
+    width: "100%",
     marginBottom: theme.spacing.fieldGap,
   };
 
   return (
     <div style={panelStyle}>
-      <PanelSection title="Chat Interface Settings" description="Configure chat interface properties.">
+      <PanelSection
+        title="Chat Interface Settings"
+        description="Configure chat interface properties."
+      >
         <label style={labelStyle}>Title</label>
         <Input
           style={inputStyle}
           value={title}
-          onChange={e => {
+          onChange={(e) => {
             setTitle(e.target.value);
             handleFieldChange("title", e.target.value);
           }}
@@ -93,7 +95,7 @@ export default function ChatInterfacePropertiesPanel({
         <Input
           style={inputStyle}
           value={placeholder}
-          onChange={e => {
+          onChange={(e) => {
             setPlaceholder(e.target.value);
             handleFieldChange("placeholder", e.target.value);
           }}
@@ -104,7 +106,7 @@ export default function ChatInterfacePropertiesPanel({
             <input
               type="checkbox"
               checked={enableFileUpload}
-              onChange={e => {
+              onChange={(e) => {
                 setEnableFileUpload(e.target.checked);
                 handleFieldChange("enableFileUpload", e.target.checked);
               }}
@@ -118,7 +120,7 @@ export default function ChatInterfacePropertiesPanel({
             <input
               type="checkbox"
               checked={showHistory}
-              onChange={e => {
+              onChange={(e) => {
                 setShowHistory(e.target.checked);
                 handleFieldChange("showHistory", e.target.checked);
               }}

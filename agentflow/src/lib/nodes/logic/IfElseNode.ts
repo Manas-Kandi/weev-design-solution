@@ -57,8 +57,8 @@ Remember: Only output TRUE or FALSE.
           input,
           context: nodeContext,
           result: resultText,
-          value: input // included in info for downstream use
-        })
+          value: input, // included in info for downstream use
+        }),
       };
     } catch (error) {
       return {

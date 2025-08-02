@@ -69,18 +69,24 @@ const PanelSection: React.FC<PanelSectionProps> = ({
         style={headerStyle}
         onClick={() => setCollapsed((prev) => !prev)}
         aria-expanded={!collapsed}
-        aria-controls={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
+        aria-controls={`panel-section-${title
+          .replace(/\s+/g, "-")
+          .toLowerCase()}`}
       >
         {collapsed ? (
-          <ChevronRight size={18} style={{ marginRight: 8, transition: "transform 0.2s" }} />
+          <ChevronRight
+            size={18}
+            style={{ marginRight: 8, transition: "transform 0.2s" }}
+          />
         ) : (
-          <ChevronDown size={18} style={{ marginRight: 8, transition: "transform 0.2s" }} />
+          <ChevronDown
+            size={18}
+            style={{ marginRight: 8, transition: "transform 0.2s" }}
+          />
         )}
         {title}
       </button>
-      {description && (
-        <div style={descriptionStyle}>{description}</div>
-      )}
+      {description && <div style={descriptionStyle}>{description}</div>}
       <div
         id={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
         style={contentStyle}
