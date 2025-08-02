@@ -16,7 +16,7 @@ import {
   isDashboardNodeData,
   isChatNodeData,
 } from "@/utils/typeGuards";
-import { vsCodePropertiesTheme as theme } from "./propertiesPanels/propertiesPanelTheme"; // Import theme
+import { figmaPropertiesTheme as theme } from "./propertiesPanels/propertiesPanelTheme"; // Import theme
 // Import your existing panels
 import AgentPropertiesPanel from "./propertiesPanels/AgentPropertiesPanel";
 import MessagePropertiesPanel from "./propertiesPanels/MessagePropertiesPanel";

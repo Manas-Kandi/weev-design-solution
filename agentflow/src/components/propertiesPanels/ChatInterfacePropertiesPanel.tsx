@@ -1,6 +1,6 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import PanelSection from "./PanelSection";
 import { VSCodeInput } from "./vsCodeFormComponents";

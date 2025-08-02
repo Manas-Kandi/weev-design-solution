@@ -10,7 +10,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import {
-  vsCodePropertiesTheme as theme,
+  figmaPropertiesTheme as theme,
   themeHelpers,
 } from "./propertiesPanelTheme";
 

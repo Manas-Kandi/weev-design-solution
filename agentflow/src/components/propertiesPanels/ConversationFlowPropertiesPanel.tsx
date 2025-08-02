@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";

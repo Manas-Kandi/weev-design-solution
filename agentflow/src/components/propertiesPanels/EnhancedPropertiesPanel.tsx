@@ -2,7 +2,7 @@
 import React from "react";
 import { FileQuestion, Settings } from "lucide-react";
 import { CanvasNode } from "@/types";
-import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import EnhancedAgentPropertiesPanel from "./AgentPropertiesPanel";
 import { AgentNodeData } from "@/types";
 import DecisionTreePropertiesPanel from "./DecisionTreePropertiesPanel";
