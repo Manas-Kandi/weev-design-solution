@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import ProjectDashboard from "@/components/ProjectDashboard";
 import DesignerLayout from "@/components/DesignerLayout";
 import { ComponentLibrary } from "@/components/ComponentLibrary";
+import LayersPanel from "@/components/LayersPanel";
 import DesignerCanvas from "@/components/DesignerCanvas";
 import PropertiesPanel from "@/components/PropertiesPanel";
 import { nodeCategories } from "@/data/nodeDefinitions";
@@ -457,10 +458,13 @@ export default function AgentFlowPage() {
   return (
     <DesignerLayout
       left={
-        <ComponentLibrary
-          onAddNode={handleAddNode}
-          onBackToProjects={() => setCurrentView("projects")}
-        />
+        <div className="flex h-full">
+          <LayersPanel nodes={nodes} />
+          <ComponentLibrary
+            onAddNode={handleAddNode}
+            onBackToProjects={() => setCurrentView("projects")}
+          />
+        </div>
       }
       center={
         <DesignerCanvas
