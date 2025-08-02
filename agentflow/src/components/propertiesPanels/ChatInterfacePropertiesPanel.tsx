@@ -61,20 +61,20 @@ export default function ChatInterfacePropertiesPanel({
     gap: 16,
   };
   const labelStyle: React.CSSProperties = {
-    color: '#b3b3b3',
+    color: "#b3b3b3",
     fontSize: 14,
-    fontFamily: 'Inter, sans-serif',
+    fontFamily: "Inter, sans-serif",
     marginBottom: 4,
   };
   const inputStyle: React.CSSProperties = {
     background: theme.colors.backgroundTertiary,
-    color: '#fff',
+    color: "#fff",
     border: `1px solid ${theme.colors.border}`,
     borderRadius: 8,
     padding: 10,
     width: "100%",
     marginBottom: 16,
-    fontFamily: 'Inter, sans-serif',
+    fontFamily: "Inter, sans-serif",
     fontSize: 15,
   };
 

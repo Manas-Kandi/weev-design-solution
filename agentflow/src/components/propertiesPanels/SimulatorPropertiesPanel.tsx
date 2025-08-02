@@ -56,7 +56,7 @@ export default function SimulatorPropertiesPanel({
     border: `1px solid ${theme.colors.border}`,
     borderRadius: "6px",
     padding: "12px",
-    fontFamily: 'Menlo, monospace',
+    fontFamily: "Menlo, monospace",
     fontSize: "15px",
     resize: "vertical",
     marginBottom: "20px",

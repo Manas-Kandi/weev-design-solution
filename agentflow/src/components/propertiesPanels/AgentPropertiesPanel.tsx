@@ -89,7 +89,7 @@ export default function EnhancedAgentPropertiesPanel({
     display: "flex",
     flexDirection: "column",
     overflowY: "auto",
-    fontFamily: 'Inter, sans-serif',
+    fontFamily: "Inter, sans-serif",
     borderRadius: 12,
   };
 
@@ -108,13 +108,13 @@ export default function EnhancedAgentPropertiesPanel({
   const headerTitleStyle: React.CSSProperties = {
     fontSize: 20,
     fontWeight: 600,
-    color: '#fff',
+    color: "#fff",
     margin: 0,
   };
 
   const headerSubtitleStyle: React.CSSProperties = {
     fontSize: 14,
-    color: '#b3b3b3',
+    color: "#b3b3b3",
     margin: 0,
   };
 
@@ -132,7 +132,7 @@ export default function EnhancedAgentPropertiesPanel({
       <div style={headerStyle}>
         <div
           style={{
-            backgroundColor: '#0ea5e9',
+            backgroundColor: "#0ea5e9",
             borderRadius: 8,
             padding: 8,
             display: "flex",
@@ -160,7 +160,7 @@ export default function EnhancedAgentPropertiesPanel({
         >
           <label
             style={{
-              color: '#b3b3b3',
+              color: "#b3b3b3",
               fontSize: 14,
               marginBottom: 4,
             }}
@@ -176,7 +176,7 @@ export default function EnhancedAgentPropertiesPanel({
           />
           <label
             style={{
-              color: '#b3b3b3',
+              color: "#b3b3b3",
               fontSize: 14,
               marginTop: 8,
               marginBottom: 4,
@@ -201,7 +201,7 @@ export default function EnhancedAgentPropertiesPanel({
         >
           <label
             style={{
-              color: '#b3b3b3',
+              color: "#b3b3b3",
               fontSize: 14,
               marginTop: 8,
               marginBottom: 4,
@@ -221,7 +221,7 @@ export default function EnhancedAgentPropertiesPanel({
 
           <label
             style={{
-              color: '#b3b3b3',
+              color: "#b3b3b3",
               fontSize: 14,
               marginTop: 8,
               marginBottom: 4,
@@ -246,7 +246,7 @@ export default function EnhancedAgentPropertiesPanel({
         >
           <label
             style={{
-              color: '#b3b3b3',
+              color: "#b3b3b3",
               fontSize: 14,
               marginTop: 8,
               marginBottom: 4,
@@ -258,7 +258,7 @@ export default function EnhancedAgentPropertiesPanel({
 
           <label
             style={{
-              color: '#b3b3b3',
+              color: "#b3b3b3",
               fontSize: 14,
               marginTop: 8,
               marginBottom: 4,
@@ -300,7 +300,7 @@ export default function EnhancedAgentPropertiesPanel({
 
           <label
             style={{
-              color: '#b3b3b3',
+              color: "#b3b3b3",
               fontSize: 14,
               marginTop: 8,
               marginBottom: 4,
@@ -338,19 +338,19 @@ export default function EnhancedAgentPropertiesPanel({
         >
           <div
             style={{
-              backgroundColor: '#18181b',
+              backgroundColor: "#18181b",
               border: `1px solid ${theme.colors.border}`,
               borderRadius: 6,
               padding: 16,
-              fontFamily: 'Menlo, monospace',
+              fontFamily: "Menlo, monospace",
               fontSize: 14,
-              color: '#b3b3b3',
+              color: "#b3b3b3",
               lineHeight: 1.6,
             }}
           >
             <div
               style={{
-                color: '#22c55e',
+                color: "#22c55e",
                 marginBottom: 8,
               }}
             >
@@ -358,25 +358,23 @@ export default function EnhancedAgentPropertiesPanel({
             </div>
             <div>
               Model:{" "}
-              <span style={{ color: '#0ea5e9' }}>
+              <span style={{ color: "#0ea5e9" }}>
                 {data.model || "gemini-pro"}
               </span>
             </div>
             <div>
               Temperature:{" "}
-              <span style={{ color: '#0ea5e9' }}>
+              <span style={{ color: "#0ea5e9" }}>
                 {data.temperature || 0.7}
               </span>
             </div>
             <div>
               Max Tokens:{" "}
-              <span style={{ color: '#0ea5e9' }}>
-                {data.maxTokens || 1000}
-              </span>
+              <span style={{ color: "#0ea5e9" }}>{data.maxTokens || 1000}</span>
             </div>
             <div>
               Personality:{" "}
-              <span style={{ color: '#0ea5e9' }}>
+              <span style={{ color: "#0ea5e9" }}>
                 {(data.personalityTags || []).join(", ") || "None set"}
               </span>
             </div>

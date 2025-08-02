@@ -139,7 +139,7 @@ export default function KnowledgeBasePropertiesPanel({
       </PanelSection>
       <PanelSection title="Documents" description="JSON array of documents">
         <VSCodeInput
-          style={{ minHeight: 48, fontFamily: 'Menlo, monospace' }}
+          style={{ minHeight: 48, fontFamily: "Menlo, monospace" }}
           value={documents}
           onChange={(
             e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -159,7 +159,7 @@ export default function KnowledgeBasePropertiesPanel({
       </PanelSection>
       <PanelSection title="Metadata" description="Additional metadata as JSON">
         <VSCodeInput
-          style={{ minHeight: 48, fontFamily: 'Menlo, monospace' }}
+          style={{ minHeight: 48, fontFamily: "Menlo, monospace" }}
           value={metadata}
           onChange={(
             e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

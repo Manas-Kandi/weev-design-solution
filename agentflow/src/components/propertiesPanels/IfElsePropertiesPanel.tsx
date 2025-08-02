@@ -102,7 +102,7 @@ export default function IfElsePropertiesPanel({
             marginTop: "6px",
           }}
         >
-          Boolean/JS-like expression. Example: {" "}
+          Boolean/JS-like expression. Example:{" "}
           <code>input == &#39;yes&#39;</code>
         </div>
       </PanelSection>

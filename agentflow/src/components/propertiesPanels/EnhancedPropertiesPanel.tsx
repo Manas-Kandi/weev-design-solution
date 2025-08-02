@@ -30,7 +30,7 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
     borderLeft: `1px solid ${theme.colors.border}`,
     display: "flex",
     flexDirection: "column",
-    fontFamily: 'Inter, sans-serif',
+    fontFamily: "Inter, sans-serif",
     fontSize: "15px",
     color: "#f3f3f3",
   };
@@ -172,7 +172,8 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
               margin: 0,
             }}
           >
-            {selectedNode.type || "Unknown"} • {selectedNode.subtype || "No subtype"}
+            {selectedNode.type || "Unknown"} •{" "}
+            {selectedNode.subtype || "No subtype"}
           </p>
         </div>
       </div>
@@ -206,7 +207,7 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
           </h3>
           <div
             style={{
-              fontFamily: 'Menlo, monospace',
+              fontFamily: "Menlo, monospace",
               fontSize: "13px",
               color: "#b0b0b0",
               lineHeight: 1.6,
@@ -216,13 +217,23 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
               ID: <span style={{ color: "#38bdf8" }}>{selectedNode.id}</span>
             </div>
             <div>
-              Type: <span style={{ color: "#38bdf8" }}>{selectedNode.type || "Unknown"}</span>
+              Type:{" "}
+              <span style={{ color: "#38bdf8" }}>
+                {selectedNode.type || "Unknown"}
+              </span>
             </div>
             <div>
-              Subtype: <span style={{ color: "#38bdf8" }}>{selectedNode.subtype || "None"}</span>
+              Subtype:{" "}
+              <span style={{ color: "#38bdf8" }}>
+                {selectedNode.subtype || "None"}
+              </span>
             </div>
             <div>
-              Position: <span style={{ color: "#38bdf8" }}>({selectedNode.position?.x || 0}, {selectedNode.position?.y || 0})</span>
+              Position:{" "}
+              <span style={{ color: "#38bdf8" }}>
+                ({selectedNode.position?.x || 0},{" "}
+                {selectedNode.position?.y || 0})
+              </span>
             </div>
           </div>
         </div>
@@ -263,7 +274,9 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
               lineHeight: 1.4,
             }}
           >
-            No properties panel has been implemented for this node type yet. The node will still function in workflows, but configuration options are limited.
+            No properties panel has been implemented for this node type yet. The
+            node will still function in workflows, but configuration options are
+            limited.
           </p>
         </div>
       </div>

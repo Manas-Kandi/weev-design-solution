@@ -135,7 +135,7 @@ export default function DecisionTreePropertiesPanel({
   if (!isDecisionTreeNodeData(node.data)) {
     return (
       <div style={panelStyle}>
-        <div style={{ color: '#fff' }}>
+        <div style={{ color: "#fff" }}>
           This properties panel is only for decision tree nodes.
         </div>
       </div>

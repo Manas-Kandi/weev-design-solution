@@ -127,9 +127,7 @@ export default function MessagePropertiesPanel({
           Max {TITLE_MAX} characters
         </span>
         {touched.title && errors.title && (
-          <div
-            style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}
-          >
+          <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>
             {errors.title}
           </div>
         )}
@@ -156,7 +154,7 @@ export default function MessagePropertiesPanel({
             padding: "12px",
             marginBottom: "20px",
             transition: "all 0.15s",
-            fontFamily: 'Menlo, monospace',
+            fontFamily: "Menlo, monospace",
             fontSize: "15px",
             resize: "vertical",
           }}
@@ -170,9 +168,7 @@ export default function MessagePropertiesPanel({
           Required. This will be sent as the message.
         </span>
         {touched.content && errors.content && (
-          <div
-            style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}
-          >
+          <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>
             {errors.content}
           </div>
         )}

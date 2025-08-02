@@ -16,7 +16,10 @@ import {
   isDashboardNodeData,
   isChatNodeData,
 } from "@/utils/typeGuards";
-import { figmaPropertiesTheme as theme } from "./propertiesPanels/propertiesPanelTheme"; // Import theme
+import {
+  figmaPropertiesTheme as theme,
+  getPanelContainerStyle,
+} from "./propertiesPanels/propertiesPanelTheme";
 // Import your existing panels
 import AgentPropertiesPanel from "./propertiesPanels/AgentPropertiesPanel";
 import MessagePropertiesPanel from "./propertiesPanels/MessagePropertiesPanel";
@@ -30,7 +33,6 @@ import SimulatorPropertiesPanel from "./propertiesPanels/SimulatorPropertiesPane
 import DashboardPropertiesPanel from "./propertiesPanels/DashboardPropertiesPanel";
 import ChatInterfacePropertiesPanel from "./propertiesPanels/ChatInterfacePropertiesPanel";
 
-
 interface PropertiesPanelProps {
   selectedNode: CanvasNode | null;
   onChange: (updatedNode: CanvasNode) => void;
@@ -40,29 +42,8 @@ export default function CompactPropertiesPanel({
   selectedNode,
   onChange,
 }: PropertiesPanelProps) {
-  // Panel container style - fixed width, no horizontal scroll, theme-driven
-  const panelStyle: React.CSSProperties = {
-    width: "340px",
-    minWidth: "260px",
-    maxWidth: "420px",
-    height: "100%",
-    minHeight: 0,
-    display: "flex",
-    flexDirection: "column",
-    background: theme.colors.background,
-    borderLeft: `1px solid ${theme.colors.border}`,
-    padding: 0,
-    overflowY: "auto",
-    overflowX: "hidden",
-    fontFamily: 'Inter, sans-serif',
-    fontSize: "15px",
-    color: "#f3f3f3",
-    position: "fixed",
-    right: 0,
-    top: 0,
-    zIndex: 100,
-    boxSizing: "border-box",
-  };
+  // Consistent panel container style from theme
+  const panelStyle = getPanelContainerStyle();
 
   // Empty state when no node is selected
   if (!selectedNode) {
@@ -70,85 +51,50 @@ export default function CompactPropertiesPanel({
       <div style={panelStyle} className="figma-scrollbar">
         <div
           style={{
-            padding: "24px 16px",
-            textAlign: "center",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             height: "100%",
-            gap: "20px",
+            padding: theme.spacing.xxl,
+            textAlign: "center",
+            gap: theme.spacing.lg,
           }}
         >
           <div
             style={{
               width: "48px",
               height: "48px",
-              backgroundColor: theme.colors.backgroundTertiary,
-              borderRadius: "12px",
+              backgroundColor: theme.colors.backgroundSecondary,
+              borderRadius: theme.borderRadius.lg,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: "12px",
+              marginBottom: theme.spacing.md,
             }}
           >
-            <Settings size={24} color="#888" />
+            <Settings size={24} color={theme.colors.textMuted} />
           </div>
-          <div style={{ textAlign: "center" }}>
+          <div>
             <h3
               style={{
-                fontSize: "18px",
-                fontWeight: 600,
-                color: "#f3f3f3",
-                margin: 0,
-                marginBottom: "8px",
+                fontSize: theme.typography.fontSize.md,
+                fontWeight: theme.typography.fontWeight.semibold,
+                color: theme.colors.textPrimary,
+                margin: `0 0 ${theme.spacing.sm} 0`,
               }}
             >
-              No Node Selected
+              No Selection
             </h3>
             <p
               style={{
-                fontSize: "14px",
-                color: "#888",
+                fontSize: theme.typography.fontSize.sm,
+                color: theme.colors.textSecondary,
                 margin: 0,
-                lineHeight: 1.4,
-                maxWidth: "180px",
+                lineHeight: theme.typography.lineHeight.relaxed,
               }}
             >
-              Select a node on the canvas to view and edit its properties.
-            </p>
-          </div>
-          <div
-            style={{
-              marginTop: "16px",
-              padding: "16px",
-              backgroundColor: theme.colors.backgroundTertiary,
-              borderRadius: "8px",
-              border: `1px solid ${theme.colors.border}`,
-              maxWidth: "200px",
-              width: "100%",
-            }}
-          >
-            <h4
-              style={{
-                fontSize: "14px",
-                fontWeight: 500,
-                color: "#f3f3f3",
-                margin: 0,
-                marginBottom: "6px",
-              }}
-            >
-              💡 Quick Tip
-            </h4>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#888",
-                margin: 0,
-                lineHeight: 1.3,
-              }}
-            >
-              Right-click any node for quick actions like setting as start node.
+              Select a node to view and edit its properties
             </p>
           </div>
         </div>
@@ -162,35 +108,37 @@ export default function CompactPropertiesPanel({
       {/* Header */}
       <div
         style={{
-          padding: "16px 24px",
+          padding: `${theme.spacing.lg} ${theme.spacing.xxl}`,
           borderBottom: `1px solid ${theme.colors.border}`,
-          backgroundColor: theme.colors.backgroundTertiary,
+          backgroundColor: theme.colors.backgroundSecondary,
           display: "flex",
           alignItems: "center",
-          gap: "12px",
-          minHeight: "48px",
+          gap: theme.spacing.md,
+          minHeight: theme.components.section.headerHeight,
         }}
       >
         <div
           style={{
-            backgroundColor: "#a97c1a",
-            borderRadius: "8px",
-            padding: "6px 10px",
+            width: "32px",
+            height: "32px",
+            backgroundColor: theme.colors.backgroundTertiary,
+            borderRadius: theme.borderRadius.sm,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            border: `1px solid ${theme.colors.border}`,
           }}
         >
-          <Settings size={16} color="white" />
+          <Settings size={16} color={theme.colors.textSecondary} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2
             style={{
-              fontSize: "15px",
-              fontWeight: 600,
-              color: "#f3f3f3",
+              fontSize: theme.typography.fontSize.base,
+              fontWeight: theme.typography.fontWeight.semibold,
+              color: theme.colors.textPrimary,
               margin: 0,
-              lineHeight: 1.2,
+              lineHeight: theme.typography.lineHeight.tight,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -200,26 +148,27 @@ export default function CompactPropertiesPanel({
           </h2>
           <p
             style={{
-              fontSize: "14px",
-              color: "#888",
-              margin: 0,
-              lineHeight: 1.2,
+              fontSize: theme.typography.fontSize.xs,
+              color: theme.colors.textSecondary,
+              margin: `${theme.spacing.xs} 0 0 0`,
+              lineHeight: theme.typography.lineHeight.normal,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
           >
-            {selectedNode.type || "Unknown"} • {selectedNode.subtype || "No subtype"}
+            {selectedNode.type || "Unknown"} •{" "}
+            {selectedNode.subtype || "No subtype"}
           </p>
         </div>
       </div>
       {/* Content */}
       <div
         style={{
-          padding: "24px",
+          padding: theme.spacing.xxl,
           display: "flex",
           flexDirection: "column",
-          gap: "16px",
+          gap: theme.spacing.lg,
           flex: 1,
         }}
       >
@@ -227,62 +176,71 @@ export default function CompactPropertiesPanel({
           style={{
             backgroundColor: theme.colors.backgroundTertiary,
             border: `1px solid ${theme.colors.border}`,
-            borderRadius: "8px",
-            padding: "16px",
+            borderRadius: theme.borderRadius.sm,
+            padding: theme.spacing.lg,
           }}
         >
           <h3
             style={{
-              fontSize: "14px",
-              fontWeight: 500,
-              color: "#f3f3f3",
+              fontSize: theme.typography.fontSize.sm,
+              fontWeight: theme.typography.fontWeight.medium,
+              color: theme.colors.textPrimary,
               margin: 0,
-              marginBottom: "10px",
+              marginBottom: theme.spacing.sm,
             }}
           >
             Node Information
           </h3>
           <div
             style={{
-              fontFamily: 'Menlo, monospace',
-              fontSize: "12px",
-              color: "#888",
-              lineHeight: 1.5,
+              fontFamily: theme.typography.fontMono,
+              fontSize: theme.typography.fontSize.xs,
+              color: theme.colors.textAccent,
+              lineHeight: theme.typography.lineHeight.normal,
             }}
           >
             <div>
-              ID: <span style={{ color: "#6cb6ff" }}>{selectedNode.id.slice(0, 8)}...</span>
+              ID:{" "}
+              <span style={{ color: theme.colors.textAccent }}>
+                {selectedNode.id.slice(0, 8)}...
+              </span>
             </div>
             <div>
-              Type: <span style={{ color: "#6cb6ff" }}>{selectedNode.type || "Unknown"}</span>
+              Type:{" "}
+              <span style={{ color: theme.colors.textAccent }}>
+                {selectedNode.type || "Unknown"}
+              </span>
             </div>
             <div>
-              Subtype: <span style={{ color: "#6cb6ff" }}>{selectedNode.subtype || "None"}</span>
+              Subtype:{" "}
+              <span style={{ color: theme.colors.textAccent }}>
+                {selectedNode.subtype || "None"}
+              </span>
             </div>
           </div>
         </div>
         <div
           style={{
-            backgroundColor: theme.colors.backgroundTertiary,
-            border: "1px solid #a97c1a",
-            borderRadius: "8px",
-            padding: "16px",
+            backgroundColor: theme.colors.backgroundSecondary,
+            border: `1px solid ${theme.colors.warning}`,
+            borderRadius: theme.borderRadius.sm,
+            padding: theme.spacing.lg,
           }}
         >
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "6px",
-              marginBottom: "6px",
+              gap: theme.spacing.sm,
+              marginBottom: theme.spacing.sm,
             }}
           >
-            <Settings size={12} color="#a97c1a" />
+            <Settings size={14} color={theme.colors.warning} />
             <h4
               style={{
-                fontSize: "14px",
-                fontWeight: 500,
-                color: "#a97c1a",
+                fontSize: theme.typography.fontSize.sm,
+                fontWeight: theme.typography.fontWeight.medium,
+                color: theme.colors.warning,
                 margin: 0,
               }}
             >
@@ -291,13 +249,14 @@ export default function CompactPropertiesPanel({
           </div>
           <p
             style={{
-              fontSize: "12px",
-              color: "#888",
+              fontSize: theme.typography.fontSize.xs,
+              color: theme.colors.textSecondary,
               margin: 0,
-              lineHeight: 1.4,
+              lineHeight: theme.typography.lineHeight.relaxed,
             }}
           >
-            Properties panel for this node type hasn&apos;t been implemented yet. The node will still work in workflows.
+            Properties panel for this node type hasn&apos;t been implemented
+            yet. The node will still work in workflows.
           </p>
         </div>
       </div>

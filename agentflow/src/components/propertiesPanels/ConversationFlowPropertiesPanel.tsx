@@ -37,11 +37,11 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
   const inputStyle: React.CSSProperties = {
     width: 90,
     background: theme.colors.backgroundTertiary,
-    color: '#fff',
+    color: "#fff",
     border: `1px solid ${theme.colors.border}`,
     borderRadius: 8,
     padding: 10,
-    fontFamily: 'Inter, sans-serif',
+    fontFamily: "Inter, sans-serif",
     fontSize: 15,
     marginRight: 8,
   };

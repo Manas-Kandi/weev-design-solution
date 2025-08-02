@@ -153,10 +153,7 @@ export default function PromptTemplatePropertiesPanel({
             </VSCodeButton>
           </div>
         ))}
-        <VSCodeButton
-          style={{ marginTop: "6px" }}
-          onClick={handleAddVariable}
-        >
+        <VSCodeButton style={{ marginTop: "6px" }} onClick={handleAddVariable}>
           Add Variable
         </VSCodeButton>
       </PanelSection>

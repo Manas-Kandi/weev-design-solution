@@ -89,7 +89,7 @@ export default function TestCasePropertiesPanel({
     border: `1px solid ${theme.colors.border}`,
     borderRadius: "6px",
     padding: "12px",
-    fontFamily: 'Menlo, monospace',
+    fontFamily: "Menlo, monospace",
     fontSize: "15px",
     resize: "vertical",
     boxSizing: "border-box",
