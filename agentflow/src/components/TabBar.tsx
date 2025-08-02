@@ -29,33 +29,6 @@ export default function TabBar({
   const [tabs, setTabs] = useState<Tab[]>(initialTabs);
   const [activeId, setActiveId] = useState<string>(initialTabs[0]?.id);
 
-  const containerStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    height: "var(--space-xl)",
-    padding: `0 var(--space-sm)`,
-    background: "var(--figma-surface)",
-    borderBottom: "1px solid var(--figma-border)",
-  };
-
-  const tabsWrapperStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: "var(--space-xs)",
-    overflow: "hidden",
-  };
-
-  const tabStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    height: "var(--space-lg)",
-    padding: `0 var(--space-sm)`,
-    cursor: "pointer",
-    userSelect: "none",
-    fontSize: "var(--fs-sm)",
-  };
-
   const addTab = () => {
     const id = Date.now().toString();
     setTabs([...tabs, { id, title: `Untitled ${tabs.length + 1}` }]);
@@ -69,89 +42,46 @@ export default function TabBar({
   };
 
   return (
-    <div style={containerStyle}>
-      <div style={tabsWrapperStyle}>
-        {tabs.map((tab) => {
-          const isActive = activeId === tab.id;
-          return (
-            <div
-              key={tab.id}
-              onClick={() => setActiveId(tab.id)}
-              style={{
-                ...tabStyle,
-                color: isActive
-                  ? "var(--figma-text)"
-                  : "var(--figma-text-secondary)",
-                background: isActive ? "var(--figma-bg)" : "transparent",
-                borderBottom: `2px solid ${
-                  isActive ? "var(--figma-accent)" : "transparent"
-                }`,
+    <div className="flex items-center justify-between h-8 px-2 bg-[var(--figma-surface)] border-b border-[var(--figma-border)]">
+      <div className="flex items-center gap-1 overflow-hidden">
+        {tabs.map((tab) => (
+          <div
+            key={tab.id}
+            onClick={() => setActiveId(tab.id)}
+            className={`group flex items-center h-6 px-2 rounded-t-md cursor-pointer select-none text-sm ${
+              activeId === tab.id
+                ? "bg-[var(--figma-bg)] text-[var(--figma-text)]"
+                : "text-[var(--figma-text-secondary)]"
+            }`}
+          >
+            <span className="truncate">
+              {tab.title}
+              {tab.breadcrumb && (
+                <span className="ml-1 text-xs text-[var(--figma-text-secondary)]">
+                  /{tab.breadcrumb.join("/")}
+                </span>
+              )}
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                closeTab(tab.id);
               }}
+              className="ml-2 opacity-0 group-hover:opacity-100 hover:text-[var(--figma-text)]"
             >
-              <span
-                style={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {tab.title}
-                {tab.breadcrumb && (
-                  <span
-                    style={{
-                      marginLeft: "var(--space-xs)",
-                      fontSize: "var(--fs-xs)",
-                      color: "var(--figma-text-secondary)",
-                    }}
-                  >
-                    /{tab.breadcrumb.join("/")}
-                  </span>
-                )}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeTab(tab.id);
-                }}
-                style={{
-                  marginLeft: "var(--space-sm)",
-                  color: "var(--figma-text-secondary)",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                <X size={12} />
-              </button>
-            </div>
-          );
-        })}
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
         <button
           onClick={addTab}
+          className="ml-1 w-6 h-6 flex items-center justify-center text-[var(--figma-text-secondary)] hover:text-[var(--figma-text)]"
           title="New file"
-          style={{
-            marginLeft: "var(--space-xs)",
-            width: "var(--space-lg)",
-            height: "var(--space-lg)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--figma-text-secondary)",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-          }}
         >
-          <Plus size={16} />
+          <Plus className="w-4 h-4" />
         </button>
       </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "var(--space-xs)",
-        }}
-      >
+      <div className="flex items-center gap-1">
         {avatars.map((a) => (
           <UserAvatar key={a.id} name={a.name} image={a.image} online={a.online} />
         ))}
@@ -159,4 +89,3 @@ export default function TabBar({
     </div>
   );
 }
-
