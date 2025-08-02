@@ -35,12 +35,18 @@
   ```
 - **Panel Styling**:
   ```tsx
-  <div style={{ background: theme.colors.background, borderRadius: theme.borderRadius.section }}>
+  <div
+    style={{
+      background: theme.colors.background,
+      borderRadius: theme.borderRadius.section,
+    }}
+  >
     {/* ... */}
   </div>
   ```
 
 ## Reference Files
+
 - `src/lib/nodes/` – Node logic and types
 - `src/components/nodes/` – Node React components
 - `src/components/propertiesPanels/` – Node property panels
