@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CanvasNode, Colors, Connection } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
+import {
+  figmaNodeStyle,
+  selectedNodeStyle,
+  hoverNodeStyle
+} from './nodeStyles';
 
 interface ChatBoxNodeProps {
   node: CanvasNode;
@@ -42,6 +47,7 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
 
   // Get the current input value from node data
   const [input, setInput] = useState((node.data as ChatBoxNodeData).inputValue || '');
+  const [isHovered, setIsHovered] = useState(false);
 
   // Update node data when input changes
   const handleInputChange = (value: string) => {
@@ -64,20 +70,27 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
       .then(result => console.log('Database update result:', result)); // Add this
   };
 
+  const nodeStyle: React.CSSProperties = {
+    ...figmaNodeStyle,
+    left: node.position.x,
+    top: node.position.y,
+    width: node.size.width,
+    height: node.size.height,
+    borderColor: isSelected ? 'var(--figma-accent)' : 'var(--figma-border)',
+    ...(isHovered ? hoverNodeStyle : {}),
+    ...(isSelected ? selectedNodeStyle : {}),
+    zIndex: 3
+  };
+
   return (
     <div
-      className={`absolute flex flex-col bg-white/5 border rounded-lg shadow-lg ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
-      style={{
-        left: node.position.x,
-        top: node.position.y,
-        width: node.size.width,
-        height: node.size.height,
-        borderColor: isSelected ? theme.accent : theme.border,
-        zIndex: 3
-      }}
+      className="absolute flex flex-col"
+      style={nodeStyle}
       onMouseDown={e => onNodeMouseDown(e, node.id)}
       onClick={e => onNodeClick(e, node.id)}
       onContextMenu={e => onNodeContextMenu(e, node.id)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Header */}
       <div className="flex items-center gap-2 p-2 border-b" style={{ borderColor: theme.border }}>

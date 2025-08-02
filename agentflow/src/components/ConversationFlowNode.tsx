@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Plus, GitBranch, Trash2, Edit2, ChevronRight, User, Bot } from 'lucide-react';
+import {
+  figmaNodeStyle,
+  selectedNodeStyle,
+  hoverNodeStyle
+} from './nodeStyles';
 
 interface ConversationNodeData {
   messages: ConversationMessage[];
@@ -69,6 +74,7 @@ export default function ConversationFlowNode({
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [showBranchMenu, setShowBranchMenu] = useState<string | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     // Update node data when messages change
@@ -155,24 +161,27 @@ export default function ConversationFlowNode({
   // - Use subtle hover/focus effects
   // - Use monospace font for message bubbles for a professional feel
 
+  const nodeStyle: React.CSSProperties = {
+    ...figmaNodeStyle,
+    left: node.position.x,
+    top: node.position.y,
+    width: 400,
+    minHeight: 300,
+    borderColor: isSelected ? 'var(--figma-accent)' : 'var(--figma-border)',
+    zIndex: isSelected ? 10 : 5,
+    fontFamily: 'Inter, Menlo, monospace',
+    ...(isHovered ? hoverNodeStyle : {}),
+    ...(isSelected ? selectedNodeStyle : {})
+  };
+
   return (
     <div
-      className={`absolute bg-[#18181b] border border-[#23232a] overflow-hidden transition-all ${
-        isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'shadow-sm'
-      }`}
-      style={{
-        left: node.position.x,
-        top: node.position.y,
-        width: 400,
-        minHeight: 300,
-        borderRadius: 4,
-        borderColor: isSelected ? '#2563eb' : '#23232a',
-        zIndex: isSelected ? 10 : 5,
-        fontFamily: 'Inter, Menlo, monospace',
-        boxShadow: isSelected ? '0 0 0 2px #2563eb33' : '0 2px 8px #000a',
-      }}
+      className="absolute overflow-hidden transition-all"
+      style={nodeStyle}
       onMouseDown={(e) => onNodeMouseDown(e, node.id)}
       onClick={(e) => onNodeClick(e, node.id)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Header */}
       <div className="bg-[#23232a] px-3 py-2 flex items-center justify-between border-b border-[#23232a]">
