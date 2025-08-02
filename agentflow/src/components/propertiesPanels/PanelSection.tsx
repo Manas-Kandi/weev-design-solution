@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { figmaPropertiesTheme as theme, themeHelpers } from "./propertiesPanelTheme";
+import { useFigmaHover } from "../../utils/figmaInteractions";
 
 interface PanelSectionProps {
   title: string;
@@ -26,7 +27,7 @@ const PanelSection: React.FC<PanelSectionProps> = ({
   actions,
 }) => {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
-  const [isHovered, setIsHovered] = useState(false);
+  const { isHovered, hoverProps } = useFigmaHover<HTMLButtonElement>();
 
   // Get styles based on section level
   const sectionStyle: React.CSSProperties = {
@@ -108,10 +109,9 @@ const PanelSection: React.FC<PanelSectionProps> = ({
         type="button"
         style={headerStyle}
         onClick={() => setCollapsed(prev => !prev)}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
         aria-expanded={!collapsed}
         aria-controls={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
+        {...hoverProps}
       >
         <div style={headerContentStyle}>
           <ChevronRight
