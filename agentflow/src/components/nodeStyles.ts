@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { figmaHoverStyle, figmaSelectedStyle } from '../utils/figmaInteractions';
 
 export const figmaNodeStyle: CSSProperties = {
   backgroundColor: 'var(--figma-surface)',
@@ -8,10 +9,6 @@ export const figmaNodeStyle: CSSProperties = {
   transition: 'box-shadow 0.2s ease'
 };
 
-export const selectedNodeStyle: CSSProperties = {
-  boxShadow: '0 0 0 2px var(--figma-accent), 0 2px 8px #000a'
-};
+export const selectedNodeStyle: CSSProperties = figmaSelectedStyle;
 
-export const hoverNodeStyle: CSSProperties = {
-  boxShadow: '0 0 0 2px var(--figma-border), 0 2px 8px #000a'
-};
+export const hoverNodeStyle: CSSProperties = figmaHoverStyle;
