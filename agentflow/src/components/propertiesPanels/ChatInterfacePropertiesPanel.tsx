@@ -1,9 +1,9 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { Input } from "../ui/input";
 import PanelSection from "./PanelSection";
+import { VSCodeInput } from "./vsCodeFormComponents";
 
 interface ChatInterfacePropertiesPanelProps {
   node: CanvasNode;
@@ -53,7 +53,7 @@ export default function ChatInterfacePropertiesPanel({
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
     padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.section,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     display: "flex",
@@ -61,18 +61,21 @@ export default function ChatInterfacePropertiesPanel({
     gap: theme.spacing.fieldGap,
   };
   const labelStyle: React.CSSProperties = {
-    color: theme.colors.label,
-    font: theme.font.label,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.labelMargin,
   };
   const inputStyle: React.CSSProperties = {
-    background: theme.colors.inputBackground,
-    color: theme.colors.inputText,
+    background: theme.colors.backgroundTertiary,
+    color: theme.colors.textPrimary,
     border: `1px solid ${theme.colors.border}`,
-    borderRadius: theme.borderRadius.input,
+    borderRadius: theme.borderRadius.sm,
     padding: theme.spacing.inputPadding,
     width: "100%",
     marginBottom: theme.spacing.fieldGap,
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.base,
   };
 
   return (
@@ -82,20 +85,20 @@ export default function ChatInterfacePropertiesPanel({
         description="Configure chat interface properties."
       >
         <label style={labelStyle}>Title</label>
-        <Input
+        <VSCodeInput
           style={inputStyle}
           value={title}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setTitle(e.target.value);
             handleFieldChange("title", e.target.value);
           }}
           placeholder="Chat title"
         />
         <label style={labelStyle}>Placeholder</label>
-        <Input
+        <VSCodeInput
           style={inputStyle}
           value={placeholder}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setPlaceholder(e.target.value);
             handleFieldChange("placeholder", e.target.value);
           }}
@@ -106,7 +109,7 @@ export default function ChatInterfacePropertiesPanel({
             <input
               type="checkbox"
               checked={enableFileUpload}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setEnableFileUpload(e.target.checked);
                 handleFieldChange("enableFileUpload", e.target.checked);
               }}
@@ -120,7 +123,7 @@ export default function ChatInterfacePropertiesPanel({
             <input
               type="checkbox"
               checked={showHistory}
-              onChange={(e) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setShowHistory(e.target.checked);
                 handleFieldChange("showHistory", e.target.checked);
               }}

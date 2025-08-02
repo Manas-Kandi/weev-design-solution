@@ -1,17 +1,13 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { Input } from "../ui/input";
 import PanelSection from "./PanelSection";
 import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "../ui/select";
-import { Button } from "../ui/button";
+  VSCodeInput,
+  VSCodeSelect,
+  VSCodeButton,
+} from "./vsCodeFormComponents";
 
 interface TestCasePropertiesPanelProps {
   node: CanvasNode;
@@ -74,8 +70,8 @@ export default function TestCasePropertiesPanel({
     maxWidth: "360px",
     height: "100%",
     background: theme.colors.background,
-    color: theme.colors.inputText,
-    borderRadius: theme.borderRadius.section,
+    color: theme.colors.textPrimary,
+    borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.sectionPadding,
     overflowY: "auto",
     display: "flex",
@@ -88,25 +84,15 @@ export default function TestCasePropertiesPanel({
   const textareaStyle: React.CSSProperties = {
     width: "100%",
     minHeight: 48,
-    background: theme.colors.inputBackground,
-    color: theme.colors.inputText,
+    background: theme.colors.backgroundTertiary,
+    color: theme.colors.textPrimary,
     border: `1px solid ${theme.colors.border}`,
-    borderRadius: theme.borderRadius.input,
+    borderRadius: theme.borderRadius.sm,
     padding: theme.spacing.inputPadding,
-    font: theme.font.input,
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.base,
     resize: "vertical",
     boxSizing: "border-box",
-  };
-
-  // Theme-based button style
-  const buttonStyle: React.CSSProperties = {
-    background: theme.colors.accent,
-    color: "#fff",
-    borderRadius: theme.borderRadius.input,
-    font: theme.font.input,
-    padding: theme.spacing.inputPadding,
-    border: "none",
-    cursor: "pointer",
   };
 
   return (
@@ -115,14 +101,13 @@ export default function TestCasePropertiesPanel({
         title="Description"
         description="Describe what this test case should validate."
       >
-        <Input
+        <VSCodeInput
           value={description}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setDescription(e.target.value);
             handleFieldChange("description", e.target.value);
           }}
           placeholder="Test case description..."
-          disabled={false}
           style={{ width: "100%" }}
         />
       </PanelSection>
@@ -130,12 +115,11 @@ export default function TestCasePropertiesPanel({
         <textarea
           style={textareaStyle}
           value={input}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
             setInput(e.target.value);
             handleFieldChange("input", e.target.value);
           }}
           placeholder="Test input..."
-          disabled={false}
         />
       </PanelSection>
       <PanelSection
@@ -145,47 +129,38 @@ export default function TestCasePropertiesPanel({
         <textarea
           style={textareaStyle}
           value={expectedOutput}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
             setExpectedOutput(e.target.value);
             handleFieldChange("expectedOutput", e.target.value);
           }}
           placeholder="Expected output..."
-          disabled={false}
         />
       </PanelSection>
       <PanelSection
         title="Assert Type"
         description="How should the output be validated?"
       >
-        <Select
+        <VSCodeSelect
           value={assertType}
-          onValueChange={(v) => {
+          onValueChange={(v: string) => {
             setAssertType(v);
             handleFieldChange("assertType", v);
           }}
-        >
-          <SelectTrigger style={{ width: "100%" }}>
-            <SelectValue placeholder="Choose assertion type" />
-          </SelectTrigger>
-          <SelectContent>
-            {assertTypes.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          options={assertTypes}
+          placeholder="Choose assertion type"
+          style={{ width: "100%" }}
+        />
       </PanelSection>
       <PanelSection title="Run Test" description="Execute this test case.">
-        <Button
-          variant="default"
-          style={buttonStyle}
+        <VSCodeButton
+          variant="primary"
+          size="medium"
           onClick={() => {
             /* TODO: Trigger test logic here */
           }}
         >
           Run Test
-        </Button>
+        </VSCodeButton>
       </PanelSection>
     </div>
   );

@@ -1,14 +1,9 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
+import { VSCodeSelect, VSCodeInput } from "./vsCodeFormComponents";
 import { CanvasNode } from "@/types";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "../ui/select";
+
 import PanelSection from "./PanelSection";
 
 interface KnowledgeBaseNodeData {
@@ -39,23 +34,9 @@ function isKnowledgeBaseNodeData(data: unknown): data is KnowledgeBaseNodeData {
 }
 
 // Define NodeData locally as per the project spec
-interface Message {
-  role: string;
-  content: string;
-  timestamp?: number;
-}
 
-interface NodeData {
-  message: string;
-  context: {
-    flowId: string;
-    nodeId: string;
-    timestamp: number;
-    metadata: Record<string, unknown>;
-  };
-  history?: Message[];
-  state?: unknown;
-}
+
+
 
 export default function KnowledgeBasePropertiesPanel({
   node,
@@ -136,70 +117,42 @@ export default function KnowledgeBasePropertiesPanel({
 
   // Only render the panel if the node is a knowledge base node
   if (!isKnowledgeBaseNodeData(node.data)) {
-    return (
-      <div className="p-4 text-vscode-textSecondary">
-        This properties panel is only for knowledge base nodes.
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.fieldGap }}>
       <PanelSection title="Operation" description="Choose what this node does">
-        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
-          Operation
-        </label>
-        <Select
+        <VSCodeSelect
           value={operation}
-          onValueChange={(val) =>
-            handleFieldChange(
-              "operation",
-              val as "store" | "retrieve" | "search"
-            )
-          }
-        >
-          <SelectTrigger className="w-full rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200">
-            <SelectValue placeholder="Select operation" />
-          </SelectTrigger>
-          <SelectContent className="bg-[var(--af-panel-bg)] border border-[var(--af-border)] text-[var(--af-text-secondary)]">
-            {operationOptions.map((opt) => (
-              <SelectItem
-                key={opt.value}
-                value={opt.value}
-                className="hover:bg-[var(--af-section-bg)]"
-              >
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onValueChange={(val: string) => handleFieldChange("operation", val as "store" | "retrieve" | "search")}
+          options={operationOptions}
+          placeholder="Select operation"
+        />
       </PanelSection>
       <PanelSection title="Documents" description="JSON array of documents">
-        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
-          Documents (JSON)
-        </label>
-        <textarea
-          className="w-full min-h-[48px] rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] font-mono focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+        <VSCodeInput
+          style={{ minHeight: 48, fontFamily: theme.typography.fontMono }}
           value={documents}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             setDocuments(e.target.value);
             try {
               handleFieldChange("documents", JSON.parse(e.target.value));
             } catch {}
           }}
           placeholder={`[
-  {"id": 1, "content": "..."}
+  {
+    "title": "Document 1",
+    "content": "..."
+  }
 ]`}
         />
       </PanelSection>
       <PanelSection title="Metadata" description="Additional metadata as JSON">
-        <label className="block mb-1 text-[var(--af-label-size)] font-semibold text-[var(--af-text-secondary)]">
-          Metadata (JSON)
-        </label>
-        <textarea
-          className="w-full min-h-[48px] rounded-[var(--af-border-radius)] bg-[var(--af-panel-bg)] border border-[var(--af-border)] px-3 py-2 text-[var(--af-text-secondary)] font-mono focus:ring-2 focus:ring-[var(--af-accent)] transition-all duration-200"
+        <VSCodeInput
+          style={{ minHeight: 48, fontFamily: theme.typography.fontMono }}
           value={metadata}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
             setMetadata(e.target.value);
             try {
               handleFieldChange("metadata", JSON.parse(e.target.value));

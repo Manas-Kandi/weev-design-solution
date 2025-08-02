@@ -1,6 +1,7 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
+import { VSCodeInput } from "./vsCodeFormComponents";
 import { CanvasNode } from "@/types";
 import PanelSection from "./PanelSection";
 
@@ -67,55 +68,40 @@ export default function IfElsePropertiesPanel({
 
   return (
     <div
-      className="agentflow-properties-panel"
       style={{
         width: 360,
         minWidth: 360,
         maxWidth: 360,
-        height: "calc(100vh - 0px)", // adjust if header/footer present
-        background: "#23272e",
-        padding: 16,
+        height: "100%",
+        background: theme.colors.background,
+        padding: theme.spacing.sectionPadding,
         boxSizing: "border-box",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
-        gap: 12,
-        borderLeft: "1px solid #252525",
+        gap: theme.spacing.fieldGap,
+        borderLeft: `1px solid ${theme.colors.border}`,
         position: "relative",
       }}
     >
-      {/* Custom Scrollbar Styles */}
-      <style>{`
-        .agentflow-properties-panel::-webkit-scrollbar {
-          width: 8px;
-          background: #1a1a1a;
-        }
-        .agentflow-properties-panel::-webkit-scrollbar-thumb {
-          background: #404040;
-          border-radius: 4px;
-          transition: background 0.2s;
-        }
-        .agentflow-properties-panel:hover::-webkit-scrollbar-thumb {
-          background: #4a4a4a;
-        }
-        .agentflow-properties-panel::-webkit-scrollbar-corner {
-          background: #23272e;
-        }
-      `}</style>
       <PanelSection
         title="Condition"
         description="Expression to evaluate for routing"
       >
-        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
-          Condition
-        </label>
-        <input
-          className="rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 w-full"
+        <VSCodeInput
           value={ifElseData.condition || ""}
-          onChange={(e) => handleFieldChange("condition", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("condition", e.target.value)
+          }
           placeholder="e.g. input == 'yes'"
         />
-        <div className="mt-1 text-[12px] text-[#858585]">
+        <div
+          style={{
+            fontSize: theme.typography.fontSize.sm,
+            color: theme.colors.textSecondary,
+            marginTop: theme.spacing.xs,
+          }}
+        >
           Boolean/JS-like expression. Example:{" "}
           <code>input == &#39;yes&#39;</code>
         </div>
@@ -124,16 +110,20 @@ export default function IfElsePropertiesPanel({
         title="Message"
         description="Optional message to emit if condition is met."
       >
-        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
-          Message
-        </label>
-        <input
-          className="rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 w-full"
+        <VSCodeInput
           value={ifElseData.message || ""}
-          onChange={(e) => handleFieldChange("message", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("message", e.target.value)
+          }
           placeholder="e.g. Branch taken!"
         />
-        <div className="mt-1 text-[12px] text-[#858585]">
+        <div
+          style={{
+            fontSize: theme.typography.fontSize.sm,
+            color: theme.colors.textSecondary,
+            marginTop: theme.spacing.xs,
+          }}
+        >
           This message will be sent if the condition is true.
         </div>
       </PanelSection>

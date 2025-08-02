@@ -171,6 +171,7 @@ export interface AgentNodeData {
   personalityTraits?: PersonalityTrait[];
   behaviorRules?: BehaviorRule[];
   knowledge?: string;
+  [key: string]: unknown;
 }
 
 export interface ToolAgentNodeData extends AgentNodeData {

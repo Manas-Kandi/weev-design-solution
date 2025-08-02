@@ -1,9 +1,9 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { Input } from "../ui/input";
 import PanelSection from "./PanelSection";
+import { VSCodeInput, VSCodeSelect } from "./vsCodeFormComponents";
 
 interface MessagePropertiesPanelProps {
   node: CanvasNode;
@@ -85,7 +85,7 @@ export default function MessagePropertiesPanel({
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
     padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.section,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -107,20 +107,23 @@ export default function MessagePropertiesPanel({
           style={{
             display: "block",
             marginBottom: 4,
-            color: theme.colors.label,
-            font: theme.font.label,
+            color: theme.colors.textPrimary,
+            fontWeight: theme.typography.fontWeight.medium,
+            fontSize: theme.typography.fontSize.base,
           }}
         >
           Title <span style={{ color: theme.colors.error }}>*</span>
         </label>
-        <Input
+        <VSCodeInput
           value={safeData.title}
           maxLength={TITLE_MAX}
           placeholder="Message"
-          onChange={(e) => handleFieldChange("title", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("title", e.target.value)
+          }
           onBlur={() => setTouched((t) => ({ ...t, title: true }))}
         />
-        <span style={{ color: theme.colors.inputText, fontSize: 12 }}>
+        <span style={{ color: theme.colors.textSecondary, fontSize: 12 }}>
           Max {TITLE_MAX} characters
         </span>
         {touched.title && errors.title && (
@@ -135,8 +138,9 @@ export default function MessagePropertiesPanel({
           style={{
             display: "block",
             marginBottom: 4,
-            color: theme.colors.label,
-            font: theme.font.label,
+            color: theme.colors.textPrimary,
+            fontWeight: theme.typography.fontWeight.medium,
+            fontSize: theme.typography.fontSize.base,
           }}
         >
           Message Content <span style={{ color: theme.colors.error }}>*</span>
@@ -145,14 +149,15 @@ export default function MessagePropertiesPanel({
           style={{
             width: "100%",
             minHeight: 64,
-            borderRadius: theme.borderRadius.input,
-            background: theme.colors.inputBackground,
-            color: theme.colors.inputText,
+            borderRadius: theme.borderRadius.sm,
+            background: theme.colors.backgroundSecondary,
+            color: theme.colors.textPrimary,
             border: `1px solid ${theme.colors.border}`,
             padding: theme.spacing.inputPadding,
             marginBottom: theme.spacing.fieldGap,
-            transition: "all 0.2s",
-            font: theme.font.input,
+            transition: `all ${theme.animation.fast}`,
+            fontFamily: theme.typography.fontMono,
+            fontSize: theme.typography.fontSize.base,
             resize: "vertical",
           }}
           value={safeData.content}
@@ -161,7 +166,7 @@ export default function MessagePropertiesPanel({
           onChange={(e) => handleFieldChange("content", e.target.value)}
           onBlur={() => setTouched((t) => ({ ...t, content: true }))}
         />
-        <span style={{ color: theme.colors.inputText, fontSize: 12 }}>
+        <span style={{ color: theme.colors.textSecondary, fontSize: 12 }}>
           Required. This will be sent as the message.
         </span>
         {touched.content && errors.content && (
@@ -176,36 +181,29 @@ export default function MessagePropertiesPanel({
           style={{
             display: "block",
             marginBottom: 4,
-            color: theme.colors.label,
-            font: theme.font.label,
+            color: theme.colors.textPrimary,
+            fontWeight: theme.typography.fontWeight.medium,
+            fontSize: theme.typography.fontSize.base,
           }}
         >
           Message Type
         </label>
-        <select
-          style={{
-            width: "100%",
-            borderRadius: theme.borderRadius.input,
-            background: theme.colors.inputBackground,
-            color: theme.colors.inputText,
-            border: `1px solid ${theme.colors.border}`,
-            padding: theme.spacing.inputPadding,
-            marginBottom: theme.spacing.fieldGap,
-            transition: "all 0.2s",
-          }}
-          value={safeData.messageType}
-          onChange={(e) =>
+        <VSCodeSelect
+          value={safeData.messageType || "User"}
+          onValueChange={(v: string) =>
             handleFieldChange(
               "messageType",
-              e.target.value as MessageNodeData["messageType"]
+              v as MessageNodeData["messageType"]
             )
           }
-        >
-          <option value="System">System</option>
-          <option value="User">User</option>
-          <option value="Assistant">Assistant</option>
-        </select>
-        <span style={{ color: theme.colors.inputText, fontSize: 12 }}>
+          options={[
+            { value: "System", label: "System" },
+            { value: "User", label: "User" },
+            { value: "Assistant", label: "Assistant" },
+          ]}
+          placeholder="Message Type"
+        />
+        <span style={{ color: theme.colors.textSecondary, fontSize: 12 }}>
           Choose the role for this message.
         </span>
       </PanelSection>
@@ -224,22 +222,26 @@ export default function MessagePropertiesPanel({
             onChange={(e) => handleFieldChange("passThrough", e.target.checked)}
             id="passThrough"
             style={{
-              accentColor: theme.colors.accent,
+              accentColor: theme.colors.textAccent,
               width: 16,
               height: 16,
-              borderRadius: theme.borderRadius.input,
+              borderRadius: theme.borderRadius.sm,
               border: `1px solid ${theme.colors.border}`,
             }}
           />
           <label
             htmlFor="passThrough"
-            style={{ color: theme.colors.label, font: theme.font.label }}
+            style={{
+              color: theme.colors.textPrimary,
+              fontWeight: theme.typography.fontWeight.medium,
+              fontSize: theme.typography.fontSize.base,
+            }}
           >
             Pass Through Mode
             <span
               style={{
                 display: "block",
-                color: theme.colors.inputText,
+                color: theme.colors.textSecondary,
                 fontSize: 12,
               }}
             >

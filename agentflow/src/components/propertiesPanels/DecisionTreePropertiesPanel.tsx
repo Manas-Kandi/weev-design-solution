@@ -1,17 +1,13 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { Input } from "../ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "../ui/select";
-import { Button } from "../ui/button";
 import PanelSection from "./PanelSection";
+import {
+  VSCodeInput,
+  VSCodeSelect,
+  VSCodeButton,
+} from "./vsCodeFormComponents";
 
 interface DecisionTreeNodeData {
   title: string;
@@ -122,7 +118,7 @@ export default function DecisionTreePropertiesPanel({
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
     padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.section,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -139,7 +135,7 @@ export default function DecisionTreePropertiesPanel({
   if (!isDecisionTreeNodeData(node.data)) {
     return (
       <div style={panelStyle}>
-        <div style={{ color: theme.colors.inputText }}>
+        <div style={{ color: theme.colors.textPrimary }}>
           This properties panel is only for decision tree nodes.
         </div>
       </div>
@@ -148,127 +144,132 @@ export default function DecisionTreePropertiesPanel({
 
   return (
     <div style={panelStyle}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>
-          Title
-        </label>
-        <Input
+      <PanelSection
+        title="Title"
+        description="Set a title for this decision tree node."
+      >
+        <VSCodeInput
           value={title}
-          onChange={(e) => handleFieldChange("title", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("title", e.target.value)
+          }
           placeholder="Node Title"
         />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>
-          Description
-        </label>
-        <Input
+      </PanelSection>
+      <PanelSection
+        title="Description"
+        description="Describe the purpose of this node."
+      >
+        <VSCodeInput
           value={description}
-          onChange={(e) => handleFieldChange("description", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("description", e.target.value)
+          }
           placeholder="Node Description"
         />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>
-          Color
-        </label>
-        <Input
+      </PanelSection>
+      <PanelSection title="Color" description="Set a color for this node.">
+        <VSCodeInput
           value={color}
-          onChange={(e) => handleFieldChange("color", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("color", e.target.value)
+          }
           placeholder="#4B5563"
         />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>
-          Icon
-        </label>
-        <Input
+      </PanelSection>
+      <PanelSection title="Icon" description="Set an icon for this node.">
+        <VSCodeInput
           value={icon}
-          onChange={(e) => handleFieldChange("icon", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("icon", e.target.value)
+          }
           placeholder="decision-tree"
         />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>
-          Rules
-        </label>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      </PanelSection>
+      <PanelSection
+        title="Rules"
+        description="Define the rules for this decision tree."
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: theme.spacing.xs,
+          }}
+        >
           {rules.map((rule, idx) => (
             <div
               key={idx}
-              style={{ display: "flex", alignItems: "center", gap: 8 }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: theme.spacing.xs,
+              }}
             >
-              <Input
+              <VSCodeInput
                 value={rule.condition || ""}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...rules];
                   next[idx] = { ...next[idx], condition: e.target.value };
                   handleFieldChange("rules", next);
                 }}
                 placeholder="Condition"
               />
-              <Input
+              <VSCodeInput
                 value={rule.outputPath || ""}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...rules];
                   next[idx] = { ...next[idx], outputPath: e.target.value };
                   handleFieldChange("rules", next);
                 }}
                 placeholder="Output Path"
               />
-              <Button
-                size="sm"
-                variant="destructive"
+              <VSCodeButton
+                variant="danger"
+                size="small"
                 onClick={() => {
                   const next = rules.filter((_, i) => i !== idx);
                   handleFieldChange("rules", next);
                 }}
               >
                 Remove
-              </Button>
+              </VSCodeButton>
             </div>
           ))}
-          <Button
-            size="sm"
-            variant="default"
+          <VSCodeButton
+            variant="primary"
+            size="small"
             onClick={() => {
               const next = [...rules, { condition: "", outputPath: "" }];
               handleFieldChange("rules", next);
             }}
           >
             Add Rule
-          </Button>
+          </VSCodeButton>
         </div>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>
-          Default Path
-        </label>
-        <Input
+      </PanelSection>
+      <PanelSection
+        title="Default Path"
+        description="Set the default output path."
+      >
+        <VSCodeInput
           value={defaultPath}
-          onChange={(e) => handleFieldChange("defaultPath", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("defaultPath", e.target.value)
+          }
         />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <label style={{ fontWeight: 600, color: theme.colors.label }}>
-          Evaluation Mode
-        </label>
-        <Select
+      </PanelSection>
+      <PanelSection
+        title="Evaluation Mode"
+        description="Choose how rules are evaluated."
+      >
+        <VSCodeSelect
           value={evaluationMode}
-          onValueChange={(v) => handleFieldChange("evaluationMode", v)}
-        >
-          <SelectTrigger style={{ width: "100%" }}>
-            <SelectValue placeholder="Choose evaluation mode" />
-          </SelectTrigger>
-          <SelectContent>
-            {evalModes.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          onValueChange={(v: string) => handleFieldChange("evaluationMode", v)}
+          options={evalModes}
+          placeholder="Choose evaluation mode"
+        />
+      </PanelSection>
     </div>
   );
 }

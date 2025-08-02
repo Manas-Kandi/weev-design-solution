@@ -1,10 +1,9 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
 import PanelSection from "./PanelSection";
+import { VSCodeInput, VSCodeButton } from "./vsCodeFormComponents";
 
 interface StateMachinePropertiesPanelProps {
   node: CanvasNode;
@@ -51,68 +50,19 @@ export default function StateMachinePropertiesPanel({
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
-  // Theme-based container style
+  // Container style from theme helpers
   const containerStyle: React.CSSProperties = {
     width: "360px",
     height: "100%",
     background: theme.colors.background,
-    color: theme.colors.inputText,
-    borderRadius: theme.borderRadius.section,
+    color: theme.colors.textPrimary,
+    borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.sectionPadding,
     overflowY: "auto",
     display: "flex",
     flexDirection: "column",
     gap: theme.spacing.fieldGap,
     boxSizing: "border-box",
-  };
-
-  // Theme-based label style for checkbox
-  const labelStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: theme.spacing.fieldGap,
-    font: theme.font.label,
-    color: theme.colors.label,
-    margin: theme.spacing.labelMargin,
-  };
-
-  // Theme-based input style for checkbox
-  const checkboxStyle: React.CSSProperties = {
-    accentColor: theme.colors.accent,
-    width: 18,
-    height: 18,
-  };
-
-  // Theme-based input style for Input fields
-  const inputStyle: React.CSSProperties = {
-    background: theme.colors.inputBackground,
-    color: theme.colors.inputText,
-    borderRadius: theme.borderRadius.input,
-    padding: theme.spacing.inputPadding,
-    font: theme.font.input,
-    border: `1px solid ${theme.colors.border}`,
-    width: "100%",
-    boxSizing: "border-box",
-  };
-
-  // Button style for destructive and primary
-  const buttonDestructive: React.CSSProperties = {
-    background: theme.colors.error,
-    color: "#fff",
-    borderRadius: theme.borderRadius.input,
-    font: theme.font.input,
-    padding: theme.spacing.inputPadding,
-    border: "none",
-    cursor: "pointer",
-  };
-  const buttonPrimary: React.CSSProperties = {
-    background: theme.colors.accent,
-    color: "#fff",
-    borderRadius: theme.borderRadius.input,
-    font: theme.font.input,
-    padding: theme.spacing.inputPadding,
-    border: "none",
-    cursor: "pointer",
   };
 
   return (
@@ -137,20 +87,19 @@ export default function StateMachinePropertiesPanel({
                 gap: theme.spacing.fieldGap,
               }}
             >
-              <Input
+              <VSCodeInput
                 value={state}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...states];
                   next[idx] = e.target.value;
                   setStates(next);
                   handleFieldChange("states", next);
                 }}
-                style={{ ...inputStyle, maxWidth: 160 }}
+                style={{ maxWidth: 160 }}
               />
-              <Button
-                size="sm"
-                variant="destructive"
-                style={buttonDestructive}
+              <VSCodeButton
+                variant="danger"
+                size="small"
                 onClick={() => {
                   const next = states.filter((_, i) => i !== idx);
                   setStates(next);
@@ -158,12 +107,11 @@ export default function StateMachinePropertiesPanel({
                 }}
               >
                 Remove
-              </Button>
+              </VSCodeButton>
             </div>
           ))}
-          <Button
-            size="sm"
-            style={buttonPrimary}
+          <VSCodeButton
+            size="small"
             onClick={() => {
               const next = [...states, "newState"];
               setStates(next);
@@ -171,20 +119,20 @@ export default function StateMachinePropertiesPanel({
             }}
           >
             Add State
-          </Button>
+          </VSCodeButton>
         </div>
       </PanelSection>
       <PanelSection
         title="Initial State"
         description="Set the starting state for this machine."
       >
-        <Input
+        <VSCodeInput
           value={initialState}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setInitialState(e.target.value);
             handleFieldChange("initialState", e.target.value);
           }}
-          style={{ ...inputStyle, maxWidth: 160 }}
+          style={{ maxWidth: 160 }}
         />
       </PanelSection>
       <PanelSection
@@ -207,43 +155,42 @@ export default function StateMachinePropertiesPanel({
                 gap: theme.spacing.fieldGap,
               }}
             >
-              <Input
+              <VSCodeInput
                 value={tr.from || ""}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...transitions];
                   next[idx] = { ...next[idx], from: e.target.value };
                   setTransitions(next);
                   handleFieldChange("transitions", next);
                 }}
-                style={{ ...inputStyle, maxWidth: 100 }}
+                style={{ maxWidth: 100 }}
                 placeholder="From"
               />
-              <Input
+              <VSCodeInput
                 value={tr.to || ""}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...transitions];
                   next[idx] = { ...next[idx], to: e.target.value };
                   setTransitions(next);
                   handleFieldChange("transitions", next);
                 }}
-                style={{ ...inputStyle, maxWidth: 100 }}
+                style={{ maxWidth: 100 }}
                 placeholder="To"
               />
-              <Input
+              <VSCodeInput
                 value={tr.condition || ""}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...transitions];
                   next[idx] = { ...next[idx], condition: e.target.value };
                   setTransitions(next);
                   handleFieldChange("transitions", next);
                 }}
-                style={{ ...inputStyle, maxWidth: 160 }}
+                style={{ maxWidth: 160 }}
                 placeholder="Condition"
               />
-              <Button
-                size="sm"
-                variant="destructive"
-                style={buttonDestructive}
+              <VSCodeButton
+                variant="danger"
+                size="small"
                 onClick={() => {
                   const next = transitions.filter((_, i) => i !== idx);
                   setTransitions(next);
@@ -251,12 +198,11 @@ export default function StateMachinePropertiesPanel({
                 }}
               >
                 Remove
-              </Button>
+              </VSCodeButton>
             </div>
           ))}
-          <Button
-            size="sm"
-            style={buttonPrimary}
+          <VSCodeButton
+            size="small"
             onClick={() => {
               const next = [
                 ...transitions,
@@ -267,19 +213,27 @@ export default function StateMachinePropertiesPanel({
             }}
           >
             Add Transition
-          </Button>
+          </VSCodeButton>
         </div>
       </PanelSection>
       <PanelSection
         title="Persistence"
         description="Optionally persist the state across executions."
       >
-        <label style={labelStyle}>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: theme.spacing.fieldGap,
+            color: theme.colors.textSecondary,
+            margin: theme.spacing.labelMargin,
+          }}
+        >
           <input
             type="checkbox"
             checked={persistState}
-            style={checkboxStyle}
-            onChange={(e) => {
+            style={{ width: 18, height: 18 }}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setPersistState(e.target.checked);
               handleFieldChange("persistState", e.target.checked);
             }}

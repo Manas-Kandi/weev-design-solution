@@ -1,11 +1,23 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
-import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+// Enhanced Agent Properties Panel with VS Code styling
+import React from "react";
+import {
+  Bot,
+  Settings,
+  Zap,
+  Brain,
+  AlertTriangle,
+  Info,
+  MessageSquare,
+} from "lucide-react";
 import { CanvasNode } from "@/types";
-import { Input } from "@/components/ui/input";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
 import PanelSection from "./PanelSection";
-
-// TODO: Add unit tests for this panel to ensure type safety and prevent regressions.
+import {
+  VSCodeInput,
+  VSCodeSelect,
+  VSCodeButton,
+} from "./vsCodeFormComponents";
 
 interface AgentNodeData {
   name?: string;
@@ -13,9 +25,16 @@ interface AgentNodeData {
   personality?: string;
   systemPrompt?: string;
   escalationThreshold?: number;
+  escalationMessage?: string;
   model?: string;
   temperature?: number;
-  // Example: extract and manage personality tags
+  maxTokens?: number;
+  responseFormat?: string;
+  personalityTags?: string[];
+  enableFunctionCalling?: boolean;
+  confidenceThreshold?: number;
+  contextWindow?: number;
+  [key: string]: unknown;
 }
 
 interface AgentPropertiesPanelProps {
@@ -23,194 +42,290 @@ interface AgentPropertiesPanelProps {
   onChange: (node: CanvasNode & { data: AgentNodeData }) => void;
 }
 
-export default function AgentPropertiesPanel({
+export default function EnhancedAgentPropertiesPanel({
   node,
   onChange,
 }: AgentPropertiesPanelProps) {
-  // Example: extract and manage personality tags
-  const [personalityTags, setPersonalityTags] = useState<string[]>(() => {
-    if ((node.data as AgentNodeData)?.personality) {
-      return (node.data as AgentNodeData)
-        .personality!.split(",")
-        .map((t: string) => t.trim())
-        .filter(Boolean);
-    }
-    return [];
-  });
+  const data = node.data;
 
-  const handleFieldChange = (field: string, value: unknown) => {
-    onChange({ ...node, data: { ...node.data, [field]: value } });
+  // Model options with descriptions
+  const modelOptions = [
+    {
+      value: "gemini-pro",
+      label: "Gemini Pro",
+      description: "Balanced performance and capability",
+    },
+    {
+      value: "gemini-pro-vision",
+      label: "Gemini Pro Vision",
+      description: "Multimodal with image understanding",
+    },
+    {
+      value: "gemini-ultra",
+      label: "Gemini Ultra",
+      description: "Most capable model (coming soon)",
+    },
+  ];
+
+  const responseFormatOptions = [
+    { value: "text", label: "Text", description: "Plain text response" },
+    { value: "json", label: "JSON", description: "Structured JSON output" },
+    { value: "markdown", label: "Markdown", description: "Formatted markdown" },
+  ];
+
+
+
+  const handleFieldChange = (field: keyof AgentNodeData, value: unknown) => {
+    const updatedData = { ...data, [field]: value };
+    onChange({ ...node, data: updatedData });
   };
 
-  // Compose panel style from theme
+  // Panel container style
   const panelStyle: React.CSSProperties = {
-    background: theme.colors.background,
-    borderLeft: `1px solid ${theme.colors.border}`,
-    padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.section,
-    minHeight: 0,
+    width: theme.components.panel.width,
+    minWidth: theme.components.panel.minWidth,
+    maxWidth: theme.components.panel.maxWidth,
     height: "100%",
-    width: 360,
-    minWidth: 360,
-    maxWidth: 360,
+    backgroundColor: theme.colors.background,
+    borderLeft: `1px solid ${theme.colors.border}`,
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.fieldGap,
-    boxSizing: "border-box",
     overflowY: "auto",
+    fontFamily: theme.typography.fontFamily,
+    borderRadius: theme.borderRadius.lg,
+  };
+
+  const headerStyle: React.CSSProperties = {
+    padding: theme.spacing.lg,
+    borderBottom: `1px solid ${theme.colors.border}`,
+    backgroundColor: theme.colors.backgroundSecondary,
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing.md,
+    minHeight: "60px",
+    borderTopLeftRadius: theme.borderRadius.lg,
+    borderTopRightRadius: theme.borderRadius.lg,
+  };
+
+  const headerTitleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+    margin: 0,
+  };
+
+  const headerSubtitleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textSecondary,
+    margin: 0,
+  };
+
+  const contentStyle: React.CSSProperties = {
+    padding: theme.spacing.md,
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.lg,
+    flex: 1,
   };
 
   return (
     <div style={panelStyle}>
-      {/* Basic Configuration */}
-      <PanelSection
-        title="Basic Configuration"
-        description="Agent name and role"
-      >
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            color: theme.colors.label,
-            font: theme.font.label,
-          }}
-        >
-          Agent Name
-        </label>
-        <Input
-          value={node.data?.name || ""}
-          onChange={(e) => handleFieldChange("name", e.target.value)}
-          placeholder="Agent name"
-        />
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            marginTop: 12,
-            color: theme.colors.label,
-            font: theme.font.label,
-          }}
-        >
-          Role
-        </label>
-        <Input
-          value={node.data?.role || ""}
-          onChange={(e) => handleFieldChange("role", e.target.value)}
-          placeholder="Agent role"
-        />
-      </PanelSection>
-      {/* Agent Behavior */}
-      <PanelSection title="Agent Behavior" description="Personality and style">
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            color: theme.colors.label,
-            font: theme.font.label,
-          }}
-        >
-          Personality Tags
-        </label>
-        <Input
-          value={personalityTags.join(", ")}
-          onChange={(e) => {
-            setPersonalityTags(e.target.value.split(",").map((t) => t.trim()));
-            handleFieldChange("personality", e.target.value);
-          }}
-          placeholder="e.g. friendly, concise, expert"
-        />
+      {/* Panel Header */}
+      <div style={headerStyle}>
         <div
-          style={{ marginTop: 4, color: theme.colors.inputText, fontSize: 12 }}
+          style={{
+            backgroundColor: theme.colors.buttonPrimary,
+            borderRadius: theme.borderRadius.md,
+            padding: theme.spacing.sm,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          Comma-separated. E.g. <code>friendly, concise, expert</code>
+          <Bot size={20} color="white" />
         </div>
-      </PanelSection>
-      {/* Now PanelSection blocks follow */}
-      <PanelSection
-        title="System Prompt"
-        description="Instructions for the agent's behavior"
-      >
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            color: theme.colors.label,
-            font: theme.font.label,
-          }}
+        <div>
+          <h2 style={headerTitleStyle}>Agent Configuration</h2>
+          <p style={headerSubtitleStyle}>
+            {data.name || "Unnamed Agent"} • {data.model || "No model selected"}
+          </p>
+        </div>
+      </div>
+
+      {/* Panel Content */}
+      <div style={contentStyle}>
+        {/* Basic Configuration */}
+        <PanelSection
+          title="Basic Configuration"
+          description="Agent name and role"
+          icon={<Settings size={16} />}
         >
-          System Prompt
-        </label>
-        <Input
-          value={node.data?.systemPrompt || ""}
-          onChange={(e) => handleFieldChange("systemPrompt", e.target.value)}
-          placeholder="You are a helpful assistant..."
-        />
-      </PanelSection>
-      <PanelSection
-        title="Escalation"
-        description="Configure escalation threshold (0-10)"
-      >
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            color: theme.colors.label,
-            font: theme.font.label,
-          }}
+          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.xs }}>Agent Name</label>
+          <VSCodeInput
+            placeholder="e.g., Customer Support Agent"
+            value={data.name || ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFieldChange("name", e.target.value)}
+          />
+          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Role</label>
+          <VSCodeInput
+            placeholder="e.g., Help customers with product inquiries"
+            value={data.role || ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFieldChange("role", e.target.value)}
+            type="textarea"
+          />
+        </PanelSection>
+
+        {/* Model Configuration */}
+        <PanelSection
+          title="Model Configuration"
+          description="AI model and performance settings"
+          icon={<Brain size={16} />}
         >
-          Escalation Threshold
-        </label>
-        <Input
-          type="number"
-          value={node.data?.escalationThreshold ?? 0}
-          min={0}
-          max={10}
-          step={1}
-          onChange={(e) =>
-            handleFieldChange("escalationThreshold", Number(e.target.value))
+          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Model</label>
+          <VSCodeSelect
+            value={data.model || "gemini-pro"}
+            options={modelOptions}
+            onValueChange={(value: string) => handleFieldChange("model", value)}
+          />
+
+          {/* TODO: VSCodeSlider not implemented. Insert slider for Temperature here. */}
+
+          {/* TODO: VSCodeSlider not implemented. Insert slider for Max Tokens here. */}
+
+          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Response Format</label>
+          <VSCodeSelect
+            value={data.responseFormat || "text"}
+            options={responseFormatOptions}
+            onValueChange={(value: string) => handleFieldChange("responseFormat", value)}
+          />
+        </PanelSection>
+
+        {/* Agent Behavior */}
+        <PanelSection
+          title="Agent Behavior"
+          description="Personality and behavioral settings"
+          icon={<MessageSquare size={16} />}
+        >
+          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Personality Tags</label>
+          {/* TODO: VSCodeTagInput not implemented. Insert tag input for Personality Tags here. */}
+
+          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>System Prompt</label>
+          <VSCodeInput
+            placeholder="You are a helpful assistant that..."
+            value={data.systemPrompt || ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => handleFieldChange("systemPrompt", e.target.value)}
+            type="textarea"
+          />
+        </PanelSection>
+
+        {/* Advanced Settings */}
+        <PanelSection
+          title="Advanced Settings"
+          description="Fine-tune agent capabilities"
+          icon={<Zap size={16} />}
+          defaultCollapsed={true}
+        >
+          {/* TODO: VSCodeSlider not implemented. Insert slider for Confidence Threshold here. */}
+          {/* TODO: VSCodeToggle not implemented. Insert toggle for Function Calling here. */}
+          {/* TODO: VSCodeSlider not implemented. Insert slider for Context Window here. */}
+          <div />
+        </PanelSection>
+
+        {/* Escalation Logic */}
+        <PanelSection
+          title="Escalation Logic"
+          description="When and how to escalate to humans"
+          icon={<AlertTriangle size={16} />}
+          defaultCollapsed={true}
+        >
+          {/* TODO: VSCodeSlider not implemented. Insert slider for Escalation Threshold here. */}
+
+          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Escalation Message</label>
+          <VSCodeInput
+            placeholder="Let me connect you with a human specialist..."
+            value={data.escalationMessage || ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => handleFieldChange("escalationMessage", e.target.value)}
+            type="textarea"
+          />
+        </PanelSection>
+
+        {/* Testing & Preview */}
+        <PanelSection
+          title="Testing & Preview"
+          description="Test your agent configuration"
+          icon={<Info size={16} />}
+          actions={
+            <VSCodeButton
+              variant="primary"
+              size="small"
+              onClick={() => {
+                // Trigger agent test
+                console.log("Testing agent with current configuration...");
+              }}
+            >
+              Test Agent
+            </VSCodeButton>
           }
-        />
-      </PanelSection>
-      <PanelSection
-        title="LLM Settings"
-        description="Model and temperature for agent reasoning"
-      >
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            color: theme.colors.label,
-            font: theme.font.label,
-          }}
         >
-          Model
-        </label>
-        <Input
-          value={node.data?.model || "gemini-2.5-flash-lite"}
-          onChange={(e) => handleFieldChange("model", e.target.value)}
-        />
-        <label
-          style={{
-            display: "block",
-            marginBottom: 4,
-            marginTop: 8,
-            color: theme.colors.label,
-            font: theme.font.label,
-          }}
-        >
-          Temperature
-        </label>
-        <Input
-          type="number"
-          value={node.data?.temperature ?? 0.7}
-          min={0}
-          max={1}
-          step={0.01}
-          onChange={(e) =>
-            handleFieldChange("temperature", Number(e.target.value))
-          }
-        />
-      </PanelSection>
+          <div
+            style={{
+              backgroundColor: theme.colors.codeBackground,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.borderRadius.sm,
+              padding: theme.spacing.md,
+              fontFamily: theme.typography.fontMono,
+              fontSize: theme.typography.fontSize.sm,
+              color: theme.colors.textSecondary,
+              lineHeight: theme.typography.lineHeight.relaxed,
+            }}
+          >
+            <div
+              style={{
+                color: theme.colors.success,
+                marginBottom: theme.spacing.sm,
+              }}
+            >
+              ✓ Agent Configuration Preview
+            </div>
+            <div>
+              Model:{" "}
+              <span style={{ color: theme.colors.textAccent }}>
+                {data.model || "gemini-pro"}
+              </span>
+            </div>
+            <div>
+              Temperature:{" "}
+              <span style={{ color: theme.colors.textAccent }}>
+                {data.temperature || 0.7}
+              </span>
+            </div>
+            <div>
+              Max Tokens:{" "}
+              <span style={{ color: theme.colors.textAccent }}>
+                {data.maxTokens || 1000}
+              </span>
+            </div>
+            <div>
+              Personality:{" "}
+              <span style={{ color: theme.colors.textAccent }}>
+                {(data.personalityTags || []).join(", ") || "None set"}
+              </span>
+            </div>
+          </div>
+
+          <VSCodeButton
+            variant="primary"
+            style={{ width: "100%" }}
+            onClick={() => {
+              // Open chat preview
+              console.log("Opening chat preview...");
+            }}
+          >
+            <MessageSquare size={16} style={{ marginRight: theme.spacing.sm, verticalAlign: "middle" }} />
+            Preview Chat Interface
+          </VSCodeButton>
+        </PanelSection>
+      </div>
     </div>
   );
 }

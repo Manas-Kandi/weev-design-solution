@@ -1,6 +1,5 @@
-// All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -34,54 +33,67 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
   transitions,
   setTransitions,
   handleFieldChange,
-}) => (
-  <div className="flex items-center gap-2 mb-2">
-    <Input
-      value={tr.from || ""}
-      onChange={(e) => {
-        const next = [...transitions];
-        next[idx] = { ...next[idx], from: e.target.value };
-        setTransitions(next);
-        handleFieldChange("transitions", next);
-      }}
-      className="w-24"
-      placeholder="From"
-    />
-    <Input
-      value={tr.to || ""}
-      onChange={(e) => {
-        const next = [...transitions];
-        next[idx] = { ...next[idx], to: e.target.value };
-        setTransitions(next);
-        handleFieldChange("transitions", next);
-      }}
-      className="w-24"
-      placeholder="To"
-    />
-    <Input
-      value={tr.condition || ""}
-      onChange={(e) => {
-        const next = [...transitions];
-        next[idx] = { ...next[idx], condition: e.target.value };
-        setTransitions(next);
-        handleFieldChange("transitions", next);
-      }}
-      className="w-32"
-      placeholder="Condition"
-    />
-    <Button
-      size="sm"
-      variant="destructive"
-      onClick={() => {
-        const next = transitions.filter((_, i) => i !== idx);
-        setTransitions(next);
-        handleFieldChange("transitions", next);
-      }}
-    >
-      Remove
-    </Button>
-  </div>
-);
+}) => {
+  const inputStyle: React.CSSProperties = {
+    width: 90,
+    background: theme.colors.backgroundTertiary,
+    color: theme.colors.textPrimary,
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.sm,
+    padding: theme.spacing.inputPadding,
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.base,
+    marginRight: theme.spacing.sm,
+  };
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
+      <Input
+        value={tr.from || ""}
+        onChange={(e) => {
+          const next = [...transitions];
+          next[idx] = { ...next[idx], from: e.target.value };
+          setTransitions(next);
+          handleFieldChange("transitions", next);
+        }}
+        style={inputStyle}
+        placeholder="From"
+      />
+      <Input
+        value={tr.to || ""}
+        onChange={(e) => {
+          const next = [...transitions];
+          next[idx] = { ...next[idx], to: e.target.value };
+          setTransitions(next);
+          handleFieldChange("transitions", next);
+        }}
+        style={inputStyle}
+        placeholder="To"
+      />
+      <Input
+        value={tr.condition || ""}
+        onChange={(e) => {
+          const next = [...transitions];
+          next[idx] = { ...next[idx], condition: e.target.value };
+          setTransitions(next);
+          handleFieldChange("transitions", next);
+        }}
+        style={{ ...inputStyle, width: 120 }}
+        placeholder="Condition"
+      />
+      <Button
+        size="sm"
+        variant="destructive"
+        onClick={() => {
+          const next = transitions.filter((_, i) => i !== idx);
+          setTransitions(next);
+          handleFieldChange("transitions", next);
+        }}
+      >
+        Remove
+      </Button>
+    </div>
+  );
+};
 
 export default function ConversationFlowPropertiesPanel({
   node,
@@ -107,7 +119,7 @@ export default function ConversationFlowPropertiesPanel({
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
     padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.section,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -156,7 +168,7 @@ export default function ConversationFlowPropertiesPanel({
         title="Transitions"
         description="Define transitions between states and their conditions."
       >
-        <div className="flex flex-col gap-1">
+        <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.xs }}>
           {transitions.map((tr, idx) => (
             <TransitionInput
               key={idx}

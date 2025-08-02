@@ -1,10 +1,9 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode, PromptTemplateNodeData } from "@/types";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
 import PanelSection from "./PanelSection";
+import { VSCodeInput, VSCodeButton } from "./vsCodeFormComponents";
 
 interface PromptTemplatePropertiesPanelProps {
   node: CanvasNode;
@@ -85,7 +84,7 @@ export default function PromptTemplatePropertiesPanel({
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
     padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.section,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -104,7 +103,7 @@ export default function PromptTemplatePropertiesPanel({
         title="Prompt Template"
         description="Define the main prompt template for this node."
       >
-        <Input
+        <VSCodeInput
           value={safeData.template || ""}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             handleFieldChange("template", e.target.value)
@@ -117,8 +116,15 @@ export default function PromptTemplatePropertiesPanel({
         description="Define and map prompt variables."
       >
         {Object.entries(variables).map(([key, value]) => (
-          <div key={key} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-            <Input
+          <div
+            key={key}
+            style={{
+              display: "flex",
+              gap: theme.spacing.xs,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            <VSCodeInput
               value={key}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const newKey = e.target.value;
@@ -130,24 +136,29 @@ export default function PromptTemplatePropertiesPanel({
               }}
               placeholder="Variable name"
             />
-            <Input
+            <VSCodeInput
               value={value}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 handleVariableChange(key, e.target.value)
               }
               placeholder="Value"
             />
-            <Button
+            <VSCodeButton
               style={{ minWidth: 32 }}
+              variant="danger"
+              size="small"
               onClick={() => handleRemoveVariable(key)}
             >
               -
-            </Button>
+            </VSCodeButton>
           </div>
         ))}
-        <Button style={{ marginTop: 8 }} onClick={handleAddVariable}>
+        <VSCodeButton
+          style={{ marginTop: theme.spacing.xs }}
+          onClick={handleAddVariable}
+        >
           Add Variable
-        </Button>
+        </VSCodeButton>
       </PanelSection>
       <PanelSection
         title="Advanced Options"
@@ -155,10 +166,10 @@ export default function PromptTemplatePropertiesPanel({
       >
         <label
           style={{
-            fontSize: 14,
+            fontSize: theme.typography.fontSize.base,
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: theme.spacing.xs,
           }}
         >
           <input
@@ -168,10 +179,10 @@ export default function PromptTemplatePropertiesPanel({
               handleFieldChange("extractVariablesFromInput", e.target.checked)
             }
             style={{
-              accentColor: theme.colors.accent,
+              accentColor: theme.colors.textAccent,
               width: 16,
               height: 16,
-              borderRadius: theme.borderRadius.input,
+              borderRadius: theme.borderRadius.sm,
               border: `1px solid ${theme.colors.border}`,
             }}
           />

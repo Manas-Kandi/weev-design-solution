@@ -1,7 +1,8 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
+// Enhanced PanelSection component with VS Code styling
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { vsCodePropertiesTheme as theme, themeHelpers } from "./propertiesPanelTheme";
 
 interface PanelSectionProps {
   title: string;
@@ -9,6 +10,9 @@ interface PanelSectionProps {
   children: React.ReactNode;
   defaultCollapsed?: boolean;
   className?: string;
+  level?: 1 | 2 | 3; // For nested sections
+  icon?: React.ReactNode;
+  actions?: React.ReactNode; // For section-level actions
 }
 
 const PanelSection: React.FC<PanelSectionProps> = ({
@@ -17,49 +21,85 @@ const PanelSection: React.FC<PanelSectionProps> = ({
   children,
   defaultCollapsed = false,
   className = "",
+  level = 1,
+  icon,
+  actions,
 }) => {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Theme-based styles
+  // Get styles based on section level
   const sectionStyle: React.CSSProperties = {
-    borderBottom: `1px solid ${theme.colors.border}`,
-    background: theme.colors.background,
-    borderRadius: theme.borderRadius.section,
-    marginBottom: theme.spacing.fieldGap,
-    paddingTop: 12,
-    paddingBottom: 0,
-    boxSizing: "border-box",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: level === 1 ? theme.colors.background : theme.colors.backgroundSecondary,
+    marginBottom: theme.spacing.md,
+    overflow: 'hidden',
+    transition: `all ${theme.animation.medium}`,
   };
+
   const headerStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    width: "100%",
-    textAlign: "left",
-    outline: "none",
-    font: theme.font.sectionTitle,
-    color: theme.colors.sectionHeader,
-    borderTopLeftRadius: theme.borderRadius.section,
-    borderTopRightRadius: theme.borderRadius.section,
-    padding: theme.spacing.inputPadding,
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    transition: "background 0.2s",
+    ...themeHelpers.getSectionHeaderStyle(),
+    backgroundColor: isHovered 
+      ? theme.colors.backgroundTertiary 
+      : (level === 1 ? theme.colors.backgroundSecondary : theme.colors.backgroundTertiary),
+    borderBottom: collapsed ? 'none' : `1px solid ${theme.colors.border}`,
+    justifyContent: 'space-between',
+    minHeight: theme.components.section.headerHeight,
+    padding: `0 ${theme.spacing.md}`,
   };
+
+  const headerContentStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    flex: 1,
+  };
+
+  const chevronStyle: React.CSSProperties = {
+    transition: `transform ${theme.animation.fast}`,
+    transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
+    color: theme.colors.textSecondary,
+    width: '16px',
+    height: '16px',
+  };
+
+  const titleStyle: React.CSSProperties = {
+    fontSize: level === 1 ? theme.typography.fontSize.base : theme.typography.fontSize.sm,
+    fontWeight: level === 1 ? theme.typography.fontWeight.semibold : theme.typography.fontWeight.medium,
+    color: theme.colors.textPrimary,
+    margin: 0,
+  };
+
   const descriptionStyle: React.CSSProperties = {
-    marginLeft: 24,
-    marginTop: 4,
-    color: theme.colors.label,
-    font: theme.font.label,
-    fontWeight: 400,
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    margin: 0,
+    fontStyle: 'italic',
   };
+
+  const actionsStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    opacity: isHovered ? 1 : 0.7,
+    transition: `opacity ${theme.animation.fast}`,
+  };
+
   const contentStyle: React.CSSProperties = {
-    transition: "all 0.2s",
-    overflow: "hidden",
-    marginLeft: 24,
-    marginTop: 8,
-    gap: theme.spacing.fieldGap,
-    display: collapsed ? "none" : "block",
+    padding: collapsed ? '0' : `${theme.spacing.md} ${theme.spacing.lg}`,
+    maxHeight: collapsed ? '0px' : '1000px', // Animate height
+    overflow: 'hidden',
+    transition: `all ${theme.animation.medium}`,
+    backgroundColor: level === 1 ? theme.colors.background : 'transparent',
+  };
+
+  const contentInnerStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.md,
+    opacity: collapsed ? 0 : 1,
+    transition: `opacity ${theme.animation.medium}`,
   };
 
   return (
@@ -67,32 +107,49 @@ const PanelSection: React.FC<PanelSectionProps> = ({
       <button
         type="button"
         style={headerStyle}
-        onClick={() => setCollapsed((prev) => !prev)}
+        onClick={() => setCollapsed(prev => !prev)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         aria-expanded={!collapsed}
-        aria-controls={`panel-section-${title
-          .replace(/\s+/g, "-")
-          .toLowerCase()}`}
+        aria-controls={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
       >
-        {collapsed ? (
+        <div style={headerContentStyle}>
           <ChevronRight
-            size={18}
-            style={{ marginRight: 8, transition: "transform 0.2s" }}
+            size={16}
+            style={chevronStyle}
           />
-        ) : (
-          <ChevronDown
-            size={18}
-            style={{ marginRight: 8, transition: "transform 0.2s" }}
-          />
+          {icon && (
+            <div style={{ 
+              color: theme.colors.textAccent, 
+              display: 'flex', 
+              alignItems: 'center',
+              width: '16px',
+              height: '16px',
+            }}>
+              {icon}
+            </div>
+          )}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
+            <h3 style={titleStyle}>{title}</h3>
+            {description && (
+              <p style={descriptionStyle}>{description}</p>
+            )}
+          </div>
+        </div>
+        {actions && (
+          <div style={actionsStyle} onClick={(e) => e.stopPropagation()}>
+            {actions}
+          </div>
         )}
-        {title}
       </button>
-      {description && <div style={descriptionStyle}>{description}</div>}
       <div
         id={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
         style={contentStyle}
         aria-hidden={collapsed}
       >
-        {!collapsed && children}
+        <div style={contentInnerStyle}>
+          {children}
+        </div>
       </div>
     </section>
   );

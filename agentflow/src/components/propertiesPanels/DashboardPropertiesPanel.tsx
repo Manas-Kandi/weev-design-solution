@@ -1,17 +1,13 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { propertiesPanelTheme as theme } from "./propertiesPanelTheme";
+import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { Input } from "../ui/input";
 import PanelSection from "./PanelSection";
 import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "../ui/select";
-import { Button } from "../ui/button";
+  VSCodeInput,
+  VSCodeSelect,
+  VSCodeButton,
+} from "./vsCodeFormComponents";
 
 interface DashboardNodeData {
   widgets: string[];
@@ -76,7 +72,7 @@ export default function DashboardPropertiesPanel({
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
     padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.section,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -92,11 +88,11 @@ export default function DashboardPropertiesPanel({
   return (
     <div style={panelStyle}>
       <PanelSection title="Title" description="Set a title for your dashboard.">
-        <Input
+        <VSCodeInput
           value={title}
-          onChange={(e) => {
-            handleFieldChange("title", e.target.value);
-          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("title", e.target.value)
+          }
           placeholder="Dashboard title..."
         />
       </PanelSection>
@@ -104,62 +100,64 @@ export default function DashboardPropertiesPanel({
         title="Layout"
         description="Choose the layout style for widgets."
       >
-        <Select
+        <VSCodeSelect
           value={layout}
-          onValueChange={(v) => {
-            handleFieldChange("layout", v);
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Choose layout" />
-          </SelectTrigger>
-          <SelectContent>
-            {layoutOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onValueChange={(v: string) => handleFieldChange("layout", v)}
+          options={layoutOptions}
+          placeholder="Choose layout"
+        />
       </PanelSection>
       <PanelSection
         title="Widgets"
         description="Manage the widgets displayed on your dashboard."
       >
-        <div className="flex flex-col gap-1">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: theme.spacing.xs,
+          }}
+        >
           {widgets.map((widget, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <Input
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: theme.spacing.xs,
+              }}
+            >
+              <VSCodeInput
                 value={widget}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...widgets];
                   next[idx] = e.target.value;
                   handleFieldChange("widgets", next);
                 }}
-                className="w-40"
+                style={{ width: 180 }}
               />
-              <Button
-                size="sm"
-                variant="destructive"
+              <VSCodeButton
+                variant="danger"
+                size="small"
                 onClick={() => {
                   const next = widgets.filter((_, i) => i !== idx);
                   handleFieldChange("widgets", next);
                 }}
               >
                 Remove
-              </Button>
+              </VSCodeButton>
             </div>
           ))}
-          <Button
-            size="sm"
-            variant="default"
+          <VSCodeButton
+            variant="primary"
+            size="small"
             onClick={() => {
               const next = [...widgets, "newWidget"];
               handleFieldChange("widgets", next);
             }}
           >
             Add Widget
-          </Button>
+          </VSCodeButton>
         </div>
       </PanelSection>
       {/* TODO: Add unit tests for this panel to ensure type safety and prevent regressions. */}
