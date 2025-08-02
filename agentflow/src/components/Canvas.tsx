@@ -5,6 +5,20 @@ import { theme } from "@/data/theme";
 import { nodeCategories } from "@/data/nodeDefinitions";
 import ChatBoxNode from "./ChatBoxNode";
 
+const canvasStyle: React.CSSProperties = {
+  backgroundColor: theme.bg,
+  backgroundImage: `radial-gradient(circle, ${theme.border} 1px, transparent 1px)`,
+};
+
+const rulerStyle: React.CSSProperties = {
+  position: "absolute",
+  backgroundColor: theme.bgElevate,
+  color: theme.textMute,
+  fontSize: "10px",
+  pointerEvents: "none",
+  zIndex: 30,
+};
+
 interface Props {
   nodes: CanvasNode[];
   connections: Connection[];
@@ -481,7 +495,14 @@ export default function CanvasEngine(props: Props) {
     <div
       ref={canvasRef}
       className="relative w-full h-full overflow-hidden"
-      style={{ backgroundColor: theme.bg, cursor: getCursor() }}
+      style={{
+        ...canvasStyle,
+        backgroundSize: `${20 * viewportTransform.scale}px ${
+          20 * viewportTransform.scale
+        }px`,
+        backgroundPosition: `${viewportTransform.x}px ${viewportTransform.y}px`,
+        cursor: getCursor(),
+      }}
       onMouseDown={handleCanvasMouseDown}
       onMouseMove={handleCanvasMouseMove}
       onMouseUp={handleCanvasMouseUp}
@@ -490,20 +511,36 @@ export default function CanvasEngine(props: Props) {
       tabIndex={0}
       data-start-node-id={startNodeId}
     >
+      {/* Rulers */}
+      <div
+        style={{
+          ...rulerStyle,
+          top: 0,
+          left: 20,
+          right: 0,
+          height: 20,
+          backgroundImage: `repeating-linear-gradient(to right, ${theme.border} 0, ${theme.border} 1px, transparent 1px, transparent 10px)`,
+          backgroundSize: `${10 * viewportTransform.scale}px 100%`,
+          backgroundPosition: `${viewportTransform.x}px 0`,
+        }}
+      />
+      <div
+        style={{
+          ...rulerStyle,
+          top: 20,
+          left: 0,
+          bottom: 0,
+          width: 20,
+          backgroundImage: `repeating-linear-gradient(to bottom, ${theme.border} 0, ${theme.border} 1px, transparent 1px, transparent 10px)`,
+          backgroundSize: `100% ${10 * viewportTransform.scale}px`,
+          backgroundPosition: `0 ${viewportTransform.y}px`,
+        }}
+      />
+
       {/* Background Grid and Connections */}
       <svg
         ref={svgRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{
-          backgroundImage: `
-            linear-gradient(${theme.border} 1px, transparent 1px),
-            linear-gradient(90deg, ${theme.border} 1px, transparent 1px)
-          `,
-          backgroundSize: `${20 * viewportTransform.scale}px ${
-            20 * viewportTransform.scale
-          }px`,
-          backgroundPosition: `${viewportTransform.x}px ${viewportTransform.y}px`,
-        }}
       >
         {/* Connections Layer - FIXED */}
         <g>
