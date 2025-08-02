@@ -52,7 +52,7 @@ export default function CompactPropertiesPanel({
     minWidth: "260px",
     maxWidth: "300px",
     // Offset the panel from the top toolbar and account for its height
-    height: "calc(100% - var(--toolbar-height, 5rem))",
+    height: "calc(100% - var(--toolbar-height))",
     minHeight: 0,
     display: "flex",
     flexDirection: "column",
@@ -66,7 +66,7 @@ export default function CompactPropertiesPanel({
     color: "#cccccc",
     position: "fixed", // Make it feel truly fixed
     right: 0,
-    top: "var(--toolbar-height, 5rem)",
+    top: "var(--toolbar-height)",
     zIndex: 100,
     boxSizing: "border-box",
   };
