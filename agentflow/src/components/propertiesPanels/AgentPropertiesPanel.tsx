@@ -73,8 +73,6 @@ export default function EnhancedAgentPropertiesPanel({
     { value: "markdown", label: "Markdown", description: "Formatted markdown" },
   ];
 
-
-
   const handleFieldChange = (field: keyof AgentNodeData, value: unknown) => {
     const updatedData = { ...data, [field]: value };
     onChange({ ...node, data: updatedData });
@@ -160,17 +158,38 @@ export default function EnhancedAgentPropertiesPanel({
           description="Agent name and role"
           icon={<Settings size={16} />}
         >
-          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.xs }}>Agent Name</label>
+          <label
+            style={{
+              color: theme.colors.textSecondary,
+              fontSize: theme.typography.fontSize.sm,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Agent Name
+          </label>
           <VSCodeInput
             placeholder="e.g., Customer Support Agent"
             value={data.name || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFieldChange("name", e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleFieldChange("name", e.target.value)
+            }
           />
-          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Role</label>
+          <label
+            style={{
+              color: theme.colors.textSecondary,
+              fontSize: theme.typography.fontSize.sm,
+              marginTop: theme.spacing.sm,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Role
+          </label>
           <VSCodeInput
             placeholder="e.g., Help customers with product inquiries"
             value={data.role || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFieldChange("role", e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleFieldChange("role", e.target.value)
+            }
             type="textarea"
           />
         </PanelSection>
@@ -181,7 +200,16 @@ export default function EnhancedAgentPropertiesPanel({
           description="AI model and performance settings"
           icon={<Brain size={16} />}
         >
-          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Model</label>
+          <label
+            style={{
+              color: theme.colors.textSecondary,
+              fontSize: theme.typography.fontSize.sm,
+              marginTop: theme.spacing.sm,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Model
+          </label>
           <VSCodeSelect
             value={data.model || "gemini-pro"}
             options={modelOptions}
@@ -192,11 +220,22 @@ export default function EnhancedAgentPropertiesPanel({
 
           {/* TODO: VSCodeSlider not implemented. Insert slider for Max Tokens here. */}
 
-          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Response Format</label>
+          <label
+            style={{
+              color: theme.colors.textSecondary,
+              fontSize: theme.typography.fontSize.sm,
+              marginTop: theme.spacing.sm,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Response Format
+          </label>
           <VSCodeSelect
             value={data.responseFormat || "text"}
             options={responseFormatOptions}
-            onValueChange={(value: string) => handleFieldChange("responseFormat", value)}
+            onValueChange={(value: string) =>
+              handleFieldChange("responseFormat", value)
+            }
           />
         </PanelSection>
 
@@ -206,14 +245,34 @@ export default function EnhancedAgentPropertiesPanel({
           description="Personality and behavioral settings"
           icon={<MessageSquare size={16} />}
         >
-          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Personality Tags</label>
+          <label
+            style={{
+              color: theme.colors.textSecondary,
+              fontSize: theme.typography.fontSize.sm,
+              marginTop: theme.spacing.sm,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Personality Tags
+          </label>
           {/* TODO: VSCodeTagInput not implemented. Insert tag input for Personality Tags here. */}
 
-          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>System Prompt</label>
+          <label
+            style={{
+              color: theme.colors.textSecondary,
+              fontSize: theme.typography.fontSize.sm,
+              marginTop: theme.spacing.sm,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            System Prompt
+          </label>
           <VSCodeInput
             placeholder="You are a helpful assistant that..."
             value={data.systemPrompt || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => handleFieldChange("systemPrompt", e.target.value)}
+            onChange={(
+              e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+            ) => handleFieldChange("systemPrompt", e.target.value)}
             type="textarea"
           />
         </PanelSection>
@@ -240,11 +299,22 @@ export default function EnhancedAgentPropertiesPanel({
         >
           {/* TODO: VSCodeSlider not implemented. Insert slider for Escalation Threshold here. */}
 
-          <label style={{ color: theme.colors.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm, marginBottom: theme.spacing.xs }}>Escalation Message</label>
+          <label
+            style={{
+              color: theme.colors.textSecondary,
+              fontSize: theme.typography.fontSize.sm,
+              marginTop: theme.spacing.sm,
+              marginBottom: theme.spacing.xs,
+            }}
+          >
+            Escalation Message
+          </label>
           <VSCodeInput
             placeholder="Let me connect you with a human specialist..."
             value={data.escalationMessage || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => handleFieldChange("escalationMessage", e.target.value)}
+            onChange={(
+              e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+            ) => handleFieldChange("escalationMessage", e.target.value)}
             type="textarea"
           />
         </PanelSection>
@@ -321,7 +391,10 @@ export default function EnhancedAgentPropertiesPanel({
               console.log("Opening chat preview...");
             }}
           >
-            <MessageSquare size={16} style={{ marginRight: theme.spacing.sm, verticalAlign: "middle" }} />
+            <MessageSquare
+              size={16}
+              style={{ marginRight: theme.spacing.sm, verticalAlign: "middle" }}
+            />
             Preview Chat Interface
           </VSCodeButton>
         </PanelSection>

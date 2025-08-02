@@ -35,9 +35,6 @@ function isKnowledgeBaseNodeData(data: unknown): data is KnowledgeBaseNodeData {
 
 // Define NodeData locally as per the project spec
 
-
-
-
 export default function KnowledgeBasePropertiesPanel({
   node,
   onChange,
@@ -121,11 +118,22 @@ export default function KnowledgeBasePropertiesPanel({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.fieldGap }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: theme.spacing.fieldGap,
+      }}
+    >
       <PanelSection title="Operation" description="Choose what this node does">
         <VSCodeSelect
           value={operation}
-          onValueChange={(val: string) => handleFieldChange("operation", val as "store" | "retrieve" | "search")}
+          onValueChange={(val: string) =>
+            handleFieldChange(
+              "operation",
+              val as "store" | "retrieve" | "search"
+            )
+          }
           options={operationOptions}
           placeholder="Select operation"
         />
@@ -134,7 +142,9 @@ export default function KnowledgeBasePropertiesPanel({
         <VSCodeInput
           style={{ minHeight: 48, fontFamily: theme.typography.fontMono }}
           value={documents}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+          onChange={(
+            e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+          ) => {
             setDocuments(e.target.value);
             try {
               handleFieldChange("documents", JSON.parse(e.target.value));
@@ -152,7 +162,9 @@ export default function KnowledgeBasePropertiesPanel({
         <VSCodeInput
           style={{ minHeight: 48, fontFamily: theme.typography.fontMono }}
           value={metadata}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+          onChange={(
+            e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+          ) => {
             setMetadata(e.target.value);
             try {
               handleFieldChange("metadata", JSON.parse(e.target.value));

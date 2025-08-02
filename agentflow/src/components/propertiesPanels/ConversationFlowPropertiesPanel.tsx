@@ -46,7 +46,14 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
     marginRight: theme.spacing.sm,
   };
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: theme.spacing.sm,
+        marginBottom: theme.spacing.sm,
+      }}
+    >
       <Input
         value={tr.from || ""}
         onChange={(e) => {
@@ -168,7 +175,13 @@ export default function ConversationFlowPropertiesPanel({
         title="Transitions"
         description="Define transitions between states and their conditions."
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: theme.spacing.xs }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: theme.spacing.xs,
+          }}
+        >
           {transitions.map((tr, idx) => (
             <TransitionInput
               key={idx}

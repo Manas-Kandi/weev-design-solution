@@ -41,14 +41,13 @@ export const vsCodePropertiesTheme = {
     lg: "16px",
     xl: "20px",
     xxl: "24px",
-    // Specific component spacing
-    sectionPadding: "16px",
-    fieldGap: "12px",
-    inputPadding: "8px 12px",
-    labelMargin: "6px",
+    // Specific component spacing (updated for compactness)
+    sectionPadding: "12px", // Reduced padding
+    fieldGap: "6px", // Tighter field spacing
+    inputPadding: "6px 8px", // Compact input padding
+    labelMargin: "4px",
     panelPadding: "0px",
-    // Layout spacing
-    headerHeight: "35px",
+    headerHeight: "32px",
     inputHeight: "28px",
     buttonHeight: "28px",
   },
@@ -58,7 +57,6 @@ export const vsCodePropertiesTheme = {
       "'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif",
     fontMono:
       "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace",
-    // Text sizes - precise hierarchy
     fontSize: {
       xs: "11px",
       sm: "12px",
@@ -81,7 +79,7 @@ export const vsCodePropertiesTheme = {
     none: "0px",
     xs: "2px",
     sm: "3px",
-    md: "4px",
+    md: "4px", // Compact border radius
     lg: "6px",
   },
   shadows: {
@@ -100,9 +98,9 @@ export const vsCodePropertiesTheme = {
   // Component-specific design tokens
   components: {
     panel: {
-      width: "320px",
-      minWidth: "280px",
-      maxWidth: "400px",
+      width: "280px", // Narrower panel width
+      minWidth: "260px", // Minimum width
+      maxWidth: "300px", // Maximum width
     },
     section: {
       headerHeight: "32px",
@@ -116,7 +114,7 @@ export const vsCodePropertiesTheme = {
     },
     button: {
       height: "28px",
-      paddingX: "12px",
+      paddingX: "8px", // Compact button padding
       borderWidth: "1px",
     },
     dropdown: {
