@@ -140,7 +140,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     <div className="flex-1 relative overflow-hidden">
       {/* Real-time Test Flow Panel */}
       {testLogs.length > 0 && (
-        <div className="absolute top-16 right-4 w-96 max-h-[60vh] overflow-auto bg-[#1e1e1e] text-vscode-text p-4 rounded shadow z-20 font-mono text-xs">
+        <div className="absolute top-16 right-4 w-96 max-h-[60vh] overflow-auto figma-scrollbar bg-[#1e1e1e] text-vscode-text p-4 rounded shadow z-20 font-mono text-xs">
           <div className="font-bold text-vscode-title mb-2">Test Flow Log</div>
           {testLogs.map((log, i) => (
             <div
@@ -207,7 +207,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
       )}
       {/* Results Panel */}
       {testFlowResult && (
-        <div className="absolute top-16 right-4 w-96 max-h-[60vh] overflow-auto bg-gray-900 text-white p-4 rounded shadow z-20">
+        <div className="absolute top-16 right-4 w-96 max-h-[60vh] overflow-auto figma-scrollbar bg-gray-900 text-white p-4 rounded shadow z-20">
           <h4 className="font-bold mb-2">Flow Results</h4>
           <div className="space-y-3">
             {Object.entries(testFlowResult).map(([nodeId, output]) => {
