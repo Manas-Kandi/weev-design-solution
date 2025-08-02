@@ -307,7 +307,7 @@ export default function CompactPropertiesPanel({
               lineHeight: 1.4,
             }}
           >
-            Properties panel for this node type hasn't been implemented yet. The
+            Properties panel for this node type hasn&apos;t been implemented yet. The
             node will still work in workflows.
           </p>
         </div>
@@ -319,6 +319,7 @@ export default function CompactPropertiesPanel({
   const renderNodePanel = () => {
     const nodeType = selectedNode.subtype || selectedNode.type;
     // Wrap existing panels with compact styling
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const wrapPanel = (PanelComponent: React.ComponentType<any>) => (
       <div style={panelStyle} className="figma-scrollbar">
         <PanelComponent node={selectedNode} onChange={onChange} />

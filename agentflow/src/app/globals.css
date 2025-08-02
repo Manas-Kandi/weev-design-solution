@@ -1,9 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @theme {
   /* Typography */
@@ -62,76 +57,33 @@
   --spacing-24: 6rem;
   --spacing-28: 7rem;
   --spacing-32: 8rem;
-  --spacing-36: 9rem;
-  --spacing-40: 10rem;
-  --spacing-44: 11rem;
-  --spacing-48: 12rem;
-  --spacing-52: 13rem;
-  --spacing-56: 14rem;
-  --spacing-60: 15rem;
-  --spacing-64: 16rem;
-  --spacing-72: 18rem;
-  --spacing-80: 20rem;
-  --spacing-96: 24rem;
 
-  /* Typography scale */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
-  --text-5xl: 3rem;
-  --text-6xl: 3.75rem;
-  --text-7xl: 4.5rem;
-  --text-8xl: 6rem;
-  --text-9xl: 8rem;
-
-  /* Radii */
-  --radius-sm: 0.125rem;
-  --radius: 0.25rem;
+  /* Border radius */
+  --radius: 0.5rem;
+  --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
-  --radius-3xl: 1.5rem;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
-  --shadow: 0 1px 3px 0 rgba(0,0,0,0.1),0 1px 2px 0 rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -2px rgba(0,0,0,0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);
-  --shadow-2xl: 0 25px 50px -12px rgba(0,0,0,0.25);
-  --shadow-inner: inset 0 2px 4px 0 rgba(0,0,0,0.05);
-  --shadow-none: 0 0 #0000;
-
-  /* Measurements */
-  --container-2xs: 16rem;
-  --container-xs: 20rem;
-  --container-sm: 24rem;
-  --container-md: 28rem;
-  --container-lg: 32rem;
-  --container-xl: 36rem;
-  --container-2xl: 42rem;
-  --container-3xl: 48rem;
-  --container-4xl: 56rem;
-  --container-5xl: 64rem;
-  --container-6xl: 72rem;
-  --container-7xl: 80rem;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
 
   /* Scrollbar */
-  --scrollbar-size: 0.5rem;
-  --scrollbar-track: transparent;
-  --scrollbar-thumb: hsl(var(--color-border));
+  --scrollbar-size: 8px;
+  --scrollbar-track: hsl(var(--color-muted));
+  --scrollbar-thumb: hsl(var(--color-muted-foreground));
   --scrollbar-thumb-hover: hsl(var(--color-muted-foreground));
 
   /* Animation */
-  --ease-in: cubic-bezier(0.4,0,1,1);
-  --ease-out: cubic-bezier(0,0,0.2,1);
-  --ease-in-out: cubic-bezier(0.4,0,0.2,1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
@@ -165,6 +117,76 @@
   --chart-5: 340 75% 55%;
 }
 
+/* CRITICAL: Add the missing Figma variables that your components are expecting */
+:root {
+  /* Figma Design Variables - These were missing! */
+  --figma-bg: #0c0c0c;
+  --figma-surface: #1a1a1a;
+  --figma-surface-hover: #2a2a2a;
+  --figma-border: #333333;
+  --figma-border-strong: #404040;
+  --figma-text: #ffffff;
+  --figma-text-secondary: #b3b3b3;
+  --figma-text-tertiary: #808080;
+  --figma-accent: #18a0fb;
+  --figma-accent-hover: #1e96f0;
+  --figma-success: #1bc47d;
+  --figma-warning: #ffcd29;
+  --figma-danger: #f24822;
+
+  /* Unified spacing system */
+  --space-0: 0px;
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-6: 12px;
+  --space-8: 16px;
+  --space-10: 20px;
+  --space-12: 24px;
+  --space-16: 32px;
+  --space-20: 40px;
+
+  /* Aliases for spacing */
+  --space-xs: var(--space-2);
+  --space-sm: var(--space-4);
+  --space-md: var(--space-8);
+  --space-lg: var(--space-12);
+  --space-xl: var(--space-16);
+
+  /* Typography scale */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+
+  /* Aliases for typography */
+  --fs-xs: var(--text-xs);
+  --fs-sm: var(--text-sm);
+  --fs-base: var(--text-base);
+  --fs-md: var(--text-md);
+  --fs-lg: var(--text-lg);
+  --fs-xl: var(--text-xl);
+
+  /* Font families */
+  --font-ui: var(--font-inter);
+  --font-code: var(--font-jetbrains);
+
+  /* Border radius */
+  --figma-radius: 6px;
+  --figma-radius-sm: 3px;
+  --figma-radius-lg: 8px;
+  --figma-radius-xl: 12px;
+
+  /* Figma-specific measurements */
+  --toolbar-height: 40px;
+  --tab-height: 32px;
+  --sidebar-width: 240px;
+  --properties-width: 280px;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -178,6 +200,9 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
     font-feature-settings: "rlig" 1, "calt" 1;
+    /* Override with Figma colors for dark theme */
+    background-color: var(--figma-bg);
+    color: var(--figma-text);
   }
 
   h1,
@@ -190,7 +215,7 @@
   }
 
   p {
-    @apply leading-base;
+    @apply leading-7;
   }
 
   button {
@@ -203,42 +228,43 @@
     @apply flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
   }
 
+  /* Figma-style scrollbars */
   ::-webkit-scrollbar {
-    width: var(--scrollbar-size);
-    height: var(--scrollbar-size);
+    width: 8px;
+    height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: var(--scrollbar-thumb);
-    border-radius: var(--radius);
+    background: var(--figma-border);
+    border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--scrollbar-thumb-hover);
+    background: var(--figma-border-strong);
   }
 }
 
 @layer utilities {
-  .scrollbar::-webkit-scrollbar {
-    width: var(--scrollbar-size);
-    height: var(--scrollbar-size);
+  .figma-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
 
-  .scrollbar::-webkit-scrollbar-track {
-    background: var(--scrollbar-track);
+  .figma-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
   }
 
-  .scrollbar::-webkit-scrollbar-thumb {
-    background-color: var(--scrollbar-thumb);
-    border-radius: var(--radius);
+  .figma-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--figma-border);
+    border-radius: 4px;
   }
 
-  .scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: var(--scrollbar-thumb-hover);
+  .figma-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--figma-border-strong);
   }
 
   .animate-accordion-down {
@@ -269,4 +295,3 @@
     }
   }
 }
-

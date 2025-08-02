@@ -7,37 +7,37 @@
 
 export const figmaPropertiesTheme = {
   colors: {
-    background: "var(--figma-bg)",
-    backgroundSecondary: "var(--figma-surface)",
-    backgroundTertiary: "var(--figma-surface)",
+    background: "var(--figma-surface)",
+    backgroundSecondary: "var(--figma-surface-hover)",
+    backgroundTertiary: "var(--figma-surface-hover)",
     border: "var(--figma-border)",
     borderLight: "var(--figma-border)",
     borderActive: "var(--figma-accent)",
     textPrimary: "var(--figma-text)",
     textSecondary: "var(--figma-text-secondary)",
-    textMuted: "var(--figma-text-secondary)",
+    textMuted: "var(--figma-text-tertiary)",
     textAccent: "var(--figma-accent)",
-    success: "#89d185",
-    warning: "#ffb62c",
-    error: "#f85149",
-    info: "#58a6ff",
+    success: "var(--figma-success)",
+    warning: "var(--figma-warning)",
+    error: "var(--figma-danger)",
+    info: "var(--figma-accent)",
     buttonPrimary: "var(--figma-accent)",
     buttonSecondary: "var(--figma-surface)",
-    buttonHover: "var(--figma-accent)",
+    buttonHover: "var(--figma-accent-hover)",
     codeBackground: "#0d1117",
     tagBackground: "var(--figma-surface)",
-    accentGlow: "rgba(10, 132, 255, 0.3)",
+    accentGlow: "rgba(24, 160, 251, 0.3)",
   },
   spacing: {
     xs: "var(--space-xs)",
     sm: "var(--space-sm)",
-    md: "calc(var(--space-sm) + var(--space-xs))",
-    lg: "var(--space-md)",
-    xl: "calc(var(--space-md) + var(--space-xs))",
-    xxl: "var(--space-lg)",
-    sectionPadding: "calc(var(--space-sm) + var(--space-xs))",
-    fieldGap: "calc(var(--space-sm) * 0.75)",
-    inputPadding: "calc(var(--space-sm) * 0.75) var(--space-sm)",
+    md: "var(--space-md)",
+    lg: "var(--space-lg)",
+    xl: "var(--space-xl)",
+    xxl: "var(--space-20)",
+    sectionPadding: "var(--space-md)",
+    fieldGap: "var(--space-sm)",
+    inputPadding: "var(--space-sm) var(--space-md)",
     labelMargin: "var(--space-xs)",
     panelPadding: "0px",
     headerHeight: "var(--space-xl)",
@@ -49,10 +49,11 @@ export const figmaPropertiesTheme = {
     fontMono: "var(--font-code)",
     fontSize: {
       xs: "var(--fs-xs)",
-      sm: "calc(var(--fs-xs) + 1px)",
-      base: "var(--fs-sm)",
-      lg: "calc(var(--fs-sm) + 1px)",
-      xl: "var(--fs-md)",
+      sm: "var(--fs-sm)",
+      base: "var(--fs-base)",
+      md: "var(--fs-md)",
+      lg: "var(--fs-lg)",
+      xl: "var(--fs-xl)",
     },
     fontWeight: {
       normal: 400,
@@ -67,17 +68,17 @@ export const figmaPropertiesTheme = {
   },
   borderRadius: {
     none: "0px",
-    xs: "calc(var(--figma-radius) / 2)",
-    sm: "calc(var(--figma-radius) * 0.75)",
+    xs: "var(--figma-radius-sm)",
+    sm: "var(--figma-radius-sm)",
     md: "var(--figma-radius)",
-    lg: "calc(var(--figma-radius) * 1.5)",
+    lg: "var(--figma-radius-lg)",
   },
   shadows: {
     none: "none",
     subtle: "0 1px 2px rgba(0, 0, 0, 0.1)",
     medium: "0 2px 8px rgba(0, 0, 0, 0.15)",
     strong: "0 4px 16px rgba(0, 0, 0, 0.25)",
-    glow: "0 0 0 2px rgba(10, 132, 255, 0.3)",
+    glow: "0 0 0 2px rgba(24, 160, 251, 0.3)",
   },
   animation: {
     fast: "0.15s ease-out",
@@ -86,9 +87,9 @@ export const figmaPropertiesTheme = {
   },
   components: {
     panel: {
-      width: "280px",
+      width: "var(--properties-width)",
       minWidth: "260px",
-      maxWidth: "300px",
+      maxWidth: "320px",
     },
     section: {
       headerHeight: "32px",
@@ -102,7 +103,7 @@ export const figmaPropertiesTheme = {
     },
     button: {
       height: "28px",
-      paddingX: "var(--space-sm)",
+      paddingX: "12px",
       borderWidth: "1px",
     },
     dropdown: {
@@ -117,25 +118,25 @@ export const figmaPropertiesTheme = {
       text: "var(--figma-text)",
     },
     hover: {
-      background: "var(--figma-border)",
-      border: "var(--figma-border)",
+      background: "var(--figma-surface-hover)",
+      border: "var(--figma-border-strong)",
       text: "var(--figma-text)",
     },
     focus: {
       background: "var(--figma-surface)",
       border: "var(--figma-accent)",
       text: "var(--figma-text)",
-      boxShadow: "0 0 0 2px rgba(10, 132, 255, 0.3)",
+      boxShadow: "0 0 0 2px rgba(24, 160, 251, 0.3)",
     },
     active: {
-      background: "var(--figma-bg)",
+      background: "var(--figma-accent)",
       border: "var(--figma-accent)",
-      text: "var(--figma-text)",
+      text: "white",
     },
     disabled: {
       background: "var(--figma-surface)",
       border: "var(--figma-border)",
-      text: "var(--figma-text-secondary)",
+      text: "var(--figma-text-tertiary)",
     },
   },
 } as const;
@@ -153,7 +154,7 @@ export const themeHelpers = {
     state: "default" | "hover" | "focus" | "error" = "default"
   ): React.CSSProperties => ({
     fontFamily: figmaPropertiesTheme.typography.fontFamily,
-    fontSize: figmaPropertiesTheme.typography.fontSize.base,
+    fontSize: figmaPropertiesTheme.typography.fontSize.sm,
     fontWeight: figmaPropertiesTheme.typography.fontWeight.normal,
     lineHeight: figmaPropertiesTheme.typography.lineHeight.normal,
     height: figmaPropertiesTheme.spacing.inputHeight,
@@ -174,12 +175,13 @@ export const themeHelpers = {
       boxShadow: figmaPropertiesTheme.shadows.glow,
     }),
   }),
+
   // Get consistent button styling
   getButtonStyle: (
     variant: "primary" | "secondary" = "secondary"
   ): React.CSSProperties => ({
     fontFamily: figmaPropertiesTheme.typography.fontFamily,
-    fontSize: figmaPropertiesTheme.typography.fontSize.base,
+    fontSize: figmaPropertiesTheme.typography.fontSize.sm,
     fontWeight: figmaPropertiesTheme.typography.fontWeight.medium,
     height: figmaPropertiesTheme.spacing.buttonHeight,
     padding: `0 ${figmaPropertiesTheme.spacing.md}`,
@@ -193,7 +195,8 @@ export const themeHelpers = {
       variant === "primary"
         ? figmaPropertiesTheme.colors.buttonPrimary
         : figmaPropertiesTheme.colors.buttonSecondary,
-    color: figmaPropertiesTheme.colors.textPrimary,
+    color:
+      variant === "primary" ? "white" : figmaPropertiesTheme.colors.textPrimary,
     cursor: "pointer",
     outline: "none",
     transition: `all ${figmaPropertiesTheme.animation.fast}`,
@@ -202,10 +205,11 @@ export const themeHelpers = {
     justifyContent: "center",
     gap: figmaPropertiesTheme.spacing.sm,
   }),
+
   // Get section header styling
   getSectionHeaderStyle: (): React.CSSProperties => ({
     fontFamily: figmaPropertiesTheme.typography.fontFamily,
-    fontSize: figmaPropertiesTheme.typography.fontSize.base,
+    fontSize: figmaPropertiesTheme.typography.fontSize.sm,
     fontWeight: figmaPropertiesTheme.typography.fontWeight.semibold,
     lineHeight: figmaPropertiesTheme.typography.lineHeight.tight,
     color: figmaPropertiesTheme.colors.textPrimary,
@@ -220,15 +224,15 @@ export const themeHelpers = {
     cursor: "pointer",
     transition: `all ${figmaPropertiesTheme.animation.fast}`,
   }),
+
   // Get label styling
   getLabelStyle: (): React.CSSProperties => ({
     fontFamily: figmaPropertiesTheme.typography.fontFamily,
-    fontSize: figmaPropertiesTheme.typography.fontSize.sm,
-    fontWeight: figmaPropertiesTheme.typography.fontWeight.normal,
+    fontSize: figmaPropertiesTheme.typography.fontSize.xs,
+    fontWeight: figmaPropertiesTheme.typography.fontWeight.medium,
     lineHeight: figmaPropertiesTheme.typography.lineHeight.normal,
     color: figmaPropertiesTheme.colors.textSecondary,
     marginBottom: figmaPropertiesTheme.spacing.labelMargin,
     display: "block",
   }),
 };
-

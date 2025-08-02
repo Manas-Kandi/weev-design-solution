@@ -41,7 +41,7 @@ export function isKnowledgeBaseNodeData(data: unknown): data is KnowledgeBaseNod
   return (
     typeof data === "object" &&
     data !== null &&
-    ["store", "retrieve", "search"].includes((data as any).operation || "retrieve")
+    ["store", "retrieve", "search"].includes((data as Record<string, unknown>).operation as string || "retrieve")
   );
 }
 
@@ -65,7 +65,7 @@ export function isStateMachineNodeData(data: unknown): data is StateMachineNodeD
   return (
     typeof data === "object" &&
     data !== null &&
-    ("states" in data && "transitions" in data && Array.isArray((data as any).states))
+    ("states" in data && "transitions" in data && Array.isArray((data as Record<string, unknown>).states))
   );
 }
 
@@ -73,7 +73,7 @@ export function isConversationFlowNodeData(data: unknown): data is ConversationF
   return (
     typeof data === "object" &&
     data !== null &&
-    ("states" in data && "transitions" in data && Array.isArray((data as any).states))
+    ("states" in data && "transitions" in data && Array.isArray((data as Record<string, unknown>).states))
   );
 }
 
@@ -99,7 +99,7 @@ export function isDashboardNodeData(data: unknown): data is DashboardNodeData {
   return (
     typeof data === "object" &&
     data !== null &&
-    Array.isArray((data as any).widgets)
+    Array.isArray((data as Record<string, unknown>).widgets)
   );
 }
 
@@ -107,6 +107,6 @@ export function isChatNodeData(data: unknown): data is ChatNodeData {
   return (
     typeof data === "object" &&
     data !== null &&
-    ("messages" in data && Array.isArray((data as any).messages))
+    ("messages" in data && Array.isArray((data as Record<string, unknown>).messages))
   );
 }

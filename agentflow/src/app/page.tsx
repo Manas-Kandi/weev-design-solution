@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabaseClient";
 import ProjectDashboard from "@/components/ProjectDashboard";
 import DesignerLayout from "@/components/DesignerLayout";
 import { ComponentLibrary } from "@/components/ComponentLibrary";
-import LayersPanel from "@/components/LayersPanel";
 import DesignerCanvas from "@/components/DesignerCanvas";
 import PropertiesPanel from "@/components/PropertiesPanel";
 import { nodeCategories } from "@/data/nodeDefinitions";
@@ -146,61 +145,38 @@ export default function AgentFlowPage() {
     projectData: Omit<Project, "id" | "lastModified" | "nodeCount">
   ) => {
     try {
-      const projectPayload = {
-        name: projectData.name || `New Project ${Date.now()}`,
-        description: projectData.description || "",
-        status: projectData.status || "draft",
-        user_id: DEFAULT_USER_ID, // Use proper UUID
-      };
-
-      console.log("Creating project with payload:", projectPayload);
-
       const { data, error } = await supabase
         .from("projects")
-        .insert([projectPayload])
+        .insert([
+          {
+            name: projectData.name,
+            description: projectData.description,
+            status: projectData.status,
+            user_id: DEFAULT_USER_ID,
+          },
+        ])
         .select()
         .single();
 
       if (error) {
-        console.error("Supabase error creating project:", {
-          error,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        });
-        alert(`Error creating project: ${error.message || "Unknown error"}`);
+        console.error("Error creating project:", error);
         return;
       }
 
-      if (!data) {
-        console.error("No data returned from project creation");
-        alert("No data returned from project creation");
-        return;
-      }
-
-      console.log("Project created successfully:", data);
-
-      // Transform the response to match our Project interface
       const newProject: Project = {
         id: data.id,
         name: data.name,
         description: data.description || "",
         lastModified: new Date(data.created_at),
         nodeCount: 0,
-        status: data.status,
+        status: data.status || "draft",
       };
 
-      setProjects((prev) => [newProject, ...prev]);
+      setProjects([newProject, ...projects]);
       setCurrentProject(newProject);
       setCurrentView("designer");
     } catch (err) {
       console.error("Unexpected error creating project:", err);
-      alert(
-        `Unexpected error: ${
-          err instanceof Error ? err.message : "Unknown error"
-        }`
-      );
     }
   };
 
@@ -274,157 +250,51 @@ export default function AgentFlowPage() {
         nodeSpecificData = {
           ...nodeSpecificData,
           template: "Hello {{name}}, welcome to {{place}}!",
-          variables: {},
-          extractVariablesFromInput: false,
-        };
-      } else if (subtype === "decision-tree") {
-        nodeSpecificData = {
-          ...nodeSpecificData,
-          rules: [
-            { condition: 'input contains "yes"', outputPath: "approve" },
-            { condition: 'input contains "no"', outputPath: "reject" },
-          ],
-          defaultPath: "default",
-          evaluationMode: "sequential",
-        };
-      } else if (subtype === "state-machine") {
-        nodeSpecificData = {
-          ...nodeSpecificData,
-          states: ["initial", "processing", "complete"],
-          initialState: "initial",
-          transitions: [
-            { from: "initial", to: "processing", event: "start" },
-            { from: "processing", to: "complete", event: "finish" },
-          ],
-          persistState: true,
-        };
-      } else if (subtype === "knowledge-base") {
-        nodeSpecificData = {
-          ...nodeSpecificData,
-          operation: "retrieve",
-          documents: [],
-          metadata: {},
+          variables: { name: "", place: "" },
         };
       } else if (subtype === "message") {
         nodeSpecificData = {
           ...nodeSpecificData,
-          content: "",
-          passThrough: false,
-        };
-      } else if (subtype === "if-else") {
-        nodeSpecificData = {
-          ...nodeSpecificData,
-          condition: "",
-          conditionGroups: [
-            {
-              id: "1",
-              operator: "AND",
-              conditions: [
-                {
-                  id: "1",
-                  field: "input",
-                  operator: "contains",
-                  value: "",
-                  dataType: "string",
-                },
-              ],
-            },
-          ],
-          globalOperator: "AND",
-          truePath: { label: "True", description: "Condition met" },
-          falsePath: { label: "False", description: "Condition not met" },
-          evaluationMode: "strict",
-          llmModel: "gemini-pro",
+          content: "Enter your message here...",
+          messageType: "user",
         };
       }
 
-      // Create payload
-      const nodePayload = {
-        project_id: currentProject.id,
-        user_id: DEFAULT_USER_ID, // Add user_id to satisfy not-null constraint
-        type: nodeDef?.type || nodeData.type,
-        subtype,
+      const newNode: CanvasNode = {
+        id: `${subtype}-${Date.now()}`,
+        type: nodeDef?.type || nodeData.type || "conversation",
+        subtype: subtype,
         position: { x: baseX, y: baseY },
-        size: { width: 200, height: 100 },
+        size: { width: 250, height: 120 },
         data: nodeSpecificData,
         inputs: defaultInputs,
         outputs: defaultOutputs,
       };
 
-      console.log("Creating node with payload:", nodePayload);
-
-      const { data, error } = await supabase
-        .from("nodes")
-        .insert([nodePayload])
-        .select()
-        .single();
-
-      if (error) {
-        // Improved error logging for Supabase
-        console.error("Supabase error creating node:", error);
-        if (typeof error === "object") {
-          console.error("Error details:", JSON.stringify(error, null, 2));
-        }
-        alert(
-          `Supabase error creating node: ${
-            error.message || error.details || JSON.stringify(error)
-          }`
-        );
-        return;
-      }
-
-      if (!data) {
-        console.error("No data returned from node creation");
-        return;
-      }
-
-      // Transform and add to state
-      const newNode: CanvasNode = {
-        id: data.id,
-        type: data.type,
-        subtype: data.subtype,
-        position: data.position,
-        size: data.size,
-        data: data.data,
-        inputs: data.inputs,
-        outputs: data.outputs,
-      };
-
-      setNodes((prev) => [...prev, newNode]);
+      setNodes([...nodes, newNode]);
     } catch (err) {
-      console.error("Unexpected error creating node:", err);
+      console.error("Error adding node:", err);
     }
   };
 
   const handleNodeUpdate = (updatedNode: CanvasNode) => {
-    console.log("handleNodeUpdate received:", updatedNode.data); // Debug log
-    setNodes((prevNodes) => {
-      const updated = prevNodes.map((node) =>
-        node.id === updatedNode.id ? updatedNode : node
-      );
-      console.log("Updated nodes array:", updated); // Debug log
-      return updated;
-    });
-    setSelectedNode(updatedNode);
-    // Also save to database
-    supabase
-      .from("nodes")
-      .update({
-        data: updatedNode.data,
-        position: updatedNode.position,
-        size: updatedNode.size,
-      })
-      .eq("id", updatedNode.id)
-      .then((result) => console.log("Supabase node update result:", result)); // Debug log
+    setNodes(nodes.map((n) => (n.id === updatedNode.id ? updatedNode : n)));
   };
 
   const handleTestFlow = async () => {
-    setShowTester(true);
     setIsTesting(true);
+    setTestFlowResult(null);
+
     try {
-      const result = await runWorkflow(nodes, connections);
+      const result = await runWorkflow(
+        nodes,
+        connections,
+        nodes[0]?.id // Use first node as start node for now
+      );
+
       setTestFlowResult(result);
     } catch (err) {
+      console.error("Error running workflow:", err);
       setTestFlowResult({
         error: err instanceof Error ? err.message : "Unknown error",
       });
@@ -458,13 +328,10 @@ export default function AgentFlowPage() {
   return (
     <DesignerLayout
       left={
-        <div className="flex h-full">
-          <LayersPanel nodes={nodes} />
-          <ComponentLibrary
-            onAddNode={handleAddNode}
-            onBackToProjects={() => setCurrentView("projects")}
-          />
-        </div>
+        <ComponentLibrary
+          onAddNode={handleAddNode}
+          onBackToProjects={() => setCurrentView("projects")}
+        />
       }
       center={
         <DesignerCanvas

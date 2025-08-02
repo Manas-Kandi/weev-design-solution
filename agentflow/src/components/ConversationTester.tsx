@@ -37,7 +37,7 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
                       )}
                       <span className="text-xs text-gray-400">
                         {node.type.charAt(0).toUpperCase() + node.type.slice(1)}
-                        {node.data?.title ? ` (${node.data.title})` : ''}
+                        {(node.data && 'title' in node.data && node.data.title) ? ` (${node.data.title})` : ''}
                       </span>
                     </div>
                     <div className={`rounded-lg px-4 py-2 ${node.type === 'agent' ? 'bg-gray-700 text-gray-100' : node.type === 'ui' ? 'bg-blue-600 text-white' : node.type === 'logic' ? 'bg-yellow-900 text-yellow-100' : 'bg-gray-800 text-gray-300'}`}>{typeof node.output === 'string' ? node.output : JSON.stringify(node.output)}</div>
