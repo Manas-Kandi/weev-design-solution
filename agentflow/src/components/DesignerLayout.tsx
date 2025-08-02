@@ -1,8 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { theme as colors } from "@/data/theme";
-import { Button } from "@/components/ui/button";
+import TabBar from "@/components/TabBar";
 import {
   MousePointer,
   Hand,
@@ -30,20 +29,15 @@ export default function DesignerLayout({
   testButtonDisabled = false,
 }: DesignerLayoutProps) {
   return (
-    <div
-      className="h-screen w-full flex overflow-hidden bg-[#18181b]"
-      style={{ fontFamily: 'Inter, Menlo, monospace' }}
-    >
+    <div className="h-screen w-full flex overflow-hidden bg-[var(--figma-bg)]">
       {/* Left Sidebar */}
       {left}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
+        <TabBar />
         {/* Toolbar */}
-        <div
-          className="h-12 border-b flex items-center justify-between px-3 bg-[#23232a] border-[#23232a]"
-          style={{ fontFamily: 'Inter, Menlo, monospace' }}
-        >
+        <div className="h-12 border-b flex items-center justify-between px-3 bg-[var(--figma-surface)] border-[var(--figma-border)]">
           <div className="flex items-center gap-1">
             {[
               { id: "select", name: "Select", icon: MousePointer, shortcut: "V" },
@@ -53,8 +47,8 @@ export default function DesignerLayout({
             ].map((tool) => (
               <button
                 key={tool.id}
-                className="w-7 h-7 flex items-center justify-center transition-colors text-gray-400 hover:bg-[#18181b]"
-                style={{ borderRadius: 4 }}
+                className="w-7 h-7 flex items-center justify-center transition-colors text-[var(--figma-text-secondary)] hover:bg-[var(--figma-bg)]"
+                style={{ borderRadius: "var(--figma-radius)" }}
                 title={`${tool.name} (${tool.shortcut})`}
               >
                 <tool.icon className="w-4 h-4" />
@@ -63,22 +57,22 @@ export default function DesignerLayout({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 font-mono">100%</span>
+            <span className="text-xs text-[var(--figma-text-secondary)] font-mono">100%</span>
             <button
-              className="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-[#18181b] transition-colors"
-              style={{ borderRadius: 4 }}
+              className="w-7 h-7 flex items-center justify-center text-[var(--figma-text-secondary)] hover:bg-[var(--figma-bg)] transition-colors"
+              style={{ borderRadius: "var(--figma-radius)" }}
             >
               <ZoomOut className="w-4 h-4" />
             </button>
             <button
-              className="w-7 h-7 flex items-center justify-center text-gray-400 hover:bg-[#18181b] transition-colors"
-              style={{ borderRadius: 4 }}
+              className="w-7 h-7 flex items-center justify-center text-[var(--figma-text-secondary)] hover:bg-[var(--figma-bg)] transition-colors"
+              style={{ borderRadius: "var(--figma-radius)" }}
             >
               <ZoomIn className="w-4 h-4" />
             </button>
             <button
               className="flex items-center gap-1 px-3 py-1 text-xs font-mono bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-              style={{ borderRadius: 4 }}
+              style={{ borderRadius: "var(--figma-radius)" }}
               onClick={onTestFlow}
               disabled={testButtonDisabled}
             >
@@ -86,8 +80,8 @@ export default function DesignerLayout({
               Test
             </button>
             <button
-              className="flex items-center gap-1 px-3 py-1 text-xs font-mono bg-[#23232a] text-gray-300 hover:bg-[#18181b] transition-colors"
-              style={{ borderRadius: 4 }}
+              className="flex items-center gap-1 px-3 py-1 text-xs font-mono bg-[var(--figma-surface)] text-[var(--figma-text-secondary)] hover:bg-[var(--figma-bg)] transition-colors"
+              style={{ borderRadius: "var(--figma-radius)" }}
             >
               <Share className="w-4 h-4" />
               Share
@@ -96,7 +90,7 @@ export default function DesignerLayout({
         </div>
 
         {/* Canvas Area */}
-        <div className="flex-1 flex bg-[#18181b]">{center}</div>
+        <div className="flex-1 flex bg-[var(--figma-bg)]">{center}</div>
       </div>
 
       {/* Right Sidebar */}
