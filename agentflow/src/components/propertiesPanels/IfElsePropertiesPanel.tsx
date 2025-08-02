@@ -74,12 +74,12 @@ export default function IfElsePropertiesPanel({
         maxWidth: 360,
         height: "100%",
         background: theme.colors.background,
-        padding: theme.spacing.sectionPadding,
+        padding: "24px",
         boxSizing: "border-box",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
-        gap: theme.spacing.fieldGap,
+        gap: "20px",
         borderLeft: `1px solid ${theme.colors.border}`,
         position: "relative",
       }}
@@ -97,12 +97,12 @@ export default function IfElsePropertiesPanel({
         />
         <div
           style={{
-            fontSize: theme.typography.fontSize.sm,
-            color: theme.colors.textSecondary,
-            marginTop: theme.spacing.xs,
+            fontSize: "13px",
+            color: "#b0b0b0",
+            marginTop: "6px",
           }}
         >
-          Boolean/JS-like expression. Example:{" "}
+          Boolean/JS-like expression. Example: {" "}
           <code>input == &#39;yes&#39;</code>
         </div>
       </PanelSection>
@@ -119,9 +119,9 @@ export default function IfElsePropertiesPanel({
         />
         <div
           style={{
-            fontSize: theme.typography.fontSize.sm,
-            color: theme.colors.textSecondary,
-            marginTop: theme.spacing.xs,
+            fontSize: "13px",
+            color: "#b0b0b0",
+            marginTop: "6px",
           }}
         >
           This message will be sent if the condition is true.

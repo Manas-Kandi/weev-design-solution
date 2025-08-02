@@ -22,17 +22,17 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
 }) => {
   // Panel container style
   const panelStyle: React.CSSProperties = {
-    width: theme.components.panel.width,
-    minWidth: theme.components.panel.minWidth,
-    maxWidth: theme.components.panel.maxWidth,
+    width: "340px", // fallback width
+    minWidth: "260px",
+    maxWidth: "420px",
     height: "100%",
     backgroundColor: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
     display: "flex",
     flexDirection: "column",
-    fontFamily: theme.typography.fontFamily,
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.textPrimary,
+    fontFamily: 'Inter, sans-serif',
+    fontSize: "15px",
+    color: "#f3f3f3",
   };
 
   // Empty state when no node is selected
@@ -46,9 +46,9 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
             alignItems: "center",
             justifyContent: "center",
             height: "100%",
-            padding: theme.spacing.xxl,
+            padding: "40px",
             textAlign: "center",
-            gap: theme.spacing.lg,
+            gap: "24px",
           }}
         >
           <div
@@ -56,34 +56,34 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
               width: "64px",
               height: "64px",
               backgroundColor: theme.colors.backgroundSecondary,
-              borderRadius: theme.borderRadius.lg,
+              borderRadius: "12px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: theme.spacing.md,
+              marginBottom: "12px",
             }}
           >
-            <Settings size={32} color={theme.colors.textMuted} />
+            <Settings size={32} color="#888" />
           </div>
 
           <div>
             <h3
               style={{
-                fontSize: theme.typography.fontSize.lg,
-                fontWeight: theme.typography.fontWeight.semibold,
-                color: theme.colors.textPrimary,
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#f3f3f3",
                 margin: 0,
-                marginBottom: theme.spacing.sm,
+                marginBottom: "8px",
               }}
             >
               No Node Selected
             </h3>
             <p
               style={{
-                fontSize: theme.typography.fontSize.sm,
-                color: theme.colors.textSecondary,
+                fontSize: "14px",
+                color: "#b0b0b0",
                 margin: 0,
-                lineHeight: theme.typography.lineHeight.relaxed,
+                lineHeight: 1.6,
                 maxWidth: "200px",
               }}
             >
@@ -93,31 +93,31 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
           <div
             style={{
-              marginTop: theme.spacing.xl,
-              padding: theme.spacing.md,
+              marginTop: "32px",
+              padding: "16px",
               backgroundColor: theme.colors.backgroundSecondary,
-              borderRadius: theme.borderRadius.sm,
+              borderRadius: "6px",
               border: `1px solid ${theme.colors.border}`,
               maxWidth: "240px",
             }}
           >
             <h4
               style={{
-                fontSize: theme.typography.fontSize.sm,
-                fontWeight: theme.typography.fontWeight.medium,
-                color: theme.colors.textPrimary,
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#f3f3f3",
                 margin: 0,
-                marginBottom: theme.spacing.sm,
+                marginBottom: "8px",
               }}
             >
               💡 Quick Tip
             </h4>
             <p
               style={{
-                fontSize: theme.typography.fontSize.xs,
-                color: theme.colors.textSecondary,
+                fontSize: "12px",
+                color: "#b0b0b0",
                 margin: 0,
-                lineHeight: theme.typography.lineHeight.normal,
+                lineHeight: 1.4,
               }}
             >
               Right-click on any node to access quick actions like setting it as
@@ -134,19 +134,19 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
     <div style={panelStyle}>
       <div
         style={{
-          padding: theme.spacing.lg,
+          padding: "20px",
           borderBottom: `1px solid ${theme.colors.border}`,
           backgroundColor: theme.colors.backgroundSecondary,
           display: "flex",
           alignItems: "center",
-          gap: theme.spacing.md,
+          gap: "16px",
         }}
       >
         <div
           style={{
-            backgroundColor: theme.colors.warning,
-            borderRadius: theme.borderRadius.md,
-            padding: theme.spacing.sm,
+            backgroundColor: "#eab308", // yellow-400
+            borderRadius: "8px",
+            padding: "8px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -157,9 +157,9 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <div>
           <h2
             style={{
-              fontSize: theme.typography.fontSize.lg,
-              fontWeight: theme.typography.fontWeight.semibold,
-              color: theme.colors.textPrimary,
+              fontSize: "18px",
+              fontWeight: 600,
+              color: "#f3f3f3",
               margin: 0,
             }}
           >
@@ -167,76 +167,62 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
           </h2>
           <p
             style={{
-              fontSize: theme.typography.fontSize.sm,
-              color: theme.colors.textSecondary,
+              fontSize: "14px",
+              color: "#b0b0b0",
               margin: 0,
             }}
           >
-            {selectedNode.type || "Unknown"} •{" "}
-            {selectedNode.subtype || "No subtype"}
+            {selectedNode.type || "Unknown"} • {selectedNode.subtype || "No subtype"}
           </p>
         </div>
       </div>
 
       <div
         style={{
-          padding: theme.spacing.lg,
+          padding: "20px",
           display: "flex",
           flexDirection: "column",
-          gap: theme.spacing.md,
+          gap: "12px",
         }}
       >
         <div
           style={{
             backgroundColor: theme.colors.backgroundSecondary,
             border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.borderRadius.sm,
-            padding: theme.spacing.md,
+            borderRadius: "6px",
+            padding: "16px",
           }}
         >
           <h3
             style={{
-              fontSize: theme.typography.fontSize.base,
-              fontWeight: theme.typography.fontWeight.medium,
-              color: theme.colors.textPrimary,
+              fontSize: "15px",
+              fontWeight: 500,
+              color: "#f3f3f3",
               margin: 0,
-              marginBottom: theme.spacing.sm,
+              marginBottom: "8px",
             }}
           >
             Node Information
           </h3>
           <div
             style={{
-              fontFamily: theme.typography.fontMono,
-              fontSize: theme.typography.fontSize.sm,
-              color: theme.colors.textSecondary,
-              lineHeight: theme.typography.lineHeight.relaxed,
+              fontFamily: 'Menlo, monospace',
+              fontSize: "13px",
+              color: "#b0b0b0",
+              lineHeight: 1.6,
             }}
           >
             <div>
-              ID:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
-                {selectedNode.id}
-              </span>
+              ID: <span style={{ color: "#38bdf8" }}>{selectedNode.id}</span>
             </div>
             <div>
-              Type:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
-                {selectedNode.type || "Unknown"}
-              </span>
+              Type: <span style={{ color: "#38bdf8" }}>{selectedNode.type || "Unknown"}</span>
             </div>
             <div>
-              Subtype:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
-                {selectedNode.subtype || "None"}
-              </span>
+              Subtype: <span style={{ color: "#38bdf8" }}>{selectedNode.subtype || "None"}</span>
             </div>
             <div>
-              Position:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
-                ({selectedNode.position?.x || 0},{" "}
-                {selectedNode.position?.y || 0})
-              </span>
+              Position: <span style={{ color: "#38bdf8" }}>({selectedNode.position?.x || 0}, {selectedNode.position?.y || 0})</span>
             </div>
           </div>
         </div>
@@ -244,25 +230,25 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <div
           style={{
             backgroundColor: theme.colors.backgroundSecondary,
-            border: `1px solid ${theme.colors.warning}`,
-            borderRadius: theme.borderRadius.sm,
-            padding: theme.spacing.md,
+            border: `1px solid #eab308`,
+            borderRadius: "6px",
+            padding: "16px",
           }}
         >
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: theme.spacing.sm,
-              marginBottom: theme.spacing.sm,
+              gap: "8px",
+              marginBottom: "8px",
             }}
           >
-            <FileQuestion size={16} color={theme.colors.warning} />
+            <FileQuestion size={16} color="#eab308" />
             <h4
               style={{
-                fontSize: theme.typography.fontSize.sm,
-                fontWeight: theme.typography.fontWeight.medium,
-                color: theme.colors.warning,
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#eab308",
                 margin: 0,
               }}
             >
@@ -271,15 +257,13 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
           </div>
           <p
             style={{
-              fontSize: theme.typography.fontSize.xs,
-              color: theme.colors.textSecondary,
+              fontSize: "12px",
+              color: "#b0b0b0",
               margin: 0,
-              lineHeight: theme.typography.lineHeight.normal,
+              lineHeight: 1.4,
             }}
           >
-            No properties panel has been implemented for this node type yet. The
-            node will still function in workflows, but configuration options are
-            limited.
+            No properties panel has been implemented for this node type yet. The node will still function in workflows, but configuration options are limited.
           </p>
         </div>
       </div>

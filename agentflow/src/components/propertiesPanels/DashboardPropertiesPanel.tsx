@@ -71,8 +71,8 @@ export default function DashboardPropertiesPanel({
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    borderRadius: 12,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -80,7 +80,7 @@ export default function DashboardPropertiesPanel({
     maxWidth: 360,
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.fieldGap,
+    gap: 16,
     boxSizing: "border-box",
     overflowY: "auto",
   };
@@ -115,7 +115,7 @@ export default function DashboardPropertiesPanel({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: theme.spacing.xs,
+            gap: 4,
           }}
         >
           {widgets.map((widget, idx) => (
@@ -124,7 +124,7 @@ export default function DashboardPropertiesPanel({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: theme.spacing.xs,
+                gap: 4,
               }}
             >
               <VSCodeInput

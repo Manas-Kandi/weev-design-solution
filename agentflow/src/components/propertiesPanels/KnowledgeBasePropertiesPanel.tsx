@@ -1,6 +1,5 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { VSCodeSelect, VSCodeInput } from "./vsCodeFormComponents";
 import { CanvasNode } from "@/types";
 
@@ -122,7 +121,7 @@ export default function KnowledgeBasePropertiesPanel({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: theme.spacing.fieldGap,
+        gap: "20px",
       }}
     >
       <PanelSection title="Operation" description="Choose what this node does">
@@ -140,7 +139,7 @@ export default function KnowledgeBasePropertiesPanel({
       </PanelSection>
       <PanelSection title="Documents" description="JSON array of documents">
         <VSCodeInput
-          style={{ minHeight: 48, fontFamily: theme.typography.fontMono }}
+          style={{ minHeight: 48, fontFamily: 'Menlo, monospace' }}
           value={documents}
           onChange={(
             e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -160,7 +159,7 @@ export default function KnowledgeBasePropertiesPanel({
       </PanelSection>
       <PanelSection title="Metadata" description="Additional metadata as JSON">
         <VSCodeInput
-          style={{ minHeight: 48, fontFamily: theme.typography.fontMono }}
+          style={{ minHeight: 48, fontFamily: 'Menlo, monospace' }}
           value={metadata}
           onChange={(
             e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

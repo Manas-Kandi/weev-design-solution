@@ -80,49 +80,49 @@ export default function EnhancedAgentPropertiesPanel({
 
   // Panel container style
   const panelStyle: React.CSSProperties = {
-    width: theme.components.panel.width,
-    minWidth: theme.components.panel.minWidth,
-    maxWidth: theme.components.panel.maxWidth,
+    width: 360,
+    minWidth: 320,
+    maxWidth: 480,
     height: "100%",
     backgroundColor: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
     display: "flex",
     flexDirection: "column",
     overflowY: "auto",
-    fontFamily: theme.typography.fontFamily,
-    borderRadius: theme.borderRadius.lg,
+    fontFamily: 'Inter, sans-serif',
+    borderRadius: 12,
   };
 
   const headerStyle: React.CSSProperties = {
-    padding: theme.spacing.lg,
+    padding: 24,
     borderBottom: `1px solid ${theme.colors.border}`,
     backgroundColor: theme.colors.backgroundSecondary,
     display: "flex",
     alignItems: "center",
-    gap: theme.spacing.md,
+    gap: 16,
     minHeight: "60px",
-    borderTopLeftRadius: theme.borderRadius.lg,
-    borderTopRightRadius: theme.borderRadius.lg,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   };
 
   const headerTitleStyle: React.CSSProperties = {
-    fontSize: theme.typography.fontSize.lg,
-    fontWeight: theme.typography.fontWeight.semibold,
-    color: theme.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: 600,
+    color: '#fff',
     margin: 0,
   };
 
   const headerSubtitleStyle: React.CSSProperties = {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textSecondary,
+    fontSize: 14,
+    color: '#b3b3b3',
     margin: 0,
   };
 
   const contentStyle: React.CSSProperties = {
-    padding: theme.spacing.md,
+    padding: 16,
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.lg,
+    gap: 24,
     flex: 1,
   };
 
@@ -132,9 +132,9 @@ export default function EnhancedAgentPropertiesPanel({
       <div style={headerStyle}>
         <div
           style={{
-            backgroundColor: theme.colors.buttonPrimary,
-            borderRadius: theme.borderRadius.md,
-            padding: theme.spacing.sm,
+            backgroundColor: '#0ea5e9',
+            borderRadius: 8,
+            padding: 8,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -160,9 +160,9 @@ export default function EnhancedAgentPropertiesPanel({
         >
           <label
             style={{
-              color: theme.colors.textSecondary,
-              fontSize: theme.typography.fontSize.sm,
-              marginBottom: theme.spacing.xs,
+              color: '#b3b3b3',
+              fontSize: 14,
+              marginBottom: 4,
             }}
           >
             Agent Name
@@ -176,10 +176,10 @@ export default function EnhancedAgentPropertiesPanel({
           />
           <label
             style={{
-              color: theme.colors.textSecondary,
-              fontSize: theme.typography.fontSize.sm,
-              marginTop: theme.spacing.sm,
-              marginBottom: theme.spacing.xs,
+              color: '#b3b3b3',
+              fontSize: 14,
+              marginTop: 8,
+              marginBottom: 4,
             }}
           >
             Role
@@ -190,7 +190,6 @@ export default function EnhancedAgentPropertiesPanel({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleFieldChange("role", e.target.value)
             }
-            type="textarea"
           />
         </PanelSection>
 
@@ -202,10 +201,10 @@ export default function EnhancedAgentPropertiesPanel({
         >
           <label
             style={{
-              color: theme.colors.textSecondary,
-              fontSize: theme.typography.fontSize.sm,
-              marginTop: theme.spacing.sm,
-              marginBottom: theme.spacing.xs,
+              color: '#b3b3b3',
+              fontSize: 14,
+              marginTop: 8,
+              marginBottom: 4,
             }}
           >
             Model
@@ -222,10 +221,10 @@ export default function EnhancedAgentPropertiesPanel({
 
           <label
             style={{
-              color: theme.colors.textSecondary,
-              fontSize: theme.typography.fontSize.sm,
-              marginTop: theme.spacing.sm,
-              marginBottom: theme.spacing.xs,
+              color: '#b3b3b3',
+              fontSize: 14,
+              marginTop: 8,
+              marginBottom: 4,
             }}
           >
             Response Format
@@ -247,10 +246,10 @@ export default function EnhancedAgentPropertiesPanel({
         >
           <label
             style={{
-              color: theme.colors.textSecondary,
-              fontSize: theme.typography.fontSize.sm,
-              marginTop: theme.spacing.sm,
-              marginBottom: theme.spacing.xs,
+              color: '#b3b3b3',
+              fontSize: 14,
+              marginTop: 8,
+              marginBottom: 4,
             }}
           >
             Personality Tags
@@ -259,10 +258,10 @@ export default function EnhancedAgentPropertiesPanel({
 
           <label
             style={{
-              color: theme.colors.textSecondary,
-              fontSize: theme.typography.fontSize.sm,
-              marginTop: theme.spacing.sm,
-              marginBottom: theme.spacing.xs,
+              color: '#b3b3b3',
+              fontSize: 14,
+              marginTop: 8,
+              marginBottom: 4,
             }}
           >
             System Prompt
@@ -301,10 +300,10 @@ export default function EnhancedAgentPropertiesPanel({
 
           <label
             style={{
-              color: theme.colors.textSecondary,
-              fontSize: theme.typography.fontSize.sm,
-              marginTop: theme.spacing.sm,
-              marginBottom: theme.spacing.xs,
+              color: '#b3b3b3',
+              fontSize: 14,
+              marginTop: 8,
+              marginBottom: 4,
             }}
           >
             Escalation Message
@@ -339,45 +338,45 @@ export default function EnhancedAgentPropertiesPanel({
         >
           <div
             style={{
-              backgroundColor: theme.colors.codeBackground,
+              backgroundColor: '#18181b',
               border: `1px solid ${theme.colors.border}`,
-              borderRadius: theme.borderRadius.sm,
-              padding: theme.spacing.md,
-              fontFamily: theme.typography.fontMono,
-              fontSize: theme.typography.fontSize.sm,
-              color: theme.colors.textSecondary,
-              lineHeight: theme.typography.lineHeight.relaxed,
+              borderRadius: 6,
+              padding: 16,
+              fontFamily: 'Menlo, monospace',
+              fontSize: 14,
+              color: '#b3b3b3',
+              lineHeight: 1.6,
             }}
           >
             <div
               style={{
-                color: theme.colors.success,
-                marginBottom: theme.spacing.sm,
+                color: '#22c55e',
+                marginBottom: 8,
               }}
             >
               ✓ Agent Configuration Preview
             </div>
             <div>
               Model:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
+              <span style={{ color: '#0ea5e9' }}>
                 {data.model || "gemini-pro"}
               </span>
             </div>
             <div>
               Temperature:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
+              <span style={{ color: '#0ea5e9' }}>
                 {data.temperature || 0.7}
               </span>
             </div>
             <div>
               Max Tokens:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
+              <span style={{ color: '#0ea5e9' }}>
                 {data.maxTokens || 1000}
               </span>
             </div>
             <div>
               Personality:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
+              <span style={{ color: '#0ea5e9' }}>
                 {(data.personalityTags || []).join(", ") || "None set"}
               </span>
             </div>
@@ -393,7 +392,7 @@ export default function EnhancedAgentPropertiesPanel({
           >
             <MessageSquare
               size={16}
-              style={{ marginRight: theme.spacing.sm, verticalAlign: "middle" }}
+              style={{ marginRight: 8, verticalAlign: "middle" }}
             />
             Preview Chat Interface
           </VSCodeButton>

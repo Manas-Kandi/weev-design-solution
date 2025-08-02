@@ -37,21 +37,21 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
   const inputStyle: React.CSSProperties = {
     width: 90,
     background: theme.colors.backgroundTertiary,
-    color: theme.colors.textPrimary,
+    color: '#fff',
     border: `1px solid ${theme.colors.border}`,
-    borderRadius: theme.borderRadius.sm,
-    padding: theme.spacing.inputPadding,
-    fontFamily: theme.typography.fontFamily,
-    fontSize: theme.typography.fontSize.base,
-    marginRight: theme.spacing.sm,
+    borderRadius: 8,
+    padding: 10,
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 15,
+    marginRight: 8,
   };
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
-        gap: theme.spacing.sm,
-        marginBottom: theme.spacing.sm,
+        gap: 8,
+        marginBottom: 8,
       }}
     >
       <Input
@@ -125,8 +125,8 @@ export default function ConversationFlowPropertiesPanel({
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    borderRadius: 12,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -134,7 +134,7 @@ export default function ConversationFlowPropertiesPanel({
     maxWidth: 360,
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.fieldGap,
+    gap: 16,
     boxSizing: "border-box",
     overflowY: "auto",
   };
@@ -179,7 +179,7 @@ export default function ConversationFlowPropertiesPanel({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: theme.spacing.xs,
+            gap: 4,
           }}
         >
           {transitions.map((tr, idx) => (

@@ -117,8 +117,8 @@ export default function DecisionTreePropertiesPanel({
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    borderRadius: 12,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -126,7 +126,7 @@ export default function DecisionTreePropertiesPanel({
     maxWidth: 360,
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.fieldGap,
+    gap: 16,
     boxSizing: "border-box",
     overflowY: "auto",
   };
@@ -135,7 +135,7 @@ export default function DecisionTreePropertiesPanel({
   if (!isDecisionTreeNodeData(node.data)) {
     return (
       <div style={panelStyle}>
-        <div style={{ color: theme.colors.textPrimary }}>
+        <div style={{ color: '#fff' }}>
           This properties panel is only for decision tree nodes.
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function DecisionTreePropertiesPanel({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: theme.spacing.xs,
+            gap: 4,
           }}
         >
           {rules.map((rule, idx) => (
@@ -203,7 +203,7 @@ export default function DecisionTreePropertiesPanel({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: theme.spacing.xs,
+                gap: 4,
               }}
             >
               <VSCodeInput

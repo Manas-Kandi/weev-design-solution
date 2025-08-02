@@ -1,18 +1,6 @@
 // VS Code-style form components for AgentFlow properties panels
-import React, { useState, useRef } from "react";
-import {
-  ChevronDown,
-  Check,
-  X,
-  Plus,
-  Minus,
-  Info,
-  AlertCircle,
-} from "lucide-react";
-import {
-  figmaPropertiesTheme as theme,
-  themeHelpers,
-} from "./propertiesPanelTheme";
+import React from "react";
+import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 
 // ...existing code from your message...
 
@@ -24,7 +12,15 @@ export const VSCodeInput: React.FC<
     {...props}
     style={{
       width: "100%",
-      ...themeHelpers.getInputStyle(),
+      background: theme.colors.backgroundSecondary,
+      color: "#f3f3f3",
+      border: `1px solid ${theme.colors.border}`,
+      borderRadius: "6px",
+      padding: "12px",
+      fontFamily: 'Menlo, monospace',
+      fontSize: "15px",
+      outline: "none",
+      transition: "border-color 0.15s",
       ...style,
     }}
   />
@@ -54,7 +50,15 @@ export const VSCodeSelect: React.FC<VSCodeSelectProps> = ({
     onChange={(e) => onValueChange(e.target.value)}
     style={{
       width: "100%",
-      ...themeHelpers.getInputStyle(),
+      background: theme.colors.backgroundSecondary,
+      color: "#f3f3f3",
+      border: `1px solid ${theme.colors.border}`,
+      borderRadius: "6px",
+      padding: "12px",
+      fontFamily: 'Menlo, monospace',
+      fontSize: "15px",
+      outline: "none",
+      transition: "border-color 0.15s",
       ...style,
     }}
   >
@@ -84,15 +88,32 @@ export const VSCodeButton: React.FC<VSCodeButtonProps> = ({
   ...props
 }) => {
   // Map "danger" to error color, otherwise use primary
-  const buttonVariant = variant === "danger" ? "primary" : variant;
-  const baseStyle = themeHelpers.getButtonStyle(buttonVariant);
+  const background = variant === "danger" ? "#ef4444" : "#2563eb";
+  const baseStyle: React.CSSProperties = {
+    background,
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    padding: "0 16px",
+    height: "32px",
+    fontWeight: 500,
+    fontFamily: 'Inter, sans-serif',
+    fontSize: "15px",
+    cursor: "pointer",
+    transition: "background 0.15s, color 0.15s",
+    outline: "none",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+  };
   // Adjust size if needed
   const sizeStyle =
     size === "small"
       ? {
           height: "24px",
-          fontSize: theme.typography.fontSize.sm,
-          padding: `0 ${theme.spacing.sm}`,
+          fontSize: "13px",
+          padding: "0 8px",
         }
       : {};
   return (

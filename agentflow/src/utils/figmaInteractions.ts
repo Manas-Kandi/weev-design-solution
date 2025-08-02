@@ -1,5 +1,5 @@
-import { useState, type HTMLAttributes } from 'react';
-import type { CSSProperties } from 'react';
+import { useState, type HTMLAttributes } from "react";
+import type { CSSProperties } from "react";
 
 /**
  * Utility hooks and styles for common Figma-like interaction patterns.
@@ -39,56 +39,56 @@ export function useFigmaFocus<T extends HTMLElement>() {
 }
 
 export const figmaHoverStyle: CSSProperties = {
-  boxShadow: '0 0 0 2px var(--figma-border), 0 2px 8px #000a',
+  boxShadow: "0 0 0 2px var(--figma-border), 0 2px 8px #000a",
 };
 
 export const figmaSelectedStyle: CSSProperties = {
-  boxShadow: '0 0 0 2px var(--figma-accent), 0 2px 8px #000a',
+  boxShadow: "0 0 0 2px var(--figma-accent), 0 2px 8px #000a",
 };
 
 // Figma interaction states
 export const figmaStates = {
   button: {
     default: {
-      backgroundColor: 'var(--figma-surface)',
-      color: 'var(--figma-text-secondary)',
-      border: '1px solid var(--figma-border)',
+      backgroundColor: "var(--figma-surface)",
+      color: "var(--figma-text-secondary)",
+      border: "1px solid var(--figma-border)",
     },
     hover: {
-      backgroundColor: 'var(--figma-surface-hover)',
-      color: 'var(--figma-text)',
-      border: '1px solid var(--figma-border-strong)',
+      backgroundColor: "var(--figma-surface-hover)",
+      color: "var(--figma-text)",
+      border: "1px solid var(--figma-border-strong)",
     },
     active: {
-      backgroundColor: 'var(--figma-accent)',
-      color: 'white',
-      border: '1px solid var(--figma-accent)',
+      backgroundColor: "var(--figma-accent)",
+      color: "white",
+      border: "1px solid var(--figma-accent)",
     },
     disabled: {
-      backgroundColor: 'var(--figma-surface)',
-      color: 'var(--figma-text-tertiary)',
-      border: '1px solid var(--figma-border)',
+      backgroundColor: "var(--figma-surface)",
+      color: "var(--figma-text-tertiary)",
+      border: "1px solid var(--figma-border)",
       opacity: 0.5,
-      cursor: 'not-allowed',
+      cursor: "not-allowed",
     },
   },
   input: {
     default: {
-      backgroundColor: 'var(--figma-surface)',
-      color: 'var(--figma-text)',
-      border: '1px solid var(--figma-border)',
+      backgroundColor: "var(--figma-surface)",
+      color: "var(--figma-text)",
+      border: "1px solid var(--figma-border)",
     },
     focus: {
-      backgroundColor: 'var(--figma-surface)',
-      color: 'var(--figma-text)',
-      border: '1px solid var(--figma-accent)',
-      boxShadow: '0 0 0 2px rgba(24, 160, 251, 0.3)',
+      backgroundColor: "var(--figma-surface)",
+      color: "var(--figma-text)",
+      border: "1px solid var(--figma-accent)",
+      boxShadow: "0 0 0 2px rgba(24, 160, 251, 0.3)",
     },
     error: {
-      backgroundColor: 'var(--figma-surface)',
-      color: 'var(--figma-text)',
-      border: '1px solid var(--figma-danger)',
-      boxShadow: '0 0 0 2px rgba(248, 72, 34, 0.3)',
+      backgroundColor: "var(--figma-surface)",
+      color: "var(--figma-text)",
+      border: "1px solid var(--figma-danger)",
+      boxShadow: "0 0 0 2px rgba(248, 72, 34, 0.3)",
     },
   },
 };

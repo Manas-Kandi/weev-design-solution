@@ -52,30 +52,30 @@ export default function ChatInterfacePropertiesPanel({
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.lg,
+    padding: 20,
+    borderRadius: 12,
     minHeight: 0,
     height: "100%",
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.fieldGap,
+    gap: 16,
   };
   const labelStyle: React.CSSProperties = {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.fontSize.sm,
-    fontFamily: theme.typography.fontFamily,
-    marginBottom: theme.spacing.labelMargin,
+    color: '#b3b3b3',
+    fontSize: 14,
+    fontFamily: 'Inter, sans-serif',
+    marginBottom: 4,
   };
   const inputStyle: React.CSSProperties = {
     background: theme.colors.backgroundTertiary,
-    color: theme.colors.textPrimary,
+    color: '#fff',
     border: `1px solid ${theme.colors.border}`,
-    borderRadius: theme.borderRadius.sm,
-    padding: theme.spacing.inputPadding,
+    borderRadius: 8,
+    padding: 10,
     width: "100%",
-    marginBottom: theme.spacing.fieldGap,
-    fontFamily: theme.typography.fontFamily,
-    fontSize: theme.typography.fontSize.base,
+    marginBottom: 16,
+    fontFamily: 'Inter, sans-serif',
+    fontSize: 15,
   };
 
   return (

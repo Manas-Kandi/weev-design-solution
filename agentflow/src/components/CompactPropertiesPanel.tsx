@@ -29,7 +29,7 @@ import ConversationFlowPropertiesPanel from "./propertiesPanels/ConversationFlow
 import SimulatorPropertiesPanel from "./propertiesPanels/SimulatorPropertiesPanel";
 import DashboardPropertiesPanel from "./propertiesPanels/DashboardPropertiesPanel";
 import ChatInterfacePropertiesPanel from "./propertiesPanels/ChatInterfacePropertiesPanel";
-import TestCasePropertiesPanel from "./propertiesPanels/TestCasePropertiesPanel";
+
 
 interface PropertiesPanelProps {
   selectedNode: CanvasNode | null;
@@ -42,9 +42,9 @@ export default function CompactPropertiesPanel({
 }: PropertiesPanelProps) {
   // Panel container style - fixed width, no horizontal scroll, theme-driven
   const panelStyle: React.CSSProperties = {
-    width: theme.components.panel.width,
-    minWidth: theme.components.panel.minWidth,
-    maxWidth: theme.components.panel.maxWidth,
+    width: "340px",
+    minWidth: "260px",
+    maxWidth: "420px",
     height: "100%",
     minHeight: 0,
     display: "flex",
@@ -54,9 +54,9 @@ export default function CompactPropertiesPanel({
     padding: 0,
     overflowY: "auto",
     overflowX: "hidden",
-    fontFamily: theme.typography.fontFamily,
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.textPrimary,
+    fontFamily: 'Inter, sans-serif',
+    fontSize: "15px",
+    color: "#f3f3f3",
     position: "fixed",
     right: 0,
     top: 0,
@@ -77,7 +77,7 @@ export default function CompactPropertiesPanel({
             alignItems: "center",
             justifyContent: "center",
             height: "100%",
-            gap: theme.spacing.fieldGap,
+            gap: "20px",
           }}
         >
           <div
@@ -85,31 +85,31 @@ export default function CompactPropertiesPanel({
               width: "48px",
               height: "48px",
               backgroundColor: theme.colors.backgroundTertiary,
-              borderRadius: theme.borderRadius.lg,
+              borderRadius: "12px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: theme.spacing.sm,
+              marginBottom: "12px",
             }}
           >
-            <Settings size={24} color={theme.colors.textMuted} />
+            <Settings size={24} color="#888" />
           </div>
           <div style={{ textAlign: "center" }}>
             <h3
               style={{
-                fontSize: theme.typography.fontSize.lg,
-                fontWeight: theme.typography.fontWeight.semibold,
-                color: theme.colors.textPrimary,
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#f3f3f3",
                 margin: 0,
-                marginBottom: theme.spacing.xs,
+                marginBottom: "8px",
               }}
             >
               No Node Selected
             </h3>
             <p
               style={{
-                fontSize: theme.typography.fontSize.sm,
-                color: theme.colors.textMuted,
+                fontSize: "14px",
+                color: "#888",
                 margin: 0,
                 lineHeight: 1.4,
                 maxWidth: "180px",
@@ -120,10 +120,10 @@ export default function CompactPropertiesPanel({
           </div>
           <div
             style={{
-              marginTop: theme.spacing.md,
-              padding: theme.spacing.md,
+              marginTop: "16px",
+              padding: "16px",
               backgroundColor: theme.colors.backgroundTertiary,
-              borderRadius: theme.borderRadius.md,
+              borderRadius: "8px",
               border: `1px solid ${theme.colors.border}`,
               maxWidth: "200px",
               width: "100%",
@@ -131,19 +131,19 @@ export default function CompactPropertiesPanel({
           >
             <h4
               style={{
-                fontSize: theme.typography.fontSize.sm,
-                fontWeight: theme.typography.fontWeight.medium,
-                color: theme.colors.textPrimary,
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#f3f3f3",
                 margin: 0,
-                marginBottom: theme.spacing.xs,
+                marginBottom: "6px",
               }}
             >
               💡 Quick Tip
             </h4>
             <p
               style={{
-                fontSize: theme.typography.fontSize.xs,
-                color: theme.colors.textMuted,
+                fontSize: "12px",
+                color: "#888",
                 margin: 0,
                 lineHeight: 1.3,
               }}
@@ -162,20 +162,20 @@ export default function CompactPropertiesPanel({
       {/* Header */}
       <div
         style={{
-          padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+          padding: "16px 24px",
           borderBottom: `1px solid ${theme.colors.border}`,
           backgroundColor: theme.colors.backgroundTertiary,
           display: "flex",
           alignItems: "center",
-          gap: theme.spacing.sm,
+          gap: "12px",
           minHeight: "48px",
         }}
       >
         <div
           style={{
-            backgroundColor: theme.colors.warning,
-            borderRadius: theme.borderRadius.md,
-            padding: theme.spacing.xs,
+            backgroundColor: "#a97c1a",
+            borderRadius: "8px",
+            padding: "6px 10px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -186,9 +186,9 @@ export default function CompactPropertiesPanel({
         <div style={{ flex: 1, minWidth: 0 }}>
           <h2
             style={{
-              fontSize: theme.typography.fontSize.base,
-              fontWeight: theme.typography.fontWeight.semibold,
-              color: theme.colors.textPrimary,
+              fontSize: "15px",
+              fontWeight: 600,
+              color: "#f3f3f3",
               margin: 0,
               lineHeight: 1.2,
               overflow: "hidden",
@@ -200,8 +200,8 @@ export default function CompactPropertiesPanel({
           </h2>
           <p
             style={{
-              fontSize: theme.typography.fontSize.sm,
-              color: theme.colors.textMuted,
+              fontSize: "14px",
+              color: "#888",
               margin: 0,
               lineHeight: 1.2,
               overflow: "hidden",
@@ -209,18 +209,17 @@ export default function CompactPropertiesPanel({
               whiteSpace: "nowrap",
             }}
           >
-            {selectedNode.type || "Unknown"} •{" "}
-            {selectedNode.subtype || "No subtype"}
+            {selectedNode.type || "Unknown"} • {selectedNode.subtype || "No subtype"}
           </p>
         </div>
       </div>
       {/* Content */}
       <div
         style={{
-          padding: theme.spacing.lg,
+          padding: "24px",
           display: "flex",
           flexDirection: "column",
-          gap: theme.spacing.md,
+          gap: "16px",
           flex: 1,
         }}
       >
@@ -228,71 +227,62 @@ export default function CompactPropertiesPanel({
           style={{
             backgroundColor: theme.colors.backgroundTertiary,
             border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.borderRadius.md,
-            padding: theme.spacing.md,
+            borderRadius: "8px",
+            padding: "16px",
           }}
         >
           <h3
             style={{
-              fontSize: theme.typography.fontSize.sm,
-              fontWeight: theme.typography.fontWeight.medium,
-              color: theme.colors.textPrimary,
+              fontSize: "14px",
+              fontWeight: 500,
+              color: "#f3f3f3",
               margin: 0,
-              marginBottom: theme.spacing.sm,
+              marginBottom: "10px",
             }}
           >
             Node Information
           </h3>
           <div
             style={{
-              fontFamily: theme.typography.fontMono,
-              fontSize: theme.typography.fontSize.xs,
-              color: theme.colors.textMuted,
+              fontFamily: 'Menlo, monospace',
+              fontSize: "12px",
+              color: "#888",
               lineHeight: 1.5,
             }}
           >
             <div>
-              ID:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
-                {selectedNode.id.slice(0, 8)}...
-              </span>
+              ID: <span style={{ color: "#6cb6ff" }}>{selectedNode.id.slice(0, 8)}...</span>
             </div>
             <div>
-              Type:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
-                {selectedNode.type || "Unknown"}
-              </span>
+              Type: <span style={{ color: "#6cb6ff" }}>{selectedNode.type || "Unknown"}</span>
             </div>
             <div>
-              Subtype:{" "}
-              <span style={{ color: theme.colors.textAccent }}>
-                {selectedNode.subtype || "None"}
-              </span>
+              Subtype: <span style={{ color: "#6cb6ff" }}>{selectedNode.subtype || "None"}</span>
             </div>
           </div>
         </div>
         <div
           style={{
             backgroundColor: theme.colors.backgroundTertiary,
-            border: `1px solid ${theme.colors.warning}`,
-            borderRadius: theme.borderRadius.md,
-            padding: theme.spacing.md,
+            border: "1px solid #a97c1a",
+            borderRadius: "8px",
+            padding: "16px",
           }}
         >
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: theme.spacing.xs,
-              marginBottom: theme.spacing.xs,
+              gap: "6px",
+              marginBottom: "6px",
             }}
           >
-            <Settings size={12} color={theme.colors.warning} />
+            <Settings size={12} color="#a97c1a" />
             <h4
               style={{
-                fontSize: theme.typography.fontSize.sm,
-                fontWeight: theme.typography.fontWeight.medium,
-                color: theme.colors.warning,
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#a97c1a",
                 margin: 0,
               }}
             >
@@ -301,14 +291,13 @@ export default function CompactPropertiesPanel({
           </div>
           <p
             style={{
-              fontSize: theme.typography.fontSize.xs,
-              color: theme.colors.textMuted,
+              fontSize: "12px",
+              color: "#888",
               margin: 0,
               lineHeight: 1.4,
             }}
           >
-            Properties panel for this node type hasn&apos;t been implemented yet. The
-            node will still work in workflows.
+            Properties panel for this node type hasn&apos;t been implemented yet. The node will still work in workflows.
           </p>
         </div>
       </div>

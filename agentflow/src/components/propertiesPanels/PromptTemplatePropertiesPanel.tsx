@@ -83,8 +83,8 @@ export default function PromptTemplatePropertiesPanel({
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.lg,
+    padding: "24px",
+    borderRadius: "12px",
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -92,7 +92,7 @@ export default function PromptTemplatePropertiesPanel({
     maxWidth: 360,
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.fieldGap,
+    gap: "20px",
     boxSizing: "border-box",
     overflowY: "auto",
   };
@@ -120,8 +120,8 @@ export default function PromptTemplatePropertiesPanel({
             key={key}
             style={{
               display: "flex",
-              gap: theme.spacing.xs,
-              marginBottom: theme.spacing.xs,
+              gap: "6px",
+              marginBottom: "6px",
             }}
           >
             <VSCodeInput
@@ -154,7 +154,7 @@ export default function PromptTemplatePropertiesPanel({
           </div>
         ))}
         <VSCodeButton
-          style={{ marginTop: theme.spacing.xs }}
+          style={{ marginTop: "6px" }}
           onClick={handleAddVariable}
         >
           Add Variable
@@ -166,10 +166,10 @@ export default function PromptTemplatePropertiesPanel({
       >
         <label
           style={{
-            fontSize: theme.typography.fontSize.base,
+            fontSize: "15px",
             display: "flex",
             alignItems: "center",
-            gap: theme.spacing.xs,
+            gap: "6px",
           }}
         >
           <input
@@ -179,10 +179,10 @@ export default function PromptTemplatePropertiesPanel({
               handleFieldChange("extractVariablesFromInput", e.target.checked)
             }
             style={{
-              accentColor: theme.colors.textAccent,
+              accentColor: "#38bdf8",
               width: 16,
               height: 16,
-              borderRadius: theme.borderRadius.sm,
+              borderRadius: "6px",
               border: `1px solid ${theme.colors.border}`,
             }}
           />

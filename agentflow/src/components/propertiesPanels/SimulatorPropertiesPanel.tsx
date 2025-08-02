@@ -35,8 +35,8 @@ export default function SimulatorPropertiesPanel({
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: theme.spacing.sectionPadding,
-    borderRadius: theme.borderRadius.lg,
+    padding: "24px",
+    borderRadius: "12px",
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -44,7 +44,7 @@ export default function SimulatorPropertiesPanel({
     maxWidth: 360,
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.fieldGap,
+    gap: "20px",
     boxSizing: "border-box",
     overflowY: "auto",
   };
@@ -52,14 +52,14 @@ export default function SimulatorPropertiesPanel({
     width: "100%",
     minHeight: 48,
     background: theme.colors.backgroundSecondary,
-    color: theme.colors.textPrimary,
+    color: "#f3f3f3",
     border: `1px solid ${theme.colors.border}`,
-    borderRadius: theme.borderRadius.sm,
-    padding: theme.spacing.inputPadding,
-    fontFamily: theme.typography.fontMono,
-    fontSize: theme.typography.fontSize.base,
+    borderRadius: "6px",
+    padding: "12px",
+    fontFamily: 'Menlo, monospace',
+    fontSize: "15px",
     resize: "vertical",
-    marginBottom: theme.spacing.fieldGap,
+    marginBottom: "20px",
   };
 
   return (

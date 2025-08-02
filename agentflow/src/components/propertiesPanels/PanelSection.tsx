@@ -2,7 +2,7 @@
 // Enhanced PanelSection component with VS Code styling
 import React, { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { figmaPropertiesTheme as theme, themeHelpers } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { useFigmaHover } from "../../utils/figmaInteractions";
 
 interface PanelSectionProps {
@@ -32,49 +32,48 @@ const PanelSection: React.FC<PanelSectionProps> = ({
   // Get styles based on section level
   const sectionStyle: React.CSSProperties = {
     border: `1px solid ${theme.colors.border}`,
-    borderRadius: theme.borderRadius.sm,
+    borderRadius: "6px",
     backgroundColor: level === 1 ? theme.colors.background : theme.colors.backgroundSecondary,
-    marginBottom: theme.spacing.md,
+    marginBottom: "16px",
     overflow: 'hidden',
-    transition: `all ${theme.animation.medium}`,
+    transition: "all 0.2s",
   };
 
   const headerStyle: React.CSSProperties = {
-    ...themeHelpers.getSectionHeaderStyle(),
     backgroundColor: isHovered 
       ? theme.colors.backgroundTertiary 
       : (level === 1 ? theme.colors.backgroundSecondary : theme.colors.backgroundTertiary),
     borderBottom: collapsed ? 'none' : `1px solid ${theme.colors.border}`,
     justifyContent: 'space-between',
-    minHeight: theme.components.section.headerHeight,
-    padding: `0 ${theme.spacing.md}`,
+    minHeight: "40px",
+    padding: "0 16px",
   };
 
   const headerContentStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing.sm,
+    gap: "8px",
     flex: 1,
   };
 
   const chevronStyle: React.CSSProperties = {
-    transition: `transform ${theme.animation.fast}`,
+    transition: "transform 0.12s",
     transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
-    color: theme.colors.textSecondary,
+    color: "#b0b0b0",
     width: '16px',
     height: '16px',
   };
 
   const titleStyle: React.CSSProperties = {
-    fontSize: level === 1 ? theme.typography.fontSize.base : theme.typography.fontSize.sm,
-    fontWeight: level === 1 ? theme.typography.fontWeight.semibold : theme.typography.fontWeight.medium,
-    color: theme.colors.textPrimary,
+    fontSize: level === 1 ? "15px" : "13px",
+    fontWeight: level === 1 ? 600 : 500,
+    color: "#f3f3f3",
     margin: 0,
   };
 
   const descriptionStyle: React.CSSProperties = {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textSecondary,
+    fontSize: "12px",
+    color: "#b0b0b0",
     margin: 0,
     fontStyle: 'italic',
   };
@@ -82,25 +81,25 @@ const PanelSection: React.FC<PanelSectionProps> = ({
   const actionsStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing.sm,
+    gap: "8px",
     opacity: isHovered ? 1 : 0.7,
-    transition: `opacity ${theme.animation.fast}`,
+    transition: "opacity 0.12s",
   };
 
   const contentStyle: React.CSSProperties = {
-    padding: collapsed ? '0' : `${theme.spacing.md} ${theme.spacing.lg}`,
+    padding: collapsed ? '0' : "16px 24px",
     maxHeight: collapsed ? '0px' : '1000px', // Animate height
     overflow: 'hidden',
-    transition: `all ${theme.animation.medium}`,
+    transition: "all 0.2s",
     backgroundColor: level === 1 ? theme.colors.background : 'transparent',
   };
 
   const contentInnerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing.md,
+    gap: "16px",
     opacity: collapsed ? 0 : 1,
-    transition: `opacity ${theme.animation.medium}`,
+    transition: "opacity 0.2s",
   };
 
   return (
@@ -120,7 +119,7 @@ const PanelSection: React.FC<PanelSectionProps> = ({
           />
           {icon && (
             <div style={{ 
-              color: theme.colors.textAccent, 
+              color: "#38bdf8", 
               display: 'flex', 
               alignItems: 'center',
               width: '16px',

@@ -331,9 +331,15 @@ export default function CompactPropertiesPanel({
     const nodeType = selectedNode.subtype || selectedNode.type;
 
     // Wrap existing panels with compact styling
-    const wrapPanel = (PanelComponent: PropertyPanelComponent, nodeOverride?: CanvasNode) => (
+    const wrapPanel = (
+      PanelComponent: PropertyPanelComponent,
+      nodeOverride?: CanvasNode
+    ) => (
       <div style={panelStyle} className="figma-scrollbar">
-        <PanelComponent node={nodeOverride ?? selectedNode} onChange={onChange} />
+        <PanelComponent
+          node={nodeOverride ?? selectedNode}
+          onChange={onChange}
+        />
       </div>
     );
 
@@ -342,7 +348,9 @@ export default function CompactPropertiesPanel({
       case "generic":
         return wrapPanel(
           AgentPropertiesPanel as unknown as PropertyPanelComponent,
-          selectedNode as typeof selectedNode & { data: import("@/types").AgentNodeData }
+          selectedNode as typeof selectedNode & {
+            data: import("@/types").AgentNodeData;
+          }
         );
 
       case "message":
@@ -386,7 +394,9 @@ export default function CompactPropertiesPanel({
         if (isConversationFlowNodeData(selectedNode.data)) {
           return wrapPanel(
             ConversationFlowPropertiesPanel as unknown as PropertyPanelComponent,
-            selectedNode as typeof selectedNode & { data: import("@/types").ConversationFlowNodeData }
+            selectedNode as typeof selectedNode & {
+              data: import("@/types").ConversationFlowNodeData;
+            }
           );
         }
         return renderUnknownNodePanel();

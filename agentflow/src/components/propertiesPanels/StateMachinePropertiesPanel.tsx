@@ -55,13 +55,13 @@ export default function StateMachinePropertiesPanel({
     width: "360px",
     height: "100%",
     background: theme.colors.background,
-    color: theme.colors.textPrimary,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.sectionPadding,
+    color: "#f3f3f3",
+    borderRadius: "12px",
+    padding: "24px",
     overflowY: "auto",
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.fieldGap,
+    gap: "20px",
     boxSizing: "border-box",
   };
 
@@ -75,7 +75,7 @@ export default function StateMachinePropertiesPanel({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: theme.spacing.fieldGap,
+            gap: "20px",
           }}
         >
           {states.map((state, idx) => (
@@ -84,7 +84,7 @@ export default function StateMachinePropertiesPanel({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: theme.spacing.fieldGap,
+                gap: "20px",
               }}
             >
               <VSCodeInput
@@ -143,7 +143,7 @@ export default function StateMachinePropertiesPanel({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: theme.spacing.fieldGap,
+            gap: "20px",
           }}
         >
           {transitions.map((tr, idx) => (
@@ -152,7 +152,7 @@ export default function StateMachinePropertiesPanel({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: theme.spacing.fieldGap,
+                gap: "20px",
               }}
             >
               <VSCodeInput
@@ -224,9 +224,9 @@ export default function StateMachinePropertiesPanel({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: theme.spacing.fieldGap,
-            color: theme.colors.textSecondary,
-            margin: theme.spacing.labelMargin,
+            gap: "20px",
+            color: "#b0b0b0",
+            margin: "8px 0",
           }}
         >
           <input
