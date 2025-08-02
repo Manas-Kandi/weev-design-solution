@@ -1,68 +1,58 @@
 // This file is the single source of truth for all UI rules for properties panels.
 // Do not use Tailwind, global CSS, or theme.ts for these components.
 
-// Enhanced VS Code-inspired theme for AgentFlow properties panels
-// This replaces propertiesPanelTheme.ts with a much more sophisticated design system
+// Figma-inspired theme that maps design tokens to global CSS variables defined in
+// `src/app/globals.css`. All properties panels should consume values from this
+// theme so visual styling stays consistent.
 
-export const vsCodePropertiesTheme = {
+export const figmaPropertiesTheme = {
   colors: {
-    // Background layers - authentic VS Code hierarchy
-    background: "#1e1e1e", // Main background (VS Code side panel)
-    backgroundSecondary: "#252526", // Elevated sections
-    backgroundTertiary: "#2d2d30", // Input fields and deeper content
-    // Borders - subtle but defined
-    border: "#3e3e42", // Primary borders
-    borderLight: "#484848", // Hover/focus borders
-    borderActive: "#007acc", // Active/selected borders (VS Code blue)
-    // Text hierarchy - perfect contrast ratios
-    textPrimary: "#cccccc", // Main text
-    textSecondary: "#9da5b4", // Secondary text, descriptions
-    textMuted: "#6a6a6a", // Disabled/muted text
-    textAccent: "#007acc", // Links, accents (VS Code blue)
-    // Status colors - authentic VS Code palette
-    success: "#89d185", // Success states
-    warning: "#ffb62c", // Warning states
-    error: "#f85149", // Error states
-    info: "#58a6ff", // Info states
-    // Interactive elements
-    buttonPrimary: "#007acc", // Primary action buttons
-    buttonSecondary: "#2d2d30", // Secondary buttons
-    buttonHover: "#1177bb", // Hover states
-    // Special elements
-    codeBackground: "#0d1117", // Code blocks, JSON editors
-    tagBackground: "#1f2937", // Tags, chips
-    accentGlow: "rgba(0, 122, 204, 0.3)", // Glow effects
+    background: "var(--figma-bg)",
+    backgroundSecondary: "var(--figma-surface)",
+    backgroundTertiary: "var(--figma-surface)",
+    border: "var(--figma-border)",
+    borderLight: "var(--figma-border)",
+    borderActive: "var(--figma-accent)",
+    textPrimary: "var(--figma-text)",
+    textSecondary: "var(--figma-text-secondary)",
+    textMuted: "var(--figma-text-secondary)",
+    textAccent: "var(--figma-accent)",
+    success: "#89d185",
+    warning: "#ffb62c",
+    error: "#f85149",
+    info: "#58a6ff",
+    buttonPrimary: "var(--figma-accent)",
+    buttonSecondary: "var(--figma-surface)",
+    buttonHover: "var(--figma-accent)",
+    codeBackground: "#0d1117",
+    tagBackground: "var(--figma-surface)",
+    accentGlow: "rgba(10, 132, 255, 0.3)",
   },
   spacing: {
-    // Precise spacing system - follows VS Code conventions
-    xs: "4px",
-    sm: "8px",
-    md: "12px",
-    lg: "16px",
-    xl: "20px",
-    xxl: "24px",
-    // Specific component spacing (updated for compactness)
-    sectionPadding: "12px", // Reduced padding
-    fieldGap: "6px", // Tighter field spacing
-    inputPadding: "6px 8px", // Compact input padding
-    labelMargin: "4px",
+    xs: "var(--space-xs)",
+    sm: "var(--space-sm)",
+    md: "calc(var(--space-sm) + var(--space-xs))",
+    lg: "var(--space-md)",
+    xl: "calc(var(--space-md) + var(--space-xs))",
+    xxl: "var(--space-lg)",
+    sectionPadding: "calc(var(--space-sm) + var(--space-xs))",
+    fieldGap: "calc(var(--space-sm) * 0.75)",
+    inputPadding: "calc(var(--space-sm) * 0.75) var(--space-sm)",
+    labelMargin: "var(--space-xs)",
     panelPadding: "0px",
-    headerHeight: "32px",
+    headerHeight: "var(--space-xl)",
     inputHeight: "28px",
     buttonHeight: "28px",
   },
   typography: {
-    // Font stack - VS Code uses Consolas/Monaco primarily
-    fontFamily:
-      "'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif",
-    fontMono:
-      "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, 'Courier New', monospace",
+    fontFamily: "var(--font-ui)",
+    fontMono: "var(--font-code)",
     fontSize: {
-      xs: "11px",
-      sm: "12px",
-      base: "13px",
-      lg: "14px",
-      xl: "16px",
+      xs: "var(--fs-xs)",
+      sm: "calc(var(--fs-xs) + 1px)",
+      base: "var(--fs-sm)",
+      lg: "calc(var(--fs-sm) + 1px)",
+      xl: "var(--fs-md)",
     },
     fontWeight: {
       normal: 400,
@@ -77,30 +67,28 @@ export const vsCodePropertiesTheme = {
   },
   borderRadius: {
     none: "0px",
-    xs: "2px",
-    sm: "3px",
-    md: "4px", // Compact border radius
-    lg: "6px",
+    xs: "calc(var(--figma-radius) / 2)",
+    sm: "calc(var(--figma-radius) * 0.75)",
+    md: "var(--figma-radius)",
+    lg: "calc(var(--figma-radius) * 1.5)",
   },
   shadows: {
     none: "none",
     subtle: "0 1px 2px rgba(0, 0, 0, 0.1)",
     medium: "0 2px 8px rgba(0, 0, 0, 0.15)",
     strong: "0 4px 16px rgba(0, 0, 0, 0.25)",
-    glow: "0 0 0 2px rgba(0, 122, 204, 0.3)",
+    glow: "0 0 0 2px rgba(10, 132, 255, 0.3)",
   },
   animation: {
-    // Smooth, professional transitions
     fast: "0.15s ease-out",
     medium: "0.25s ease-out",
     slow: "0.35s ease-out",
   },
-  // Component-specific design tokens
   components: {
     panel: {
-      width: "280px", // Narrower panel width
-      minWidth: "260px", // Minimum width
-      maxWidth: "300px", // Maximum width
+      width: "280px",
+      minWidth: "260px",
+      maxWidth: "300px",
     },
     section: {
       headerHeight: "32px",
@@ -114,7 +102,7 @@ export const vsCodePropertiesTheme = {
     },
     button: {
       height: "28px",
-      paddingX: "8px", // Compact button padding
+      paddingX: "var(--space-sm)",
       borderWidth: "1px",
     },
     dropdown: {
@@ -122,42 +110,41 @@ export const vsCodePropertiesTheme = {
       maxHeight: "200px",
     },
   },
-  // State variants for interactive elements
   states: {
     default: {
-      background: "#2d2d30",
-      border: "#3e3e42",
-      text: "#cccccc",
+      background: "var(--figma-surface)",
+      border: "var(--figma-border)",
+      text: "var(--figma-text)",
     },
     hover: {
-      background: "#3e3e42",
-      border: "#484848",
-      text: "#e1e1e1",
+      background: "var(--figma-border)",
+      border: "var(--figma-border)",
+      text: "var(--figma-text)",
     },
     focus: {
-      background: "#2d2d30",
-      border: "#007acc",
-      text: "#cccccc",
-      boxShadow: "0 0 0 2px rgba(0, 122, 204, 0.3)",
+      background: "var(--figma-surface)",
+      border: "var(--figma-accent)",
+      text: "var(--figma-text)",
+      boxShadow: "0 0 0 2px rgba(10, 132, 255, 0.3)",
     },
     active: {
-      background: "#1f1f20",
-      border: "#007acc",
-      text: "#e1e1e1",
+      background: "var(--figma-bg)",
+      border: "var(--figma-accent)",
+      text: "var(--figma-text)",
     },
     disabled: {
-      background: "#252526",
-      border: "#3e3e42",
-      text: "#6a6a6a",
+      background: "var(--figma-surface)",
+      border: "var(--figma-border)",
+      text: "var(--figma-text-secondary)",
     },
   },
 } as const;
 
 // Type definitions for better TypeScript support
-export type VSCodeTheme = typeof vsCodePropertiesTheme;
-export type ThemeColors = VSCodeTheme["colors"];
-export type ThemeSpacing = VSCodeTheme["spacing"];
-export type ThemeTypography = VSCodeTheme["typography"];
+export type FigmaTheme = typeof figmaPropertiesTheme;
+export type ThemeColors = FigmaTheme["colors"];
+export type ThemeSpacing = FigmaTheme["spacing"];
+export type ThemeTypography = FigmaTheme["typography"];
 
 // Helper functions for common styling patterns
 export const themeHelpers = {
@@ -165,82 +152,83 @@ export const themeHelpers = {
   getInputStyle: (
     state: "default" | "hover" | "focus" | "error" = "default"
   ): React.CSSProperties => ({
-    fontFamily: vsCodePropertiesTheme.typography.fontFamily,
-    fontSize: vsCodePropertiesTheme.typography.fontSize.base,
-    fontWeight: vsCodePropertiesTheme.typography.fontWeight.normal,
-    lineHeight: vsCodePropertiesTheme.typography.lineHeight.normal,
-    height: vsCodePropertiesTheme.spacing.inputHeight,
-    padding: vsCodePropertiesTheme.spacing.inputPadding,
-    borderRadius: vsCodePropertiesTheme.borderRadius.sm,
+    fontFamily: figmaPropertiesTheme.typography.fontFamily,
+    fontSize: figmaPropertiesTheme.typography.fontSize.base,
+    fontWeight: figmaPropertiesTheme.typography.fontWeight.normal,
+    lineHeight: figmaPropertiesTheme.typography.lineHeight.normal,
+    height: figmaPropertiesTheme.spacing.inputHeight,
+    padding: figmaPropertiesTheme.spacing.inputPadding,
+    borderRadius: figmaPropertiesTheme.borderRadius.sm,
     border: `1px solid ${
       state === "error"
-        ? vsCodePropertiesTheme.colors.error
+        ? figmaPropertiesTheme.colors.error
         : state === "focus"
-        ? vsCodePropertiesTheme.colors.borderActive
-        : vsCodePropertiesTheme.colors.border
+        ? figmaPropertiesTheme.colors.borderActive
+        : figmaPropertiesTheme.colors.border
     }`,
-    backgroundColor: vsCodePropertiesTheme.colors.backgroundTertiary,
-    color: vsCodePropertiesTheme.colors.textPrimary,
+    backgroundColor: figmaPropertiesTheme.colors.backgroundTertiary,
+    color: figmaPropertiesTheme.colors.textPrimary,
     outline: "none",
-    transition: `all ${vsCodePropertiesTheme.animation.fast}`,
+    transition: `all ${figmaPropertiesTheme.animation.fast}`,
     ...(state === "focus" && {
-      boxShadow: vsCodePropertiesTheme.shadows.glow,
+      boxShadow: figmaPropertiesTheme.shadows.glow,
     }),
   }),
   // Get consistent button styling
   getButtonStyle: (
     variant: "primary" | "secondary" = "secondary"
   ): React.CSSProperties => ({
-    fontFamily: vsCodePropertiesTheme.typography.fontFamily,
-    fontSize: vsCodePropertiesTheme.typography.fontSize.base,
-    fontWeight: vsCodePropertiesTheme.typography.fontWeight.medium,
-    height: vsCodePropertiesTheme.spacing.buttonHeight,
-    padding: `0 ${vsCodePropertiesTheme.spacing.md}`,
-    borderRadius: vsCodePropertiesTheme.borderRadius.sm,
+    fontFamily: figmaPropertiesTheme.typography.fontFamily,
+    fontSize: figmaPropertiesTheme.typography.fontSize.base,
+    fontWeight: figmaPropertiesTheme.typography.fontWeight.medium,
+    height: figmaPropertiesTheme.spacing.buttonHeight,
+    padding: `0 ${figmaPropertiesTheme.spacing.md}`,
+    borderRadius: figmaPropertiesTheme.borderRadius.sm,
     border: `1px solid ${
       variant === "primary"
-        ? vsCodePropertiesTheme.colors.buttonPrimary
-        : vsCodePropertiesTheme.colors.border
+        ? figmaPropertiesTheme.colors.buttonPrimary
+        : figmaPropertiesTheme.colors.border
     }`,
     backgroundColor:
       variant === "primary"
-        ? vsCodePropertiesTheme.colors.buttonPrimary
-        : vsCodePropertiesTheme.colors.buttonSecondary,
-    color: vsCodePropertiesTheme.colors.textPrimary,
+        ? figmaPropertiesTheme.colors.buttonPrimary
+        : figmaPropertiesTheme.colors.buttonSecondary,
+    color: figmaPropertiesTheme.colors.textPrimary,
     cursor: "pointer",
     outline: "none",
-    transition: `all ${vsCodePropertiesTheme.animation.fast}`,
+    transition: `all ${figmaPropertiesTheme.animation.fast}`,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: vsCodePropertiesTheme.spacing.sm,
+    gap: figmaPropertiesTheme.spacing.sm,
   }),
   // Get section header styling
   getSectionHeaderStyle: (): React.CSSProperties => ({
-    fontFamily: vsCodePropertiesTheme.typography.fontFamily,
-    fontSize: vsCodePropertiesTheme.typography.fontSize.base,
-    fontWeight: vsCodePropertiesTheme.typography.fontWeight.semibold,
-    lineHeight: vsCodePropertiesTheme.typography.lineHeight.tight,
-    color: vsCodePropertiesTheme.colors.textPrimary,
-    height: vsCodePropertiesTheme.spacing.headerHeight,
-    padding: `0 ${vsCodePropertiesTheme.spacing.md}`,
+    fontFamily: figmaPropertiesTheme.typography.fontFamily,
+    fontSize: figmaPropertiesTheme.typography.fontSize.base,
+    fontWeight: figmaPropertiesTheme.typography.fontWeight.semibold,
+    lineHeight: figmaPropertiesTheme.typography.lineHeight.tight,
+    color: figmaPropertiesTheme.colors.textPrimary,
+    height: figmaPropertiesTheme.spacing.headerHeight,
+    padding: `0 ${figmaPropertiesTheme.spacing.md}`,
     margin: 0,
     display: "flex",
     alignItems: "center",
-    gap: vsCodePropertiesTheme.spacing.sm,
-    borderBottom: `1px solid ${vsCodePropertiesTheme.colors.border}`,
-    backgroundColor: vsCodePropertiesTheme.colors.backgroundSecondary,
+    gap: figmaPropertiesTheme.spacing.sm,
+    borderBottom: `1px solid ${figmaPropertiesTheme.colors.border}`,
+    backgroundColor: figmaPropertiesTheme.colors.backgroundSecondary,
     cursor: "pointer",
-    transition: `all ${vsCodePropertiesTheme.animation.fast}`,
+    transition: `all ${figmaPropertiesTheme.animation.fast}`,
   }),
   // Get label styling
   getLabelStyle: (): React.CSSProperties => ({
-    fontFamily: vsCodePropertiesTheme.typography.fontFamily,
-    fontSize: vsCodePropertiesTheme.typography.fontSize.sm,
-    fontWeight: vsCodePropertiesTheme.typography.fontWeight.normal,
-    lineHeight: vsCodePropertiesTheme.typography.lineHeight.normal,
-    color: vsCodePropertiesTheme.colors.textSecondary,
-    marginBottom: vsCodePropertiesTheme.spacing.labelMargin,
+    fontFamily: figmaPropertiesTheme.typography.fontFamily,
+    fontSize: figmaPropertiesTheme.typography.fontSize.sm,
+    fontWeight: figmaPropertiesTheme.typography.fontWeight.normal,
+    lineHeight: figmaPropertiesTheme.typography.lineHeight.normal,
+    color: figmaPropertiesTheme.colors.textSecondary,
+    marginBottom: figmaPropertiesTheme.spacing.labelMargin,
     display: "block",
   }),
 };
+

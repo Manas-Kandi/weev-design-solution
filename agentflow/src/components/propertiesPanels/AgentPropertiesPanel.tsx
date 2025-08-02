@@ -11,7 +11,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { CanvasNode } from "@/types";
-import { vsCodePropertiesTheme as theme } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import PanelSection from "./PanelSection";
 import {
   VSCodeInput,

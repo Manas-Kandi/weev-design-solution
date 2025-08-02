@@ -2,7 +2,7 @@
 // Enhanced PanelSection component with VS Code styling
 import React, { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { vsCodePropertiesTheme as theme, themeHelpers } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme, themeHelpers } from "./propertiesPanelTheme";
 
 interface PanelSectionProps {
   title: string;
