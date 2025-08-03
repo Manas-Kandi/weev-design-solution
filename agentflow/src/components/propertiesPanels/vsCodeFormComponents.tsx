@@ -5,29 +5,50 @@ import {
   themeHelpers,
 } from "./propertiesPanelTheme";
 
-// ...existing code from your message...
-
 // VSCodeInput
-export const VSCodeInput: React.FC<
-  React.InputHTMLAttributes<HTMLInputElement>
-> = ({ style, ...props }) => (
-  <input
-    {...props}
-    style={{
-      width: "100%",
-      background: theme.colors.backgroundSecondary,
-      color: "#f3f3f3",
-      border: `1px solid ${theme.colors.border}`,
-      borderRadius: "6px",
-      padding: "12px",
-      fontFamily: "Menlo, monospace",
-      fontSize: "15px",
-      outline: "none",
-      transition: "border-color 0.15s",
-      ...style,
-    }}
-  />
-);
+interface VSCodeInputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  loading?: boolean;
+}
+export const VSCodeInput: React.FC<VSCodeInputProps> = ({
+  style,
+  loading = false,
+  disabled,
+  ...props
+}) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  const baseStyle = themeHelpers.getInputStyle(
+    isFocused ? "focus" : isHovered ? "hover" : "default"
+  );
+
+  const animationStyle: React.CSSProperties = {
+    transform: isHovered || isFocused ? "scale(1.01)" : "scale(1)",
+    boxShadow: isFocused
+      ? theme.shadows.glow
+      : isHovered
+      ? theme.shadows.subtle
+      : undefined,
+  };
+
+  const stateStyle: React.CSSProperties =
+    loading || disabled
+      ? { opacity: theme.states.disabled.opacity, cursor: "not-allowed" }
+      : {};
+
+  return (
+    <input
+      {...props}
+      disabled={disabled || loading}
+      style={{ ...baseStyle, ...animationStyle, ...stateStyle, ...style }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+    />
+  );
+};
 
 // VSCodeSelect
 interface VSCodeSelectOption {
@@ -40,6 +61,8 @@ interface VSCodeSelectProps {
   options: VSCodeSelectOption[];
   placeholder?: string;
   style?: React.CSSProperties;
+  loading?: boolean;
+  disabled?: boolean;
 }
 export const VSCodeSelect: React.FC<VSCodeSelectProps> = ({
   value,
@@ -47,55 +70,78 @@ export const VSCodeSelect: React.FC<VSCodeSelectProps> = ({
   options,
   placeholder,
   style,
-}) => (
-  <select
-    value={value}
-    onChange={(e) => onValueChange(e.target.value)}
-    style={{
-      width: "100%",
-      background: theme.colors.backgroundSecondary,
-      color: "#f3f3f3",
-      border: `1px solid ${theme.colors.border}`,
-      borderRadius: "6px",
-      padding: "12px",
-      fontFamily: "Menlo, monospace",
-      fontSize: "15px",
-      outline: "none",
-      transition: "border-color 0.15s",
-      ...style,
-    }}
-  >
-    {placeholder && (
-      <option value="" disabled>
-        {placeholder}
-      </option>
-    )}
-    {options.map((opt) => (
-      <option key={opt.value} value={opt.value}>
-        {opt.label}
-      </option>
-    ))}
-  </select>
-);
+  loading = false,
+  disabled,
+}) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  const baseStyle = themeHelpers.getInputStyle(
+    isFocused ? "focus" : isHovered ? "hover" : "default"
+  );
+
+  const animationStyle: React.CSSProperties = {
+    transform: isHovered || isFocused ? "scale(1.01)" : "scale(1)",
+    boxShadow: isFocused
+      ? theme.shadows.glow
+      : isHovered
+      ? theme.shadows.subtle
+      : undefined,
+  };
+
+  const stateStyle: React.CSSProperties =
+    loading || disabled
+      ? { opacity: theme.states.disabled.opacity, cursor: "not-allowed" }
+      : {};
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => onValueChange(e.target.value)}
+      disabled={disabled || loading}
+      style={{ ...baseStyle, ...animationStyle, ...stateStyle, ...style }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+    >
+      {placeholder && (
+        <option value="" disabled>
+          {placeholder}
+        </option>
+      )}
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  );
+};
 
 // VSCodeButton
 interface VSCodeButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger";
   size?: "small" | "medium";
+  loading?: boolean;
 }
 export const VSCodeButton: React.FC<VSCodeButtonProps> = ({
   variant = "primary",
   size = "medium",
+  loading = false,
   style,
+  disabled,
+  children,
   ...props
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
-  // Use theme helper for consistency
+  const [isFocused, setIsFocused] = React.useState(false);
+
   const baseStyle = themeHelpers.getButtonStyle(
     variant === "danger" ? "secondary" : variant
   );
-  // Override colors for danger variant using theme
+
   const variantStyle: React.CSSProperties =
     variant === "danger"
       ? {
@@ -104,7 +150,7 @@ export const VSCodeButton: React.FC<VSCodeButtonProps> = ({
           color: "white",
         }
       : {};
-  // Size adjustments using theme tokens
+
   const sizeStyle: React.CSSProperties =
     size === "small"
       ? {
@@ -113,25 +159,40 @@ export const VSCodeButton: React.FC<VSCodeButtonProps> = ({
           padding: `0 ${theme.spacing.sm}`,
         }
       : {};
-  // Hover effects
-  const hoverStyle: React.CSSProperties = isHovered
-    ? {
-        filter: "brightness(0.96)",
-        boxShadow: theme.shadows.subtle,
-      }
-    : {};
+
+  const animationStyle: React.CSSProperties = {
+    filter: isHovered ? "brightness(0.96)" : undefined,
+    transform: isHovered || isFocused ? "scale(1.02)" : "scale(1)",
+    boxShadow: isFocused
+      ? theme.shadows.glow
+      : isHovered
+      ? theme.shadows.subtle
+      : undefined,
+  };
+
+  const stateStyle: React.CSSProperties =
+    loading || disabled
+      ? { opacity: theme.states.disabled.opacity, cursor: "not-allowed" }
+      : {};
+
   return (
     <button
       {...props}
+      disabled={disabled || loading}
       style={{
         ...baseStyle,
         ...variantStyle,
         ...sizeStyle,
-        ...hoverStyle,
+        ...animationStyle,
+        ...stateStyle,
         ...style,
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-    />
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+    >
+      {loading ? "Loading..." : children}
+    </button>
   );
 };
