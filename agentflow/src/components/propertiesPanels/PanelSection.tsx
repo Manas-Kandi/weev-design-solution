@@ -40,11 +40,11 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
     transition: `all ${theme.animation.medium}`,
     boxShadow: "none",
     padding: 0,
-    maxWidth: '100%',
+    maxWidth: "100%",
     minWidth: 0,
-    width: '100%',
-    boxSizing: 'border-box',
-    wordBreak: 'break-word',
+    width: "100%",
+    boxSizing: "border-box",
+    wordBreak: "break-word",
   };
 
   const headerStyle: React.CSSProperties = {
@@ -137,10 +137,10 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
     overflowY: "visible",
     transition: `max-height ${theme.animation.medium}, padding ${theme.animation.medium}`,
     padding: collapsed ? "0" : `0 20px`,
-    boxSizing: 'border-box',
-    width: '100%',
+    boxSizing: "border-box",
+    width: "100%",
     minWidth: 0,
-    maxWidth: '100%',
+    maxWidth: "100%",
   };
 
   const contentInnerStyle: React.CSSProperties = {
@@ -150,14 +150,14 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
     opacity: collapsed ? 0 : 1,
     transition: `opacity ${theme.animation.medium}`,
     transitionDelay: collapsed ? "0ms" : "100ms",
-    width: '100%',
+    width: "100%",
     minWidth: 0,
-    maxWidth: '100%',
+    maxWidth: "100%",
     margin: 0,
-    boxSizing: 'border-box',
-    wordBreak: 'break-word',
-    whiteSpace: 'pre-line',
-    overflowX: 'hidden',
+    boxSizing: "border-box",
+    wordBreak: "break-word",
+    whiteSpace: "pre-line",
+    overflowX: "hidden",
   };
 
   return (

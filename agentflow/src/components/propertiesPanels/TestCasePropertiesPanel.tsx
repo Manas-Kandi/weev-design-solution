@@ -108,7 +108,17 @@ export default function TestCasePropertiesPanel({
             handleFieldChange("description", e.target.value);
           }}
           placeholder="Test case description..."
-          style={{ width: "100%", fontFamily: theme.typography.fontFamily, fontSize: theme.typography.fontSize.base, background: theme.colors.backgroundTertiary, color: theme.colors.textPrimary, border: `1px solid ${theme.colors.border}`, borderRadius: theme.borderRadius.sm, padding: theme.spacing.inputPadding, boxSizing: "border-box" }}
+          style={{
+            width: "100%",
+            fontFamily: theme.typography.fontFamily,
+            fontSize: theme.typography.fontSize.base,
+            background: theme.colors.backgroundTertiary,
+            color: theme.colors.textPrimary,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.borderRadius.sm,
+            padding: theme.spacing.inputPadding,
+            boxSizing: "border-box",
+          }}
         />
       </PanelSection>
       <PanelSection title="Input" description="Input data for the test case.">
@@ -148,7 +158,17 @@ export default function TestCasePropertiesPanel({
           }}
           options={assertTypes}
           placeholder="Choose assertion type"
-          style={{ width: "100%", fontFamily: theme.typography.fontFamily, fontSize: theme.typography.fontSize.base, background: theme.colors.backgroundTertiary, color: theme.colors.textPrimary, border: `1px solid ${theme.colors.border}`, borderRadius: theme.borderRadius.sm, padding: theme.spacing.inputPadding, boxSizing: "border-box" }}
+          style={{
+            width: "100%",
+            fontFamily: theme.typography.fontFamily,
+            fontSize: theme.typography.fontSize.base,
+            background: theme.colors.backgroundTertiary,
+            color: theme.colors.textPrimary,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.borderRadius.sm,
+            padding: theme.spacing.inputPadding,
+            boxSizing: "border-box",
+          }}
         />
       </PanelSection>
       <PanelSection title="Run Test" description="Execute this test case.">

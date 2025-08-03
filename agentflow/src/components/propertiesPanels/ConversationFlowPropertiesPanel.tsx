@@ -113,7 +113,15 @@ export default function ConversationFlowPropertiesPanel({
   // No custom panelStyle: rely on theme and section/content styles only
 
   return (
-    <div style={{ padding: 0, margin: 0, background: theme.colors.background, height: "100%", overflowY: "auto" }}>
+    <div
+      style={{
+        padding: 0,
+        margin: 0,
+        background: theme.colors.background,
+        height: "100%",
+        overflowY: "auto",
+      }}
+    >
       <PanelSection
         title="States"
         description="Comma-separated list of all possible states."
@@ -186,7 +194,13 @@ export default function ConversationFlowPropertiesPanel({
         title="Persistence"
         description="Optionally persist the state across executions."
       >
-        <label style={{ display: "flex", alignItems: "center", gap: theme.spacing.xs }}>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: theme.spacing.xs,
+          }}
+        >
           <input
             type="checkbox"
             checked={persistState}

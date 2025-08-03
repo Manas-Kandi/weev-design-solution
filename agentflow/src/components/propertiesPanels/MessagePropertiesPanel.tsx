@@ -124,11 +124,22 @@ export default function MessagePropertiesPanel({
           }
           onBlur={() => setTouched((t) => ({ ...t, title: true }))}
         />
-        <span style={{ color: theme.colors.textMuted, fontSize: theme.typography.fontSize.xs }}>
+        <span
+          style={{
+            color: theme.colors.textMuted,
+            fontSize: theme.typography.fontSize.xs,
+          }}
+        >
           Max {TITLE_MAX} characters
         </span>
         {touched.title && errors.title && (
-          <div style={{ color: theme.colors.error, fontSize: theme.typography.fontSize.xs, marginTop: theme.spacing.xs }}>
+          <div
+            style={{
+              color: theme.colors.error,
+              fontSize: theme.typography.fontSize.xs,
+              marginTop: theme.spacing.xs,
+            }}
+          >
             {errors.title}
           </div>
         )}
@@ -167,11 +178,22 @@ export default function MessagePropertiesPanel({
           onChange={(e) => handleFieldChange("content", e.target.value)}
           onBlur={() => setTouched((t) => ({ ...t, content: true }))}
         />
-        <span style={{ color: theme.colors.textMuted, fontSize: theme.typography.fontSize.xs }}>
+        <span
+          style={{
+            color: theme.colors.textMuted,
+            fontSize: theme.typography.fontSize.xs,
+          }}
+        >
           Required. This will be sent as the message.
         </span>
         {touched.content && errors.content && (
-          <div style={{ color: theme.colors.error, fontSize: theme.typography.fontSize.xs, marginTop: theme.spacing.xs }}>
+          <div
+            style={{
+              color: theme.colors.error,
+              fontSize: theme.typography.fontSize.xs,
+              marginTop: theme.spacing.xs,
+            }}
+          >
             {errors.content}
           </div>
         )}
@@ -203,7 +225,12 @@ export default function MessagePropertiesPanel({
           ]}
           placeholder="Message Type"
         />
-        <span style={{ color: theme.colors.textMuted, fontSize: theme.typography.fontSize.xs }}>
+        <span
+          style={{
+            color: theme.colors.textMuted,
+            fontSize: theme.typography.fontSize.xs,
+          }}
+        >
           Choose the role for this message.
         </span>
       </PanelSection>

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import UserAvatar from "@/components/UserAvatar";
-// import AgentFlowLogo from "@/components/AgentFlowLogo";
 
 interface Tab {
   id: string;
@@ -42,201 +41,152 @@ export default function TabBar({
     if (id === activeId && next.length) setActiveId(next[0].id);
   };
 
+  // IMPORTANT: To avoid a black bar, ensure the parent layout has no margin/padding/gap above or below this TabBar.
+  // The background here should match the main app background.
   return (
     <div
-      className="flex items-center justify-between w-full"
+      className="flex items-center w-full shadow-xl"
       style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "40px",
-        background: "#000", // pure black
-        borderBottom: "1px solid #181A20",
-        boxShadow: "0 2px 8px 0 rgba(0,0,0,0.10)",
-        zIndex: 1000,
-        paddingLeft: 0,
-        paddingRight: 12,
+        height: 44,
+        background: "#111111", // Ultra-dark as requested
+        padding: "0 16px",
+        gap: 12,
+        border: "none",
+        minHeight: 0,
+        maxHeight: 44,
+        zIndex: 10,
       }}
     >
-      <div className="flex items-center min-w-[40px] justify-center" style={{ paddingRight: 8, marginLeft: 4 }}>
-        <img src="/weave%20icon%20no%20background.png" alt="weev logo" style={{ width: 24, height: 24, objectFit: "contain", borderRadius: 4, boxShadow: '0 1px 4px rgba(0,0,0,0.10)' }} />
+      {/* Logo */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginRight: 5,
+          height: 20,
+        }}
+      >
+        <img
+          src="/weave%20icon%20no%20background.png"
+          alt="AgentFlow"
+          style={{
+            width: 28,
+            height: 28,
+            objectFit: "contain",
+            display: "block",
+            marginTop: 2,
+            marginBottom: 2,
+          }}
+        />
       </div>
-      <div className="flex items-center gap-1 overflow-hidden" style={{ marginLeft: 0, marginRight: 'auto', alignItems: 'center', height: 40 }}>
-        {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            onClick={() => setActiveId(tab.id)}
-            style={{
-              background: activeId === tab.id ? "#181A20" : "transparent",
-              color: activeId === tab.id ? "#fff" : "#b0b0b0",
-              border: activeId === tab.id ? "1.5px solid #222" : "1px solid transparent",
-              borderRadius: 6,
-              marginRight: 2,
-              height: 28,
-              padding: '0 10px',
-              display: 'flex',
-              alignItems: 'center',
-              cursor: 'pointer',
-              fontSize: 14,
-              minWidth: 56,
-              transition: 'border 0.18s, background 0.18s',
-              position: 'relative',
-            }}
-            className={`group select-none ${activeId === tab.id ? '' : 'hover:bg-[#181A20]'}`}
-          >
-            <span className="truncate">
-              {tab.title}
-              {tab.breadcrumb && (
-                <span className="ml-1 text-xs text-[var(--figma-text-secondary)]">
-                  /{tab.breadcrumb.join("/")}
-                </span>
-              )}
-            </span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                closeTab(tab.id);
+
+      {/* Tabs */}
+      <div
+        className="flex items-center gap-1 flex-1 overflow-x-auto"
+        style={{ minHeight: 0 }}
+      >
+        {tabs.map((tab) => {
+          const isActive = activeId === tab.id;
+          return (
+            <div
+              key={tab.id}
+              onClick={() => setActiveId(tab.id)}
+              className={`group flex items-center gap-2 px-4 py-2 text-sm font-medium cursor-pointer select-none transition-all duration-150
+                ${
+                  isActive
+                    ? "bg-[#18191b] text-white z-10"
+                    : "bg-transparent text-gray-400 hover:bg-[#232a36]/40 hover:text-gray-100 z-0"
+                }
+              `}
+              style={{
+                borderRadius: isActive ? 12 : 12,
+                marginTop: 2,
+                marginBottom: 2,
+                height: 31,
+                paddingTop: 0,
+                paddingBottom: 0,
+                boxShadow: isActive ? "inset 0 4px 12px 0 #222222" : "none",
+                minWidth: 56,
+                maxWidth: 140,
+                minHeight: 0,
+                marginRight: 6,
+                marginLeft: 0,
+                border: "0px solid rgba(255,255,255,0.05)",
+                position: "relative",
+                zIndex: isActive ? 2 : 2,
+                outline: "none",
+                background: isActive ? "#000000" : undefined,
+                display: "flex",
+                alignItems: "center",
               }}
-              className="ml-2 opacity-0 group-hover:opacity-100 hover:text-white"
-              style={{ transition: 'opacity 0.18s', fontSize: 13, color: '#888', background: 'none', border: 'none', padding: 0, marginLeft: 2, cursor: 'pointer' }}
+              tabIndex={0}
+              aria-selected={isActive}
+              role="tab"
             >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
+              <span className="truncate max-w-[110px] font-medium tracking-tight">
+                {tab.title}
+              </span>
+              <button
+                type="button"
+                aria-label="Close tab"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  closeTab(tab.id);
+                }}
+                className="opacity-0 group-hover:opacity-100 ml-1 rounded-full p-0.5 bg-transparent hover:bg-[#2a222a]/60 focus:bg-[#2a222a]/70 transition-all text-gray-500 hover:text-red-400 focus:text-red-500 shadow-none"
+                tabIndex={-1}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          );
+        })}
         <button
+          type="button"
+          aria-label="Add tab"
           onClick={addTab}
-          className="ml-1 w-6 h-6 flex items-center justify-center text-[var(--figma-text-secondary)] hover:text-white"
-          title="New file"
-          style={{ background: 'none', border: 'none', borderRadius: 4, color: '#b0b0b0', padding: 0, marginLeft: 2, cursor: 'pointer', transition: 'background 0.18s' }}
+          className="w-6 h-6 flex items-center justify-center rounded-full text-gray-400 hover:text-white ml-1 transition-all duration-150 border-none bg-transparent focus:bg-[#232a36]/40 hover:bg-[#232a36]/40"
+          style={{
+            background: "transparent",
+            border: "none",
+            boxShadow: "none",
+            outline: "none",
+          }}
         >
           <Plus className="w-4 h-4" />
         </button>
       </div>
-      <div className="flex items-center ml-auto" style={{ height: 40, alignItems: 'center', gap: 0 }}>
-        {/* Zoom Controls Group */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: 'none', borderRadius: 6, marginRight: 6 }}>
-          <button
-            style={{
-              width: 36,
-              height: 32,
-              background: 'none',
-              border: '1px solid #232323',
-              borderRight: 'none',
-              borderRadius: '6px 0 0 6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#b0b0b0',
-              fontSize: 15,
-              fontWeight: 500,
-              transition: 'background 0.18s, border 0.18s',
-              margin: 0,
-              padding: 0,
-              cursor: 'pointer',
-            }}
-            title="Zoom Level"
-          >
-            100%
-          </button>
-          <button
-            style={{
-              width: 32,
-              height: 32,
-              background: 'none',
-              border: '1px solid #232323',
-              borderLeft: 'none',
-              borderRight: 'none',
-              borderRadius: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#b0b0b0',
-              fontSize: 16,
-              margin: 0,
-              padding: 0,
-              cursor: 'pointer',
-              transition: 'background 0.18s, border 0.18s',
-            }}
-            title="Zoom Out"
-          >
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" stroke="#b0b0b0" strokeWidth="1.5"/><path d="M5.5 8H10.5" stroke="#b0b0b0" strokeWidth="1.5" strokeLinecap="round"/></svg>
-          </button>
-          <button
-            style={{
-              width: 32,
-              height: 32,
-              background: 'none',
-              border: '1px solid #232323',
-              borderLeft: 'none',
-              borderRadius: '0 6px 6px 0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#b0b0b0',
-              fontSize: 16,
-              margin: 0,
-              padding: 0,
-              cursor: 'pointer',
-              transition: 'background 0.18s, border 0.18s',
-            }}
-            title="Zoom In"
-          >
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" stroke="#b0b0b0" strokeWidth="1.5"/><path d="M8 5.5V10.5M5.5 8H10.5" stroke="#b0b0b0" strokeWidth="1.5" strokeLinecap="round"/></svg>
-          </button>
-        </div>
-        {/* Test Button */}
+
+      {/* Right controls */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-600 tracking-tight mr-1">100%</span>
         <button
-          style={{
-            width: 70,
-            height: 32,
-            background: '#2563eb',
-            border: 'none',
-            borderRadius: 7,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 6,
-            cursor: 'pointer',
-            color: '#fff',
-            fontWeight: 500,
-            fontSize: 15,
-            gap: 5,
-            transition: 'background 0.18s',
-          }}
-          title="Test"
+          type="button"
+          className="px-3 py-1.5 bg-[#232a36] hover:bg-[#2a3646] text-white text-xs rounded-full font-semibold transition-all duration-150"
         >
-          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: 3 }}><path d="M6.5 5.5L12 9L6.5 12.5V5.5Z" fill="white"/></svg>
           Test
         </button>
-        {/* Share Button */}
         <button
-          style={{
-            width: 64,
-            height: 32,
-            background: 'none',
-            border: '1px solid #232323',
-            borderRadius: 7,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: 0,
-            cursor: 'pointer',
-            color: '#b0b0b0',
-            fontWeight: 500,
-            fontSize: 15,
-            gap: 5,
-            transition: 'background 0.18s, border 0.18s',
-          }}
-          title="Share"
+          type="button"
+          className="px-3 py-1.5 border border-[#232323]/70 hover:border-[#1e90ff88] hover:bg-[#181b22] text-gray-200 hover:text-[#4faaff] text-xs rounded-full font-semibold shadow-none transition-all duration-150"
         >
-          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: 3 }}><path d="M13.5 10.5V12.25C13.5 13.2165 12.7165 14 11.75 14H6.25C5.2835 14 4.5 13.2165 4.5 12.25V10.5" stroke="#b0b0b0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M9 11V4.75M9 4.75L6.5 7.25M9 4.75L11.5 7.25" stroke="#b0b0b0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           Share
         </button>
-        {avatars.map((a) => (
-          <UserAvatar key={a.id} name={a.name} image={a.image} online={a.online} />
-        ))}
+        {avatars.length > 0 && (
+          <>
+            <div className="w-px h-4 bg-[#232a36] mx-1" />
+            <div className="flex items-center gap-1">
+              {avatars.map((a) => (
+                <UserAvatar
+                  key={a.id}
+                  name={a.name}
+                  image={a.image}
+                  online={a.online}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

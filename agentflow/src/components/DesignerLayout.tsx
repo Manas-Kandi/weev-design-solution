@@ -17,7 +17,7 @@ export default function DesignerLayout(props: DesignerLayoutProps) {
   return (
     <div
       className="h-screen w-full flex overflow-hidden bg-[var(--figma-bg)]"
-      style={{ ...layoutStyle, paddingTop: "40px" }}
+      style={layoutStyle}
     >
       {/* Left Sidebar */}
       {left}

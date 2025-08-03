@@ -4,7 +4,8 @@
 
 export const figmaPropertiesTheme = {
   colors: {
-    background: "linear-gradient(120deg, rgba(18,18,20,0.72) 60%, rgba(32,32,36,0.60) 100%)", // ultra-subtle glass
+    background:
+      "linear-gradient(120deg, rgba(18,18,20,0.72) 60%, rgba(32,32,36,0.60) 100%)", // ultra-subtle glass
     backgroundSecondary: "rgba(32,32,36,0.38)", // even more transparent
     backgroundTertiary: "rgba(40,40,44,0.22)", // hover/input, barely visible
     backgroundElevated: "rgba(50,50,54,0.32)", // cards, very subtle

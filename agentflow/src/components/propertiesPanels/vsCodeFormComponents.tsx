@@ -1,6 +1,9 @@
 // VS Code-style form components for AgentFlow properties panels
 import React from "react";
-import { figmaPropertiesTheme as theme, themeHelpers } from "./propertiesPanelTheme";
+import {
+  figmaPropertiesTheme as theme,
+  themeHelpers,
+} from "./propertiesPanelTheme";
 
 // ...existing code from your message...
 
@@ -76,7 +79,8 @@ export const VSCodeSelect: React.FC<VSCodeSelectProps> = ({
 );
 
 // VSCodeButton
-interface VSCodeButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface VSCodeButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger";
   size?: "small" | "medium";
 }
@@ -88,24 +92,34 @@ export const VSCodeButton: React.FC<VSCodeButtonProps> = ({
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   // Use theme helper for consistency
-  const baseStyle = themeHelpers.getButtonStyle(variant === "danger" ? "secondary" : variant);
+  const baseStyle = themeHelpers.getButtonStyle(
+    variant === "danger" ? "secondary" : variant
+  );
   // Override colors for danger variant using theme
-  const variantStyle: React.CSSProperties = variant === "danger" ? {
-    backgroundColor: theme.colors.error,
-    border: `1px solid ${theme.colors.error}`,
-    color: "white",
-  } : {};
+  const variantStyle: React.CSSProperties =
+    variant === "danger"
+      ? {
+          backgroundColor: theme.colors.error,
+          border: `1px solid ${theme.colors.error}`,
+          color: "white",
+        }
+      : {};
   // Size adjustments using theme tokens
-  const sizeStyle: React.CSSProperties = size === "small" ? {
-    height: theme.spacing.buttonHeight,
-    fontSize: theme.typography.fontSize.xs,
-    padding: `0 ${theme.spacing.sm}`,
-  } : {};
+  const sizeStyle: React.CSSProperties =
+    size === "small"
+      ? {
+          height: theme.spacing.buttonHeight,
+          fontSize: theme.typography.fontSize.xs,
+          padding: `0 ${theme.spacing.sm}`,
+        }
+      : {};
   // Hover effects
-  const hoverStyle: React.CSSProperties = isHovered ? {
-    filter: "brightness(0.96)",
-    boxShadow: theme.shadows.subtle,
-  } : {};
+  const hoverStyle: React.CSSProperties = isHovered
+    ? {
+        filter: "brightness(0.96)",
+        boxShadow: theme.shadows.subtle,
+      }
+    : {};
   return (
     <button
       {...props}

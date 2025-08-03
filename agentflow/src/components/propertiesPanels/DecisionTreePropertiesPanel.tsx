@@ -118,14 +118,29 @@ export default function DecisionTreePropertiesPanel({
   // Only render the panel if the node is a decision-tree node
   if (!isDecisionTreeNodeData(node.data)) {
     return (
-      <div style={{ padding: theme.spacing.lg, background: theme.colors.background, color: theme.colors.error, fontFamily: theme.typography.fontFamily }}>
+      <div
+        style={{
+          padding: theme.spacing.lg,
+          background: theme.colors.background,
+          color: theme.colors.error,
+          fontFamily: theme.typography.fontFamily,
+        }}
+      >
         This properties panel is only for decision tree nodes.
       </div>
     );
   }
 
   return (
-    <div style={{ padding: 0, margin: 0, background: theme.colors.background, height: "100%", overflowY: "auto" }}>
+    <div
+      style={{
+        padding: 0,
+        margin: 0,
+        background: theme.colors.background,
+        height: "100%",
+        overflowY: "auto",
+      }}
+    >
       <PanelSection
         title="Title"
         description="Set a title for this decision tree node."

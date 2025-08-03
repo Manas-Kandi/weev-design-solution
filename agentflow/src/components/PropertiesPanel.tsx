@@ -35,12 +35,17 @@ const panelStyle: React.CSSProperties = {
   boxSizing: "border-box",
 };
 
-export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPanelProps) {
+export default function PropertiesPanel({
+  selectedNode,
+  onChange,
+}: PropertiesPanelProps) {
   if (!selectedNode) {
     return (
       <div style={panelStyle}>
         <div style={{ padding: "32px", textAlign: "center", color: "#aaa" }}>
-          <span style={{ fontWeight: 500, fontSize: 18 }}>No node selected</span>
+          <span style={{ fontWeight: 500, fontSize: 18 }}>
+            No node selected
+          </span>
           <div style={{ marginTop: 8, fontSize: 14 }}>
             Select a node to edit its properties.
           </div>
@@ -56,19 +61,36 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
     case "tool-agent":
       return (
         <div style={panelStyle}>
-          <AgentPropertiesPanel node={selectedNode as CanvasNode & { data: import("@/types").AgentNodeData }} onChange={onChange} />
+          <AgentPropertiesPanel
+            node={
+              selectedNode as CanvasNode & {
+                data: import("@/types").AgentNodeData;
+              }
+            }
+            onChange={onChange}
+          />
         </div>
       );
     case "chat":
       return (
         <div style={panelStyle}>
-          <ChatInterfacePropertiesPanel node={selectedNode} onChange={onChange} />
+          <ChatInterfacePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     case "conversation":
       return (
         <div style={panelStyle}>
-          <ConversationFlowPropertiesPanel node={selectedNode as CanvasNode & { data: import("@/types").ConversationFlowNodeData }} onChange={onChange} />
+          <ConversationFlowPropertiesPanel
+            node={
+              selectedNode as CanvasNode & {
+                data: import("@/types").ConversationFlowNodeData;
+              }
+            }
+            onChange={onChange}
+          />
         </div>
       );
     case "dashboard":
@@ -80,7 +102,10 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
     case "decision-tree":
       return (
         <div style={panelStyle}>
-          <DecisionTreePropertiesPanel node={selectedNode} onChange={onChange} />
+          <DecisionTreePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     case "if-else":
@@ -92,7 +117,10 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
     case "knowledge-base":
       return (
         <div style={panelStyle}>
-          <KnowledgeBasePropertiesPanel node={selectedNode} onChange={onChange} />
+          <KnowledgeBasePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     case "message":
@@ -104,7 +132,10 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
     case "template":
       return (
         <div style={panelStyle}>
-          <PromptTemplatePropertiesPanel node={selectedNode} onChange={onChange} />
+          <PromptTemplatePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     case "simulator":
@@ -116,7 +147,10 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
     case "state-machine":
       return (
         <div style={panelStyle}>
-          <StateMachinePropertiesPanel node={selectedNode} onChange={onChange} />
+          <StateMachinePropertiesPanel
+            node={selectedNode}
+            onChange={onChange}
+          />
         </div>
       );
     case "test-case":
@@ -129,7 +163,9 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
       return (
         <div style={panelStyle}>
           <div style={{ padding: "32px", textAlign: "center", color: "#aaa" }}>
-            <span style={{ fontWeight: 500, fontSize: 18 }}>Unknown node type</span>
+            <span style={{ fontWeight: 500, fontSize: 18 }}>
+              Unknown node type
+            </span>
             <div style={{ marginTop: 8, fontSize: 14 }}>
               This node type is not yet supported.
             </div>

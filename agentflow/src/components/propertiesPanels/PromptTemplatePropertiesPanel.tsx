@@ -86,9 +86,9 @@ export default function PromptTemplatePropertiesPanel({
     borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
-    width: '100%',
+    width: "100%",
     minWidth: 0,
-    maxWidth: '100%',
+    maxWidth: "100%",
     display: "flex",
     flexDirection: "column",
     gap: theme.spacing.lg,
@@ -153,7 +153,10 @@ export default function PromptTemplatePropertiesPanel({
             </VSCodeButton>
           </div>
         ))}
-        <VSCodeButton style={{ marginTop: theme.spacing.xs }} onClick={handleAddVariable}>
+        <VSCodeButton
+          style={{ marginTop: theme.spacing.xs }}
+          onClick={handleAddVariable}
+        >
           Add Variable
         </VSCodeButton>
       </PanelSection>

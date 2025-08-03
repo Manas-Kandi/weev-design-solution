@@ -99,7 +99,12 @@ export default function SimulatorPropertiesPanel({
       >
         <VSCodeButton
           type="button"
-          style={{ minWidth: 120, fontSize: theme.typography.fontSize.base, fontFamily: theme.typography.fontFamily, padding: theme.spacing.inputPadding }}
+          style={{
+            minWidth: 120,
+            fontSize: theme.typography.fontSize.base,
+            fontFamily: theme.typography.fontFamily,
+            padding: theme.spacing.inputPadding,
+          }}
           onClick={() => {
             // Simulation logic here
           }}

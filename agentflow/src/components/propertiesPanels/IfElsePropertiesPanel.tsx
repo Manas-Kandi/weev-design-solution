@@ -69,23 +69,23 @@ export default function IfElsePropertiesPanel({
   return (
     <div
       style={{
-        width: '100%',
+        width: "100%",
         minWidth: 0,
-        maxWidth: '100%',
-        height: '100%',
-        background: 'rgba(20, 22, 28, 0.72)', // glassy dark
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        padding: '20px 18px 18px 18px',
-        boxSizing: 'border-box',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '14px',
-        border: 'none',
-        boxShadow: 'none',
-        position: 'relative',
+        maxWidth: "100%",
+        height: "100%",
+        background: "rgba(20, 22, 28, 0.72)", // glassy dark
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        padding: "20px 18px 18px 18px",
+        boxSizing: "border-box",
+        overflowY: "auto",
+        overflowX: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        gap: "14px",
+        border: "none",
+        boxShadow: "none",
+        position: "relative",
       }}
     >
       <PanelSection

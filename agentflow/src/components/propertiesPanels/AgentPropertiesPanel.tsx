@@ -11,7 +11,10 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { CanvasNode } from "@/types";
-import { figmaPropertiesTheme as theme, getPanelContainerStyle } from "./propertiesPanelTheme";
+import {
+  figmaPropertiesTheme as theme,
+  getPanelContainerStyle,
+} from "./propertiesPanelTheme";
 import { PanelSection } from "./PanelSection";
 import {
   VSCodeInput,
@@ -117,7 +120,9 @@ export default function AgentPropertiesPanel({
         <div>
           <h2 style={headerTitleStyle}>Agent Configuration</h2>
           <p style={headerSubtitleStyle}>
-            {`${data?.name ?? data?.title ?? "Unnamed Agent"} • ${data?.model ?? "No model selected"}`}
+            {`${data?.name ?? data?.title ?? "Unnamed Agent"} • ${
+              data?.model ?? "No model selected"
+            }`}
           </p>
         </div>
       </div>
@@ -141,7 +146,13 @@ export default function AgentPropertiesPanel({
           </label>
           <VSCodeInput
             placeholder="e.g., Customer Support Agent"
-            value={typeof data?.name === "string" ? data.name : (typeof data?.title === "string" ? data.title : "")}
+            value={
+              typeof data?.name === "string"
+                ? data.name
+                : typeof data?.title === "string"
+                ? data.title
+                : ""
+            }
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleFieldChange("name", e.target.value)
             }
@@ -349,7 +360,10 @@ export default function AgentPropertiesPanel({
             <div>
               Personality:{" "}
               <span style={{ color: "#0ea5e9" }}>
-                {(Array.isArray(data?.personalityTags) ? data.personalityTags : []).join(", ") || "None set"}
+                {(Array.isArray(data?.personalityTags)
+                  ? data.personalityTags
+                  : []
+                ).join(", ") || "None set"}
               </span>
             </div>
           </div>
