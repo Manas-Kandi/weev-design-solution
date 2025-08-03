@@ -1,6 +1,6 @@
 import React from "react";
 
-// DashboardNodeData, TestCaseNodeData, ConversationFlowNodeData are defined in their respective panels, so we’ll define them here for type safety:
+// Node data types shared across the application for type safety
 export interface DashboardNodeData {
   widgets: string[];
   title: string;
@@ -69,12 +69,6 @@ export interface StateMachineNodeData {
 export interface SimulatorNodeData {
   testInput?: string;
   expectedOutput?: string;
-}
-
-export interface DashboardNodeData {
-  widgets: string[];
-  title: string;
-  layout: string;
 }
 
 export interface ConditionGroup {

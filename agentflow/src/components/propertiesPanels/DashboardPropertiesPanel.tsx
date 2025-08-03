@@ -4,19 +4,13 @@ import {
   figmaPropertiesTheme as theme,
   getPanelContainerStyle,
 } from "./propertiesPanelTheme";
-import { CanvasNode } from "@/types";
+import { CanvasNode, DashboardNodeData } from "@/types";
 import { PanelSection } from "./PanelSection";
 import {
   VSCodeInput,
   VSCodeSelect,
   VSCodeButton,
 } from "./vsCodeFormComponents";
-
-interface DashboardNodeData {
-  widgets: string[];
-  title: string;
-  layout: string;
-}
 
 interface DashboardPropertiesPanelProps {
   node: CanvasNode;
