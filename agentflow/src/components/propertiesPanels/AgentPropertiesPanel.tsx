@@ -1,6 +1,6 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 // Enhanced Agent Properties Panel with VS Code styling
-import React from "react";
+import React, { useState } from "react";
 import {
   Bot,
   Settings,
@@ -49,7 +49,7 @@ export default function AgentPropertiesPanel({
   node,
   onChange,
 }: AgentPropertiesPanelProps) {
-  const data = node.data;
+  const [data, setData] = useState<AgentNodeData>(() => node.data);
 
   // Model options with descriptions
   const modelOptions = [
@@ -65,8 +65,11 @@ export default function AgentPropertiesPanel({
   ];
 
   const handleFieldChange = (field: keyof AgentNodeData, value: unknown) => {
-    const updatedData = { ...data, [field]: value };
-    onChange({ ...node, data: updatedData });
+    setData((prev) => {
+      const updatedData = { ...prev, [field]: value };
+      onChange({ ...node, data: { ...node.data, ...updatedData } });
+      return updatedData;
+    });
   };
 
   // Use theme-driven panel container style

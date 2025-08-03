@@ -23,7 +23,13 @@ interface TransitionInputProps {
   setTransitions: React.Dispatch<
     React.SetStateAction<{ from: string; to: string; condition: string }[]>
   >;
-  handleFieldChange: (field: string, value: unknown) => void;
+  handleFieldChange: (
+    field: string,
+    value: unknown,
+    setter: React.Dispatch<
+      React.SetStateAction<{ from: string; to: string; condition: string }[]>
+    >
+  ) => void;
 }
 
 const TransitionInput: React.FC<TransitionInputProps> = ({
@@ -47,8 +53,7 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
         onChange={(e) => {
           const next = [...transitions];
           next[idx] = { ...next[idx], from: e.target.value };
-          setTransitions(next);
-          handleFieldChange("transitions", next);
+          handleFieldChange("transitions", next, setTransitions);
         }}
         placeholder="From"
         style={{ width: 90 }}
@@ -58,8 +63,7 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
         onChange={(e) => {
           const next = [...transitions];
           next[idx] = { ...next[idx], to: e.target.value };
-          setTransitions(next);
-          handleFieldChange("transitions", next);
+          handleFieldChange("transitions", next, setTransitions);
         }}
         placeholder="To"
         style={{ width: 90 }}
@@ -69,8 +73,7 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
         onChange={(e) => {
           const next = [...transitions];
           next[idx] = { ...next[idx], condition: e.target.value };
-          setTransitions(next);
-          handleFieldChange("transitions", next);
+          handleFieldChange("transitions", next, setTransitions);
         }}
         placeholder="Condition"
         style={{ width: 120 }}
@@ -80,8 +83,7 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
         size="small"
         onClick={() => {
           const next = transitions.filter((_, i) => i !== idx);
-          setTransitions(next);
-          handleFieldChange("transitions", next);
+          handleFieldChange("transitions", next, setTransitions);
         }}
         style={{ marginLeft: theme.spacing.xs }}
       >
@@ -106,7 +108,12 @@ export default function ConversationFlowPropertiesPanel({
     { from: string; to: string; condition: string }[]
   >(() => node.data?.transitions || []);
 
-  const handleFieldChange = (field: string, value: unknown) => {
+  const handleFieldChange = <K extends keyof ConversationFlowNodeData>(
+    field: K,
+    value: ConversationFlowNodeData[K],
+    setter: (value: ConversationFlowNodeData[K]) => void
+  ) => {
+    setter(value);
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
@@ -133,8 +140,7 @@ export default function ConversationFlowPropertiesPanel({
               .split(",")
               .map((s) => s.trim())
               .filter(Boolean);
-            setStates(arr);
-            handleFieldChange("states", arr);
+            handleFieldChange("states", arr, setStates);
           }}
           placeholder="Comma separated states"
         />
@@ -145,10 +151,9 @@ export default function ConversationFlowPropertiesPanel({
       >
         <VSCodeInput
           value={initialState}
-          onChange={(e) => {
-            setInitialState(e.target.value);
-            handleFieldChange("initialState", e.target.value);
-          }}
+          onChange={(e) =>
+            handleFieldChange("initialState", e.target.value, setInitialState)
+          }
           placeholder="Initial state"
         />
       </PanelSection>
@@ -176,14 +181,13 @@ export default function ConversationFlowPropertiesPanel({
           <VSCodeButton
             variant="primary"
             size="small"
-            onClick={() => {
-              const next = [
-                ...transitions,
-                { from: "", to: "", condition: "" },
-              ];
-              setTransitions(next);
-              handleFieldChange("transitions", next);
-            }}
+            onClick={() =>
+              handleFieldChange(
+                "transitions",
+                [...transitions, { from: "", to: "", condition: "" }],
+                setTransitions
+              )
+            }
             style={{ marginTop: theme.spacing.xs }}
           >
             Add Transition
@@ -204,10 +208,9 @@ export default function ConversationFlowPropertiesPanel({
           <input
             type="checkbox"
             checked={persistState}
-            onChange={(e) => {
-              setPersistState(e.target.checked);
-              handleFieldChange("persistState", e.target.checked);
-            }}
+            onChange={(e) =>
+              handleFieldChange("persistState", e.target.checked, setPersistState)
+            }
             style={{ accentColor: theme.colors.textAccent }}
           />
           <span>Persist State</span>

@@ -27,7 +27,12 @@ export default function SimulatorPropertiesPanel({
     () => data.expectedOutput || ""
   );
 
-  const handleFieldChange = (field: string, value: unknown) => {
+  const handleFieldChange = (
+    field: string,
+    value: string,
+    setter: (value: string) => void
+  ) => {
+    setter(value);
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
@@ -72,10 +77,9 @@ export default function SimulatorPropertiesPanel({
         <textarea
           style={textareaStyle}
           value={testInput}
-          onChange={(e) => {
-            setTestInput(e.target.value);
-            handleFieldChange("testInput", e.target.value);
-          }}
+          onChange={(e) =>
+            handleFieldChange("testInput", e.target.value, setTestInput)
+          }
           placeholder="Input for simulation..."
         />
       </PanelSection>
@@ -86,10 +90,13 @@ export default function SimulatorPropertiesPanel({
         <textarea
           style={textareaStyle}
           value={expectedOutput}
-          onChange={(e) => {
-            setExpectedOutput(e.target.value);
-            handleFieldChange("expectedOutput", e.target.value);
-          }}
+          onChange={(e) =>
+            handleFieldChange(
+              "expectedOutput",
+              e.target.value,
+              setExpectedOutput
+            )
+          }
           placeholder="Expected output..."
         />
       </PanelSection>

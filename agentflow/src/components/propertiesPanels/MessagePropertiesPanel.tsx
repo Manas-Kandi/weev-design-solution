@@ -26,7 +26,7 @@ export default function MessagePropertiesPanel({
   onChange,
 }: MessagePropertiesPanelProps) {
   // Extract and normalize data
-  const safeData: MessageNodeData = isMessageNodeData(node.data)
+  const initialData: MessageNodeData = isMessageNodeData(node.data)
     ? {
         title:
           "title" in node.data && typeof node.data.title === "string"
@@ -61,22 +61,27 @@ export default function MessagePropertiesPanel({
         passThrough: false,
       };
 
+  const [data, setData] = useState<MessageNodeData>(initialData);
+
   // Validation state
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
 
   const handleFieldChange = (field: keyof MessageNodeData, value: unknown) => {
-    // Always spread the original node.data to preserve union fields
-    onChange({ ...node, data: { ...node.data, [field]: value } });
+    setData((prev) => {
+      const updated = { ...prev, [field]: value };
+      onChange({ ...node, data: { ...node.data, ...updated } });
+      return updated;
+    });
   };
 
   // Validation logic
   const errors: { [key: string]: string } = {};
-  if (!safeData.title || safeData.title.trim().length === 0) {
+  if (!data.title || data.title.trim().length === 0) {
     errors.title = "Title is required.";
-  } else if (safeData.title.length > TITLE_MAX) {
+  } else if (data.title.length > TITLE_MAX) {
     errors.title = `Title must be under ${TITLE_MAX} characters.`;
   }
-  if (!safeData.content || safeData.content.trim().length === 0) {
+  if (!data.content || data.content.trim().length === 0) {
     errors.content = "Message content is required.";
   }
 
@@ -116,7 +121,7 @@ export default function MessagePropertiesPanel({
           Title <span style={{ color: theme.colors.error }}>*</span>
         </label>
         <VSCodeInput
-          value={safeData.title}
+          value={data.title}
           maxLength={TITLE_MAX}
           placeholder="Message"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -172,7 +177,7 @@ export default function MessagePropertiesPanel({
             resize: "vertical",
             boxSizing: "border-box",
           }}
-          value={safeData.content}
+          value={data.content}
           maxLength={500}
           placeholder="Message to send..."
           onChange={(e) => handleFieldChange("content", e.target.value)}
@@ -211,12 +216,9 @@ export default function MessagePropertiesPanel({
           Message Type
         </label>
         <VSCodeSelect
-          value={safeData.messageType || "User"}
+          value={data.messageType || "User"}
           onValueChange={(v: string) =>
-            handleFieldChange(
-              "messageType",
-              v as MessageNodeData["messageType"]
-            )
+            handleFieldChange("messageType", v as MessageNodeData["messageType"])
           }
           options={[
             { value: "System", label: "System" },
@@ -245,7 +247,7 @@ export default function MessagePropertiesPanel({
         >
           <input
             type="checkbox"
-            checked={!!safeData.passThrough}
+            checked={!!data.passThrough}
             onChange={(e) => handleFieldChange("passThrough", e.target.checked)}
             id="passThrough"
             style={{

@@ -55,9 +55,14 @@ export default function TestCasePropertiesPanel({
     () => testCaseData.assertType || assertTypes[0].value
   );
 
-  function handleFieldChange(field: keyof TestCaseNodeData, value: string) {
+  function handleFieldChange(
+    field: keyof TestCaseNodeData,
+    value: string,
+    setter: (value: string) => void
+  ) {
+    setter(value);
     const updatedData: TestCaseNodeData = {
-      ...testCaseData,
+      ...node.data,
       [field]: value,
     };
     onChange({ ...node, data: updatedData });
@@ -103,10 +108,9 @@ export default function TestCasePropertiesPanel({
       >
         <VSCodeInput
           value={description}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setDescription(e.target.value);
-            handleFieldChange("description", e.target.value);
-          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("description", e.target.value, setDescription)
+          }
           placeholder="Test case description..."
           style={{
             width: "100%",
@@ -125,10 +129,9 @@ export default function TestCasePropertiesPanel({
         <textarea
           style={textareaStyle}
           value={input}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-            setInput(e.target.value);
-            handleFieldChange("input", e.target.value);
-          }}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+            handleFieldChange("input", e.target.value, setInput)
+          }
           placeholder="Test input..."
         />
       </PanelSection>
@@ -139,10 +142,13 @@ export default function TestCasePropertiesPanel({
         <textarea
           style={textareaStyle}
           value={expectedOutput}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-            setExpectedOutput(e.target.value);
-            handleFieldChange("expectedOutput", e.target.value);
-          }}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+            handleFieldChange(
+              "expectedOutput",
+              e.target.value,
+              setExpectedOutput
+            )
+          }
           placeholder="Expected output..."
         />
       </PanelSection>
@@ -152,10 +158,9 @@ export default function TestCasePropertiesPanel({
       >
         <VSCodeSelect
           value={assertType}
-          onValueChange={(v: string) => {
-            setAssertType(v);
-            handleFieldChange("assertType", v);
-          }}
+          onValueChange={(v: string) =>
+            handleFieldChange("assertType", v, setAssertType)
+          }
           options={assertTypes}
           placeholder="Choose assertion type"
           style={{

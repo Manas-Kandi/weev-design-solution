@@ -1,5 +1,5 @@
 // If/Else Properties Panel with hardcoded minimal design
-import React from "react";
+import React, { useState } from "react";
 import { GitBranch } from "lucide-react";
 import { CanvasNode } from "@/types";
 import { PanelSection } from "./PanelSection";
@@ -38,18 +38,8 @@ export default function IfElsePropertiesPanel({
     return typeof data === "object" && data !== null && "condition" in data;
   }
 
-  const handleFieldChange = (field: keyof IfElseNodeData, value: unknown) => {
-    if (isIfElseNodeData(node.data)) {
-      const updatedData: IfElseNodeData = {
-        ...node.data,
-        [field]: value,
-      };
-      onChange({ ...node, data: updatedData });
-    }
-  };
-
-  // FIX: Correct ternary assignment for ifElseData
-  const ifElseData: IfElseNodeData = isIfElseNodeData(node.data)
+  // FIX: Correct ternary assignment for initialData
+  const initialData: IfElseNodeData = isIfElseNodeData(node.data)
     ? node.data
     : {
         condition: "",
@@ -63,6 +53,16 @@ export default function IfElsePropertiesPanel({
         history: [],
         state: {},
       };
+
+  const [data, setData] = useState<IfElseNodeData>(() => initialData);
+
+  const handleFieldChange = (field: keyof IfElseNodeData, value: unknown) => {
+    setData((prev) => {
+      const updatedData = { ...prev, [field]: value };
+      onChange({ ...node, data: { ...node.data, ...updatedData } });
+      return updatedData;
+    });
+  };
 
   return (
     <div
@@ -171,7 +171,7 @@ export default function IfElsePropertiesPanel({
             Boolean Expression
           </label>
           <input
-            value={ifElseData.condition || ""}
+            value={data.condition || ""}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleFieldChange("condition", e.target.value)
             }
@@ -230,7 +230,7 @@ export default function IfElsePropertiesPanel({
             Condition Message
           </label>
           <input
-            value={ifElseData.message || ""}
+            value={data.message || ""}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleFieldChange("message", e.target.value)
             }
@@ -289,7 +289,7 @@ export default function IfElsePropertiesPanel({
             Context Data
           </label>
           <textarea
-            value={JSON.stringify(ifElseData.context ?? {}, null, 2)}
+            value={JSON.stringify(data.context ?? {}, null, 2)}
             onChange={(e) => {
               try {
                 handleFieldChange("context", JSON.parse(e.target.value));
@@ -352,7 +352,7 @@ export default function IfElsePropertiesPanel({
             Execution History
           </label>
           <textarea
-            value={JSON.stringify(ifElseData.history ?? [], null, 2)}
+            value={JSON.stringify(data.history ?? [], null, 2)}
             readOnly
             rows={3}
             style={{
@@ -404,7 +404,7 @@ export default function IfElsePropertiesPanel({
             Node State
           </label>
           <textarea
-            value={JSON.stringify(ifElseData.state ?? {}, null, 2)}
+            value={JSON.stringify(data.state ?? {}, null, 2)}
             onChange={(e) => {
               try {
                 handleFieldChange("state", JSON.parse(e.target.value));
@@ -482,7 +482,7 @@ export default function IfElsePropertiesPanel({
             <div>
               <span style={{ color: "#f97316" }}>if</span> ({" "}
               <span style={{ color: "#38bdf8" }}>
-                {ifElseData.condition || "condition"}
+                {data.condition || "condition"}
               </span>{" "}
               ) {"{"}
               <br />
