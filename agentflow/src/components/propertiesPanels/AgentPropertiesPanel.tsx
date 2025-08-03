@@ -78,6 +78,9 @@ export default function AgentPropertiesPanel({
     display: "flex",
     alignItems: "center",
     gap: theme.spacing.md,
+    position: "sticky",
+    top: 0,
+    zIndex: 2,
   };
   const headerTitleStyle: React.CSSProperties = {
     fontSize: theme.typography.fontSize.md,
@@ -266,8 +269,16 @@ export default function AgentPropertiesPanel({
           icon={<Zap size={16} />}
           defaultCollapsed={true}
         >
+          <PanelSection
+            title="Function Calling"
+            description="Enable or disable function call support"
+            level={2}
+            defaultCollapsed={true}
+            icon={<Settings size={16} />}
+          >
+            {/* TODO: VSCodeToggle not implemented. Insert toggle for Function Calling here. */}
+          </PanelSection>
           {/* TODO: VSCodeSlider not implemented. Insert slider for Confidence Threshold here. */}
-          {/* TODO: VSCodeToggle not implemented. Insert toggle for Function Calling here. */}
           {/* TODO: VSCodeSlider not implemented. Insert slider for Context Window here. */}
           <div />
         </PanelSection>

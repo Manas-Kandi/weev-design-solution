@@ -14,6 +14,8 @@ interface PanelSectionProps {
   level?: 1 | 2 | 3; // For nested sections
   icon?: React.ReactNode;
   actions?: React.ReactNode; // For section-level actions
+  sticky?: boolean; // Make header stick to top of scroll container
+  stickyOffset?: number; // Optional offset for sticky headers
 }
 
 export const PanelSection: React.FC<PanelSectionProps> = ({
@@ -25,9 +27,15 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
   level = 1,
   icon,
   actions,
+  sticky = false,
+  stickyOffset = 0,
 }) => {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [isHovered, setIsHovered] = useState(false);
+
+  // Calculate left padding based on nesting level
+  const basePadding = parseInt(theme.spacing.lg);
+  const leftPadding = `${basePadding * level}px`;
 
   // ===== CONSISTENT SECTION STYLING =====
   const sectionStyle: React.CSSProperties = {
@@ -49,10 +57,11 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
 
   const headerStyle: React.CSSProperties = {
     height: theme.components.section.headerHeight,
-    background: "none",
+    background: sticky ? theme.colors.backgroundSecondary : "none",
     border: "none",
     borderBottom: "none",
-    padding: `0 ${theme.spacing.lg}`,
+    paddingRight: theme.spacing.lg,
+    paddingLeft: leftPadding,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
@@ -61,6 +70,11 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
     width: "100%",
     textAlign: "left",
     boxShadow: "none",
+    ...(sticky && {
+      position: "sticky",
+      top: stickyOffset,
+      zIndex: 1,
+    }),
   };
 
   const headerContentStyle: React.CSSProperties = {
@@ -136,7 +150,8 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
     overflowX: "hidden",
     overflowY: "visible",
     transition: `max-height ${theme.animation.medium}, padding ${theme.animation.medium}`,
-    padding: collapsed ? "0" : `0 20px`,
+    paddingRight: collapsed ? "0" : theme.spacing.lg,
+    paddingLeft: collapsed ? "0" : leftPadding,
     boxSizing: "border-box",
     width: "100%",
     minWidth: 0,
@@ -144,8 +159,8 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
   };
 
   const contentInnerStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
     gap: theme.spacing.fieldGap,
     opacity: collapsed ? 0 : 1,
     transition: `opacity ${theme.animation.medium}`,
