@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CanvasNode, Colors, Connection } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
 import {
@@ -23,6 +23,7 @@ interface ChatBoxNodeProps {
   ) => void;
   connections: Connection[]; // Add this
   nodes: CanvasNode[]; // Add this
+  isPulsing?: boolean;
 }
 
 export default function ChatBoxNode(props: ChatBoxNodeProps) {
@@ -36,7 +37,8 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
     theme,
     onOutputPortMouseDown,
     connections,
-    nodes
+    nodes,
+    isPulsing
   } = props;
 
   interface ChatBoxNodeData {
@@ -48,6 +50,10 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
   // Get the current input value from node data
   const [input, setInput] = useState((node.data as ChatBoxNodeData).inputValue || '');
   const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    setInput((node.data as ChatBoxNodeData).inputValue || '');
+  }, [node.data]);
 
   // Update node data when input changes
   const handleInputChange = (value: string) => {
@@ -84,7 +90,7 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
 
   return (
     <div
-      className="absolute flex flex-col"
+      className={`absolute flex flex-col ${isPulsing ? 'node-pulse' : ''}`}
       style={nodeStyle}
       onMouseDown={e => onNodeMouseDown(e, node.id)}
       onClick={e => onNodeClick(e, node.id)}

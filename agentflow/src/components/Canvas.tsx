@@ -79,9 +79,19 @@ export default function CanvasEngine(props: Props) {
     nodeId: string;
   } | null>(null);
   const [startNodeIdLocal, setStartNodeIdLocal] = useState<string | null>(null);
+  const [pulsingNodeId, setPulsingNodeId] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  const handleNodeUpdateWithPulse = useCallback(
+    (node: CanvasNode) => {
+      setPulsingNodeId(node.id);
+      onNodeUpdate(node);
+      setTimeout(() => setPulsingNodeId(null), 600);
+    },
+    [onNodeUpdate]
+  );
 
   // Helper functions
   const screenToCanvas = useCallback(
@@ -614,11 +624,12 @@ export default function CanvasEngine(props: Props) {
                 onNodeMouseDown={handleNodeMouseDown}
                 onNodeClick={handleNodeClick}
                 onNodeContextMenu={handleNodeContextMenu}
-                onNodeUpdate={onNodeUpdate}
+                onNodeUpdate={handleNodeUpdateWithPulse}
                 nodes={nodes}
                 connections={connections}
                 theme={theme}
                 onOutputPortMouseDown={handlePortMouseDown}
+                isPulsing={pulsingNodeId === node.id}
               />
             );
           }
@@ -628,7 +639,9 @@ export default function CanvasEngine(props: Props) {
               key={node.id}
               className={`absolute cursor-pointer pointer-events-auto ${
                 isSelected ? "ring-2 ring-blue-400" : ""
-              } ${isStart ? "border-2 border-green-500 shadow-lg" : ""}`}
+              } ${isStart ? "border-2 border-green-500 shadow-lg" : ""} ${
+                pulsingNodeId === node.id ? "node-pulse" : ""
+              }`}
               style={{
                 left: node.position.x,
                 top: node.position.y,

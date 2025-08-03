@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Project, CanvasNode, Connection, NodeType } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
 import ProjectDashboard from "@/components/ProjectDashboard";
@@ -47,10 +47,57 @@ export default function AgentFlowPage() {
     string,
     unknown
   > | null>(null);
+  const [history, setHistory] = useState<CanvasNode[][]>([]);
+  const [future, setFuture] = useState<CanvasNode[][]>([]);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  const showStatus = (msg: string) => {
+    setStatusMessage(msg);
+    setTimeout(() => setStatusMessage(null), 1000);
+  };
+
+  const handleUndo = useCallback(() => {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      const prev = h[h.length - 1];
+      setFuture((f) => [nodes, ...f]);
+      setNodes(prev);
+      showStatus("Undid");
+      return h.slice(0, -1);
+    });
+  }, [nodes]);
+
+  const handleRedo = useCallback(() => {
+    setFuture((f) => {
+      if (f.length === 0) return f;
+      const [next, ...rest] = f;
+      setHistory((h) => [...h, nodes]);
+      setNodes(next);
+      showStatus("Redid");
+      return rest;
+    });
+  }, [nodes]);
+
+  useEffect(() => {
+    const keyHandler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+        e.preventDefault();
+        handleUndo();
+      } else if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.key === "y" || (e.shiftKey && e.key === "Z"))
+      ) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener("keydown", keyHandler);
+    return () => window.removeEventListener("keydown", keyHandler);
+  }, [handleUndo, handleRedo]);
 
   const fetchProjects = async () => {
     try {
@@ -279,7 +326,10 @@ export default function AgentFlowPage() {
   };
 
   const handleNodeUpdate = (updatedNode: CanvasNode) => {
+    setHistory((h) => [...h, nodes]);
     setNodes(nodes.map((n) => (n.id === updatedNode.id ? updatedNode : n)));
+    setFuture([]);
+    showStatus("Saved");
   };
 
   const handleTestFlow = async () => {
@@ -342,11 +392,7 @@ export default function AgentFlowPage() {
             connections={connections}
             selectedNode={selectedNode}
             onNodeSelect={setSelectedNode}
-            onNodeUpdate={(updatedNode) => {
-              setNodes(
-                nodes.map((n) => (n.id === updatedNode.id ? updatedNode : n))
-              );
-            }}
+            onNodeUpdate={handleNodeUpdate}
             onConnectionsChange={setConnections}
             onCreateConnection={async () => {
               // TODO: Implement connection creation logic if needed
@@ -366,6 +412,11 @@ export default function AgentFlowPage() {
           />
         }
       />
+      {statusMessage && (
+        <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-3 py-1 rounded shadow">
+          {statusMessage}
+        </div>
+      )}
     </>
   );
 }
