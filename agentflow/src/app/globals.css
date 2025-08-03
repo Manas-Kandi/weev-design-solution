@@ -18,8 +18,14 @@
   --color-secondary-foreground: 240 5.9% 10%;
   --color-muted: 240 4.8% 95.9%;
   --color-muted-foreground: 240 3.8% 46.1%;
-  --color-accent: 240 4.8% 95.9%;
-  --color-accent-foreground: 240 5.9% 10%;
+  --color-accent: var(--color-accent-400);
+  --color-accent-foreground: 0 0% 100%;
+  /* Accent ramps */
+  --color-accent-100: 220 90% 95%;
+  --color-accent-200: 220 90% 85%;
+  --color-accent-300: 220 90% 75%;
+  --color-accent-400: 220 90% 65%;
+  --color-accent-500: 220 90% 55%;
   --color-destructive: 0 84.2% 60.2%;
   --color-destructive-foreground: 0 0% 98%;
   --color-border: 240 5.9% 90%;
@@ -74,6 +80,12 @@
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1),
     0 8px 10px -6px rgb(0 0 0 / 0.1);
 
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.3);
+  --glass-backdrop: blur(10px);
+  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1),
+    0 0 1px rgba(255, 255, 255, 0.5);
+
   /* Scrollbar */
   --scrollbar-size: 8px;
   --scrollbar-track: hsl(var(--color-muted));
@@ -87,6 +99,11 @@
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
+
+  /* Motion */
+  --transition-base: 0.2s ease-out;
+  --transition-hover: var(--transition-base);
+  --transition-focus: var(--transition-base);
 }
 
 .dark {
@@ -102,8 +119,14 @@
   --color-secondary-foreground: 0 0% 98%;
   --color-muted: 240 3.7% 15.9%;
   --color-muted-foreground: 240 5% 64.9%;
-  --color-accent: 240 3.7% 15.9%;
-  --color-accent-foreground: 0 0% 98%;
+  --color-accent: var(--color-accent-400);
+  --color-accent-foreground: 240 10% 3.9%;
+  /* Accent ramps */
+  --color-accent-100: 220 50% 20%;
+  --color-accent-200: 220 60% 30%;
+  --color-accent-300: 220 70% 40%;
+  --color-accent-400: 220 80% 50%;
+  --color-accent-500: 220 90% 60%;
   --color-destructive: 0 62.8% 30.6%;
   --color-destructive-foreground: 0 85.7% 97.3%;
   --color-border: 240 3.7% 15.9%;
@@ -115,7 +138,52 @@
   --chart-3: 30 80% 55%;
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
-}
+
+  /* Glassmorphism */
+  --glass-bg: rgba(0, 0, 0, 0.3);
+  --glass-backdrop: blur(10px);
+  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.2),
+    0 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+ @media (prefers-color-scheme: dark) {
+   :root {
+     --color-background: 240 10% 3.9%;
+     --color-foreground: 0 0% 98%;
+     --color-card: 240 10% 3.9%;
+     --color-card-foreground: 0 0% 98%;
+     --color-popover: 240 10% 3.9%;
+     --color-popover-foreground: 0 0% 98%;
+     --color-primary: 0 0% 98%;
+     --color-primary-foreground: 240 5.9% 10%;
+     --color-secondary: 240 3.7% 15.9%;
+     --color-secondary-foreground: 0 0% 98%;
+     --color-muted: 240 3.7% 15.9%;
+     --color-muted-foreground: 240 5% 64.9%;
+     --color-accent: var(--color-accent-400);
+     --color-accent-foreground: 240 10% 3.9%;
+     --color-accent-100: 220 50% 20%;
+     --color-accent-200: 220 60% 30%;
+     --color-accent-300: 220 70% 40%;
+     --color-accent-400: 220 80% 50%;
+     --color-accent-500: 220 90% 60%;
+     --color-destructive: 0 62.8% 30.6%;
+     --color-destructive-foreground: 0 85.7% 97.3%;
+     --color-border: 240 3.7% 15.9%;
+     --color-input: 240 3.7% 15.9%;
+     --color-ring: 240 4.9% 83.9%;
+     --chart-1: 220 70% 50%;
+     --chart-2: 160 60% 45%;
+     --chart-3: 30 80% 55%;
+     --chart-4: 280 65% 60%;
+     --chart-5: 340 75% 55%;
+     /* Glassmorphism */
+     --glass-bg: rgba(0, 0, 0, 0.3);
+     --glass-backdrop: blur(10px);
+     --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.2),
+       0 0 1px rgba(255, 255, 255, 0.05);
+   }
+ }
 
 /* CRITICAL: Add the missing Figma variables that your components are expecting */
 :root {
