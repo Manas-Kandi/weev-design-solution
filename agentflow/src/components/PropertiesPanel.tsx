@@ -51,6 +51,9 @@ export default function PropertiesPanel({ selectedNode, onChange }: PropertiesPa
   const nodeType = selectedNode.subtype || selectedNode.type;
   switch (nodeType) {
     case "agent":
+    case "generic":
+    case "human-handoff":
+    case "tool-agent":
       return (
         <div style={panelStyle}>
           <AgentPropertiesPanel node={selectedNode as CanvasNode & { data: import("@/types").AgentNodeData }} onChange={onChange} />

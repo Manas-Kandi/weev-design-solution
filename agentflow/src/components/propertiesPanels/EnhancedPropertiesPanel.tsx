@@ -293,10 +293,7 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
         typeof data === "object" &&
         data !== null &&
         typeof (data as AgentNodeData).title === "string" &&
-        typeof (data as AgentNodeData).model === "string" &&
-        typeof (data as AgentNodeData).description === "string" &&
-        typeof (data as AgentNodeData).color === "string" &&
-        typeof (data as AgentNodeData).icon === "string"
+        typeof (data as AgentNodeData).model === "string"
       );
     }
 

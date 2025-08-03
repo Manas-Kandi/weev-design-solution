@@ -117,7 +117,7 @@ export default function AgentPropertiesPanel({
         <div>
           <h2 style={headerTitleStyle}>Agent Configuration</h2>
           <p style={headerSubtitleStyle}>
-            {data.name || "Unnamed Agent"} • {data.model || "No model selected"}
+            {`${data?.name ?? data?.title ?? "Unnamed Agent"} • ${data?.model ?? "No model selected"}`}
           </p>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function AgentPropertiesPanel({
           </label>
           <VSCodeInput
             placeholder="e.g., Customer Support Agent"
-            value={data.name || ""}
+            value={typeof data?.name === "string" ? data.name : (typeof data?.title === "string" ? data.title : "")}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleFieldChange("name", e.target.value)
             }
@@ -158,7 +158,7 @@ export default function AgentPropertiesPanel({
           </label>
           <VSCodeInput
             placeholder="e.g., Help customers with product inquiries"
-            value={data.role || ""}
+            value={data?.role ?? ""}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleFieldChange("role", e.target.value)
             }
@@ -182,7 +182,7 @@ export default function AgentPropertiesPanel({
             Model
           </label>
           <VSCodeSelect
-            value={data.model || "gemini-pro"}
+            value={data?.model ?? "gemini-pro"}
             options={modelOptions}
             onValueChange={(value: string) => handleFieldChange("model", value)}
           />
@@ -202,7 +202,7 @@ export default function AgentPropertiesPanel({
             Response Format
           </label>
           <VSCodeSelect
-            value={data.responseFormat || "text"}
+            value={data?.responseFormat ?? "text"}
             options={responseFormatOptions}
             onValueChange={(value: string) =>
               handleFieldChange("responseFormat", value)
@@ -240,7 +240,7 @@ export default function AgentPropertiesPanel({
           </label>
           <VSCodeInput
             placeholder="You are a helpful assistant that..."
-            value={data.systemPrompt || ""}
+            value={data?.systemPrompt ?? ""}
             onChange={(
               e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
             ) => handleFieldChange("systemPrompt", e.target.value)}
@@ -282,7 +282,7 @@ export default function AgentPropertiesPanel({
           </label>
           <VSCodeInput
             placeholder="Let me connect you with a human specialist..."
-            value={data.escalationMessage || ""}
+            value={data?.escalationMessage ?? ""}
             onChange={(
               e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
             ) => handleFieldChange("escalationMessage", e.target.value)}
@@ -331,23 +331,25 @@ export default function AgentPropertiesPanel({
             <div>
               Model:{" "}
               <span style={{ color: "#0ea5e9" }}>
-                {data.model || "gemini-pro"}
+                {data?.model ?? "gemini-pro"}
               </span>
             </div>
             <div>
               Temperature:{" "}
               <span style={{ color: "#0ea5e9" }}>
-                {data.temperature || 0.7}
+                {data?.temperature ?? 0.7}
               </span>
             </div>
             <div>
               Max Tokens:{" "}
-              <span style={{ color: "#0ea5e9" }}>{data.maxTokens || 1000}</span>
+              <span style={{ color: "#0ea5e9" }}>
+                {data?.maxTokens ?? 1000}
+              </span>
             </div>
             <div>
               Personality:{" "}
               <span style={{ color: "#0ea5e9" }}>
-                {(data.personalityTags || []).join(", ") || "None set"}
+                {(Array.isArray(data?.personalityTags) ? data.personalityTags : []).join(", ") || "None set"}
               </span>
             </div>
           </div>
