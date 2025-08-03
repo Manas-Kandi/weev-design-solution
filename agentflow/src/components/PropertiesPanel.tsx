@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { MousePointerClick } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { figmaPropertiesTheme as theme } from "./propertiesPanels/propertiesPanelTheme";
 import AgentPropertiesPanel from "./propertiesPanels/AgentPropertiesPanel";
 import ChatInterfacePropertiesPanel from "./propertiesPanels/ChatInterfacePropertiesPanel";
@@ -39,138 +41,169 @@ export default function PropertiesPanel({
   selectedNode,
   onChange,
 }: PropertiesPanelProps) {
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (selectedNode) {
+      setIsLoading(true);
+      const t = setTimeout(() => setIsLoading(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [selectedNode?.id]);
+
   if (!selectedNode) {
     return (
-      <div style={panelStyle}>
-        <div style={{ padding: "32px", textAlign: "center", color: "#aaa" }}>
-          <span style={{ fontWeight: 500, fontSize: 18 }}>
-            No node selected
-          </span>
-          <div style={{ marginTop: 8, fontSize: 14 }}>
-            Select a node to edit its properties.
+      <div style={panelStyle} className="flex h-full items-center justify-center">
+        <div className="flex flex-col items-center text-center text-[#aaa]">
+          <MousePointerClick className="mb-4 h-12 w-12 text-[#666]" />
+          <span className="text-lg font-medium">No node selected</span>
+          <div className="mt-2 text-sm">
+            Select a node on the canvas to edit its properties.
           </div>
+          <div className="mt-1 text-xs">Use the toolbar to add new nodes.</div>
         </div>
       </div>
     );
   }
+
+  if (isLoading) {
+    return (
+      <div style={panelStyle} className="space-y-4 p-4">
+        <Skeleton className="h-6 w-2/3" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-1/2" />
+      </div>
+    );
+  }
+
   const nodeType = selectedNode.subtype || selectedNode.type;
+
+  let content: React.ReactNode = null;
+
   switch (nodeType) {
     case "agent":
     case "generic":
     case "human-handoff":
     case "tool-agent":
-      return (
-        <div style={panelStyle}>
-          <AgentPropertiesPanel
-            node={
-              selectedNode as CanvasNode & {
-                data: import("@/types").AgentNodeData;
-              }
+      content = (
+        <AgentPropertiesPanel
+          node={
+            selectedNode as CanvasNode & {
+              data: import("@/types").AgentNodeData;
             }
-            onChange={onChange}
-          />
-        </div>
+          }
+          onChange={onChange}
+        />
       );
+      break;
     case "chat":
-      return (
-        <div style={panelStyle}>
-          <ChatInterfacePropertiesPanel
-            node={selectedNode}
-            onChange={onChange}
-          />
-        </div>
+      content = (
+        <ChatInterfacePropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+        />
       );
+      break;
     case "conversation":
-      return (
-        <div style={panelStyle}>
-          <ConversationFlowPropertiesPanel
-            node={
-              selectedNode as CanvasNode & {
-                data: import("@/types").ConversationFlowNodeData;
-              }
+      content = (
+        <ConversationFlowPropertiesPanel
+          node={
+            selectedNode as CanvasNode & {
+              data: import("@/types").ConversationFlowNodeData;
             }
-            onChange={onChange}
-          />
-        </div>
+          }
+          onChange={onChange}
+        />
       );
+      break;
     case "dashboard":
-      return (
-        <div style={panelStyle}>
-          <DashboardPropertiesPanel node={selectedNode} onChange={onChange} />
-        </div>
+      content = (
+        <DashboardPropertiesPanel node={selectedNode} onChange={onChange} />
       );
+      break;
     case "decision-tree":
-      return (
-        <div style={panelStyle}>
-          <DecisionTreePropertiesPanel
-            node={selectedNode}
-            onChange={onChange}
-          />
-        </div>
+      content = (
+        <DecisionTreePropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+        />
       );
+      break;
     case "if-else":
-      return (
-        <div style={panelStyle}>
-          <IfElsePropertiesPanel node={selectedNode} onChange={onChange} />
-        </div>
+      content = (
+        <IfElsePropertiesPanel node={selectedNode} onChange={onChange} />
       );
+      break;
     case "knowledge-base":
-      return (
-        <div style={panelStyle}>
-          <KnowledgeBasePropertiesPanel
-            node={selectedNode}
-            onChange={onChange}
-          />
-        </div>
+      content = (
+        <KnowledgeBasePropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+        />
       );
+      break;
     case "message":
-      return (
-        <div style={panelStyle}>
-          <MessagePropertiesPanel node={selectedNode} onChange={onChange} />
-        </div>
+      content = (
+        <MessagePropertiesPanel node={selectedNode} onChange={onChange} />
       );
+      break;
     case "template":
-      return (
-        <div style={panelStyle}>
-          <PromptTemplatePropertiesPanel
-            node={selectedNode}
-            onChange={onChange}
-          />
-        </div>
+      content = (
+        <PromptTemplatePropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+        />
       );
+      break;
     case "simulator":
-      return (
-        <div style={panelStyle}>
-          <SimulatorPropertiesPanel node={selectedNode} onChange={onChange} />
-        </div>
+      content = (
+        <SimulatorPropertiesPanel node={selectedNode} onChange={onChange} />
       );
+      break;
     case "state-machine":
-      return (
-        <div style={panelStyle}>
-          <StateMachinePropertiesPanel
-            node={selectedNode}
-            onChange={onChange}
-          />
-        </div>
+      content = (
+        <StateMachinePropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+        />
       );
+      break;
     case "test-case":
-      return (
-        <div style={panelStyle}>
-          <TestCasePropertiesPanel node={selectedNode} onChange={onChange} />
-        </div>
+      content = (
+        <TestCasePropertiesPanel node={selectedNode} onChange={onChange} />
       );
+      break;
     default:
-      return (
-        <div style={panelStyle}>
-          <div style={{ padding: "32px", textAlign: "center", color: "#aaa" }}>
-            <span style={{ fontWeight: 500, fontSize: 18 }}>
-              Unknown node type
-            </span>
-            <div style={{ marginTop: 8, fontSize: 14 }}>
-              This node type is not yet supported.
-            </div>
+      content = (
+        <div style={{ padding: "32px", textAlign: "center", color: "#aaa" }}>
+          <span style={{ fontWeight: 500, fontSize: 18 }}>Unknown node type</span>
+          <div style={{ marginTop: 8, fontSize: 14 }}>
+            This node type is not yet supported.
           </div>
         </div>
       );
   }
+
+  return <AnimatedPanel key={nodeType}>{content}</AnimatedPanel>;
+}
+
+function AnimatedPanel({ children }: { children: React.ReactNode }) {
+  const [visible, setVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  return (
+    <div
+      style={panelStyle}
+      className={`transition-all duration-300 ${
+        visible ? "translate-x-0 opacity-100" : "translate-x-2 opacity-0"
+      }`}
+    >
+      {children}
+    </div>
+  );
 }
