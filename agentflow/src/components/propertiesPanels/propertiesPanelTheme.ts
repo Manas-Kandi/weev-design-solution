@@ -4,12 +4,12 @@
 
 export const figmaPropertiesTheme = {
   colors: {
-    background: "#1e1e1e", // Main panel background - darker for better contrast
-    backgroundSecondary: "#252526", // Section headers
-    backgroundTertiary: "#2d2d30", // Hover states, inputs
-    backgroundElevated: "#323233", // Cards, elevated elements
-    border: "#464647", // Default borders - higher contrast
-    borderLight: "#3e3e40", // Subtle separators
+    background: "linear-gradient(120deg, rgba(18,18,20,0.72) 60%, rgba(32,32,36,0.60) 100%)", // ultra-subtle glass
+    backgroundSecondary: "rgba(32,32,36,0.38)", // even more transparent
+    backgroundTertiary: "rgba(40,40,44,0.22)", // hover/input, barely visible
+    backgroundElevated: "rgba(50,50,54,0.32)", // cards, very subtle
+    border: "rgba(40,40,44,0.10)", // ultra subtle border
+    borderLight: "rgba(40,40,44,0.06)", // almost invisible
     borderActive: "#007acc", // VS Code blue for active states
     textPrimary: "#cccccc", // Primary text - VS Code text color
     textSecondary: "#9d9d9d", // Secondary text
@@ -76,10 +76,10 @@ export const figmaPropertiesTheme = {
   },
   shadows: {
     none: "none",
-    subtle: "0 1px 3px rgba(0, 0, 0, 0.2)",
-    medium: "0 2px 8px rgba(0, 0, 0, 0.25)",
-    strong: "0 4px 16px rgba(0, 0, 0, 0.3)",
-    glow: "0 0 0 2px rgba(0, 122, 204, 0.4)",
+    subtle: "0 2px 12px 0 rgba(0,0,0,0.10)", // softer, lighter
+    medium: "0 6px 24px 0 rgba(0,0,0,0.14)",
+    strong: "0 8px 32px 0 rgba(0,0,0,0.18)",
+    glow: "0 0 0 2px rgba(0,0,0,0.10)",
   },
   animation: {
     fast: "0.1s ease-out",
@@ -120,29 +120,29 @@ export const figmaPropertiesTheme = {
   },
   states: {
     default: {
-      background: "#2d2d30",
-      border: "#464647",
+      background: "rgba(45,45,48,0.32)",
+      border: "rgba(40,40,44,0.10)",
       text: "#cccccc",
     },
     hover: {
-      background: "#37373a",
-      border: "#565658",
+      background: "rgba(55,55,58,0.18)",
+      border: "rgba(40,40,44,0.14)",
       text: "#cccccc",
     },
     focus: {
-      background: "#2d2d30",
-      border: "#007acc",
+      background: "rgba(45,45,48,0.18)",
+      border: "rgba(40,40,44,0.18)",
       text: "#cccccc",
-      boxShadow: "0 0 0 2px rgba(0, 122, 204, 0.4)",
+      boxShadow: "0 0 0 2px rgba(0,0,0,0.10)",
     },
     active: {
-      background: "#007acc",
-      border: "#007acc",
+      background: "rgba(40,40,44,0.22)",
+      border: "rgba(40,40,44,0.18)",
       text: "white",
     },
     disabled: {
-      background: "#2d2d30",
-      border: "#464647",
+      background: "rgba(45,45,48,0.10)",
+      border: "rgba(40,40,44,0.06)",
       text: "#6a6a6a",
       opacity: 0.6,
     },

@@ -31,32 +31,36 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
 
   // ===== CONSISTENT SECTION STYLING =====
   const sectionStyle: React.CSSProperties = {
-    backgroundColor:
-      level === 1
-        ? theme.colors.backgroundElevated
-        : theme.colors.backgroundSecondary,
-    border: `1px solid ${theme.colors.border}`,
-    borderRadius: theme.borderRadius.lg,
+    background: "none",
+    border: "none",
+    borderRadius: 0,
     marginBottom: theme.components.section.marginBottom,
-    overflow: "hidden",
+    overflowX: "hidden",
+    overflowY: "visible",
     transition: `all ${theme.animation.medium}`,
+    boxShadow: "none",
+    padding: 0,
+    maxWidth: '100%',
+    minWidth: 0,
+    width: '100%',
+    boxSizing: 'border-box',
+    wordBreak: 'break-word',
   };
 
   const headerStyle: React.CSSProperties = {
     height: theme.components.section.headerHeight,
-    backgroundColor: isHovered
-      ? theme.colors.backgroundTertiary
-      : theme.colors.backgroundSecondary,
-    borderBottom: collapsed ? "none" : `1px solid ${theme.colors.border}`,
+    background: "none",
+    border: "none",
+    borderBottom: "none",
     padding: `0 ${theme.spacing.lg}`,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     cursor: "pointer",
     transition: `all ${theme.animation.fast}`,
-    border: "none",
     width: "100%",
     textAlign: "left",
+    boxShadow: "none",
   };
 
   const headerContentStyle: React.CSSProperties = {
@@ -77,7 +81,7 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
   };
 
   const iconStyle: React.CSSProperties = {
-    color: theme.colors.textAccent,
+    color: theme.colors.textSecondary,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -128,10 +132,15 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
 
   // ===== PROPER COLLAPSIBLE ANIMATION =====
   const contentStyle: React.CSSProperties = {
-    maxHeight: collapsed ? "0px" : "1000px", // Use maxHeight for smooth animation
-    overflow: "hidden",
+    maxHeight: collapsed ? "0px" : "1000px",
+    overflowX: "hidden",
+    overflowY: "visible",
     transition: `max-height ${theme.animation.medium}, padding ${theme.animation.medium}`,
-    padding: collapsed ? "0" : theme.spacing.sectionPadding,
+    padding: collapsed ? "0" : `0 20px`,
+    boxSizing: 'border-box',
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
   };
 
   const contentInnerStyle: React.CSSProperties = {
@@ -140,8 +149,15 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
     gap: theme.spacing.fieldGap,
     opacity: collapsed ? 0 : 1,
     transition: `opacity ${theme.animation.medium}`,
-    // Add a slight delay to opacity animation when expanding
     transitionDelay: collapsed ? "0ms" : "100ms",
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
+    margin: 0,
+    boxSizing: 'border-box',
+    wordBreak: 'break-word',
+    whiteSpace: 'pre-line',
+    overflowX: 'hidden',
   };
 
   return (

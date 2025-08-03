@@ -125,11 +125,13 @@ export default function KnowledgeBasePropertiesPanel({
         gap: theme.spacing.lg,
         background: theme.colors.background,
         padding: theme.spacing.lg,
-        minWidth: 360,
-        maxWidth: 480,
+        width: '100%',
+        minWidth: 0,
+        maxWidth: '100%',
         height: "100%",
         boxSizing: "border-box",
         overflowY: "auto",
+        overflowX: "hidden",
       }}
     >
       <PanelSection title="Operation" description="Choose what this node does">

@@ -86,14 +86,15 @@ export default function PromptTemplatePropertiesPanel({
     borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
-    width: 360,
-    minWidth: 360,
-    maxWidth: 360,
+    width: '100%',
+    minWidth: 0,
+    maxWidth: '100%',
     display: "flex",
     flexDirection: "column",
     gap: theme.spacing.lg,
     boxSizing: "border-box",
     overflowY: "auto",
+    overflowX: "hidden",
   };
 
   return (

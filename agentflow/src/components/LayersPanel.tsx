@@ -9,8 +9,8 @@ interface LayersPanelProps {
 
 export default function LayersPanel({ nodes }: LayersPanelProps) {
   return (
-    <aside className="w-64 border-r border-[var(--figma-border)] bg-[var(--figma-surface)] flex flex-col">
-      <div className="border-b border-[var(--figma-border)] p-[var(--space-md)]">
+    <aside className="w-64 bg-[var(--figma-surface)] flex flex-col">
+      <div className="p-[var(--space-md)]">
         <h2 className="font-medium text-[var(--fs-sm)]">Layers</h2>
       </div>
       <div className="flex-1 overflow-y-auto figma-scrollbar p-[var(--space-sm)]">

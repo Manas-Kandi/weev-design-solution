@@ -34,22 +34,10 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
 
   return (
     <aside
-      className="border-r border-[var(--figma-border)] bg-[var(--figma-surface)] font-mono w-64 flex flex-col"
+      className="bg-[var(--figma-surface)] font-mono w-64 flex flex-col"
       style={{ minWidth: 220, maxWidth: 280, height: '100%', boxShadow: 'none', padding: 0, display: 'flex' }}
     >
-      {/* Header - minimalist, flat, professional */}
-      <div className="h-12 border-b border-[var(--figma-border)] flex items-center px-4">
-        <button
-          onClick={onBackToProjects}
-          className="flex items-center gap-2 px-2 py-1 hover:bg-[var(--figma-accent)]/20 transition-colors rounded focus:outline-none"
-          style={{ borderRadius: 4, background: 'none', boxShadow: 'none' }}
-        >
-          <div className="w-6 h-6 rounded flex items-center justify-center bg-[var(--figma-accent)]">
-            <Bot className="w-4 h-4 text-[var(--figma-bg)]" />
-          </div>
-          <span className="text-xs font-semibold text-[var(--figma-text)] tracking-wide">AgentFlow</span>
-        </button>
-      </div>
+
       {/* Node Library - minimalist explorer */}
       <div className="flex-1 overflow-auto figma-scrollbar p-4">
         <div className="flex items-center justify-between mb-3">
