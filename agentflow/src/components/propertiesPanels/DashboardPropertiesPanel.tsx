@@ -52,18 +52,19 @@ export default function DashboardPropertiesPanel({
   const [layout, setLayout] = useState<string>(safeData.layout);
 
   // Always update all fields to avoid partial updates
-  const handleFieldChange = (
-    field: keyof DashboardNodeData,
-    value: unknown
+  const handleFieldChange = <K extends keyof DashboardNodeData>(
+    field: K,
+    value: DashboardNodeData[K],
+    setter: (value: DashboardNodeData[K]) => void
   ) => {
-    let updated: DashboardNodeData = { widgets, title, layout };
-    if (field === "widgets" && Array.isArray(value)) {
-      updated = { ...updated, widgets: value as string[] };
-    } else if (field === "title" && typeof value === "string") {
-      updated = { ...updated, title: value };
-    } else if (field === "layout" && typeof value === "string") {
-      updated = { ...updated, layout: value };
-    }
+    setter(value);
+    const updated: DashboardNodeData = {
+      ...node.data,
+      widgets,
+      title,
+      layout,
+      [field]: value,
+    };
     setWidgets(updated.widgets);
     setTitle(updated.title);
     setLayout(updated.layout);
@@ -82,7 +83,7 @@ export default function DashboardPropertiesPanel({
         <VSCodeInput
           value={title}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            handleFieldChange("title", e.target.value)
+            handleFieldChange("title", e.target.value, setTitle)
           }
           placeholder="Dashboard title..."
         />
@@ -93,7 +94,7 @@ export default function DashboardPropertiesPanel({
       >
         <VSCodeSelect
           value={layout}
-          onValueChange={(v: string) => handleFieldChange("layout", v)}
+          onValueChange={(v: string) => handleFieldChange("layout", v, setLayout)}
           options={layoutOptions}
           placeholder="Choose layout"
         />
@@ -123,7 +124,7 @@ export default function DashboardPropertiesPanel({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...widgets];
                   next[idx] = e.target.value;
-                  handleFieldChange("widgets", next);
+                  handleFieldChange("widgets", next, setWidgets);
                 }}
                 style={{ width: 180 }}
               />
@@ -132,7 +133,7 @@ export default function DashboardPropertiesPanel({
                 size="small"
                 onClick={() => {
                   const next = widgets.filter((_, i) => i !== idx);
-                  handleFieldChange("widgets", next);
+                  handleFieldChange("widgets", next, setWidgets);
                 }}
               >
                 Remove
@@ -142,10 +143,9 @@ export default function DashboardPropertiesPanel({
           <VSCodeButton
             variant="primary"
             size="small"
-            onClick={() => {
-              const next = [...widgets, "newWidget"];
-              handleFieldChange("widgets", next);
-            }}
+            onClick={() =>
+              handleFieldChange("widgets", [...widgets, "newWidget"], setWidgets)
+            }
           >
             Add Widget
           </VSCodeButton>

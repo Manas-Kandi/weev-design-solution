@@ -24,7 +24,7 @@ export default function PromptTemplatePropertiesPanel({
   node,
   onChange,
 }: PromptTemplatePropertiesPanelProps) {
-  const safeData: PromptTemplateNodeData = isPromptTemplateNodeData(node.data)
+  const initialData: PromptTemplateNodeData = isPromptTemplateNodeData(node.data)
     ? (node.data as PromptTemplateNodeData)
     : {
         title: "",
@@ -36,47 +36,35 @@ export default function PromptTemplatePropertiesPanel({
         extractVariablesFromInput: false,
       };
 
-  const [variables, setVariables] = useState<Record<string, string>>(
-    () => safeData.variables || {}
-  );
+  const [data, setData] = useState<PromptTemplateNodeData>(initialData);
 
   const handleFieldChange = (
     field: keyof PromptTemplateNodeData,
     value: unknown
   ) => {
-    if (isPromptTemplateNodeData(node.data)) {
-      const updatedData: PromptTemplateNodeData = {
-        ...node.data,
-        [field]: value,
-        title: node.data.title,
-        description: node.data.description,
-        color: node.data.color,
-        icon: node.data.icon,
-      };
-      onChange({ ...node, data: updatedData });
-    } else {
-      // Do not update if not correct type
-      return;
-    }
+    setData((prev) => {
+      const updated = { ...prev, [field]: value };
+      onChange({ ...node, data: { ...node.data, ...updated } });
+      return updated;
+    });
   };
 
   const handleVariableChange = (key: string, value: string) => {
-    const next = { ...variables, [key]: value };
-    setVariables(next);
+    const next = { ...(data.variables || {}), [key]: value };
     handleFieldChange("variables", next);
   };
 
   const handleAddVariable = () => {
-    const newKey = `var${Object.keys(variables).length + 1}`;
-    const next = { ...variables, [newKey]: "" };
-    setVariables(next);
+    const vars = data.variables || {};
+    const newKey = `var${Object.keys(vars).length + 1}`;
+    const next = { ...vars, [newKey]: "" };
+    handleFieldChange("variables", next);
   };
 
   const handleRemoveVariable = (key: string) => {
-    const next = { ...variables };
-    delete next[key];
-    setVariables(next);
-    handleFieldChange("variables", next);
+    const vars = { ...(data.variables || {}) };
+    delete vars[key];
+    handleFieldChange("variables", vars);
   };
 
   const panelStyle: React.CSSProperties = {
@@ -104,7 +92,7 @@ export default function PromptTemplatePropertiesPanel({
         description="Define the main prompt template for this node."
       >
         <VSCodeInput
-          value={safeData.template || ""}
+          value={data.template || ""}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             handleFieldChange("template", e.target.value)
           }
@@ -115,7 +103,7 @@ export default function PromptTemplatePropertiesPanel({
         title="Variables"
         description="Define and map prompt variables."
       >
-        {Object.entries(variables).map(([key, value]) => (
+        {Object.entries(data.variables || {}).map(([key, value]) => (
           <div
             key={key}
             style={{
@@ -128,10 +116,9 @@ export default function PromptTemplatePropertiesPanel({
               value={key}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const newKey = e.target.value;
-                const next = { ...variables };
+                const next = { ...(data.variables || {}) };
                 next[newKey] = next[key];
                 delete next[key];
-                setVariables(next);
                 handleFieldChange("variables", next);
               }}
               placeholder="Variable name"
@@ -176,7 +163,7 @@ export default function PromptTemplatePropertiesPanel({
         >
           <input
             type="checkbox"
-            checked={!!safeData.extractVariablesFromInput}
+            checked={!!data.extractVariablesFromInput}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               handleFieldChange("extractVariablesFromInput", e.target.checked)
             }

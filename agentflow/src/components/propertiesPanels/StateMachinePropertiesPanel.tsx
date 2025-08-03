@@ -46,7 +46,12 @@ export default function StateMachinePropertiesPanel({
     { from: string; to: string; condition: string }[]
   >(() => (isStateMachineNodeData(node.data) ? node.data.transitions : []));
 
-  const handleFieldChange = (field: string, value: unknown) => {
+  const handleFieldChange = (
+    field: string,
+    value: unknown,
+    setter?: (value: any) => void
+  ) => {
+    if (setter) setter(value);
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
@@ -94,8 +99,7 @@ export default function StateMachinePropertiesPanel({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...states];
                   next[idx] = e.target.value;
-                  setStates(next);
-                  handleFieldChange("states", next);
+                  handleFieldChange("states", next, setStates);
                 }}
                 style={{ maxWidth: 160 }}
               />
@@ -104,8 +108,7 @@ export default function StateMachinePropertiesPanel({
                 size="small"
                 onClick={() => {
                   const next = states.filter((_, i) => i !== idx);
-                  setStates(next);
-                  handleFieldChange("states", next);
+                  handleFieldChange("states", next, setStates);
                 }}
               >
                 Remove
@@ -114,11 +117,9 @@ export default function StateMachinePropertiesPanel({
           ))}
           <VSCodeButton
             size="small"
-            onClick={() => {
-              const next = [...states, "newState"];
-              setStates(next);
-              handleFieldChange("states", next);
-            }}
+            onClick={() =>
+              handleFieldChange("states", [...states, "newState"], setStates)
+            }
           >
             Add State
           </VSCodeButton>
@@ -130,10 +131,9 @@ export default function StateMachinePropertiesPanel({
       >
         <VSCodeInput
           value={initialState}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setInitialState(e.target.value);
-            handleFieldChange("initialState", e.target.value);
-          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("initialState", e.target.value, setInitialState)
+          }
           style={{ maxWidth: 160 }}
         />
       </PanelSection>
@@ -162,8 +162,7 @@ export default function StateMachinePropertiesPanel({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...transitions];
                   next[idx] = { ...next[idx], from: e.target.value };
-                  setTransitions(next);
-                  handleFieldChange("transitions", next);
+                  handleFieldChange("transitions", next, setTransitions);
                 }}
                 style={{ maxWidth: 100 }}
                 placeholder="From"
@@ -173,8 +172,7 @@ export default function StateMachinePropertiesPanel({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...transitions];
                   next[idx] = { ...next[idx], to: e.target.value };
-                  setTransitions(next);
-                  handleFieldChange("transitions", next);
+                  handleFieldChange("transitions", next, setTransitions);
                 }}
                 style={{ maxWidth: 100 }}
                 placeholder="To"
@@ -184,8 +182,7 @@ export default function StateMachinePropertiesPanel({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...transitions];
                   next[idx] = { ...next[idx], condition: e.target.value };
-                  setTransitions(next);
-                  handleFieldChange("transitions", next);
+                  handleFieldChange("transitions", next, setTransitions);
                 }}
                 style={{ maxWidth: 160 }}
                 placeholder="Condition"
@@ -195,8 +192,7 @@ export default function StateMachinePropertiesPanel({
                 size="small"
                 onClick={() => {
                   const next = transitions.filter((_, i) => i !== idx);
-                  setTransitions(next);
-                  handleFieldChange("transitions", next);
+                  handleFieldChange("transitions", next, setTransitions);
                 }}
               >
                 Remove

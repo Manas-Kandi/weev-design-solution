@@ -83,33 +83,51 @@ export default function DecisionTreePropertiesPanel({
     field: keyof DecisionTreeNodeData,
     value: unknown
   ) => {
-    if (field === "rules")
-      setRules(value as { condition: string; outputPath: string }[]);
-    if (field === "defaultPath") setDefaultPath(value as string);
-    if (field === "evaluationMode") setEvaluationMode(value as string);
-    if (field === "title") setTitle(value as string);
-    if (field === "description") setDescription(value as string);
-    if (field === "color") setColor(value as string);
-    if (field === "icon") setIcon(value as string);
-
     const updated: DecisionTreeNodeData = {
-      title: field === "title" ? (value as string) : title,
-      description: field === "description" ? (value as string) : description,
-      color: field === "color" ? (value as string) : color,
-      icon: field === "icon" ? (value as string) : icon,
+      ...node.data,
+      title,
+      description,
+      color,
+      icon,
       id: data.id,
       type: data.type,
       position: data.position,
       inputs: data.inputs,
       outputs: data.outputs,
-      rules:
-        field === "rules"
-          ? (value as { condition: string; outputPath: string }[])
-          : rules,
-      defaultPath: field === "defaultPath" ? (value as string) : defaultPath,
-      evaluationMode:
-        field === "evaluationMode" ? (value as string) : evaluationMode,
+      rules,
+      defaultPath,
+      evaluationMode,
     };
+
+    if (field === "rules") {
+      setRules(value as { condition: string; outputPath: string }[]);
+      updated.rules = value as { condition: string; outputPath: string }[];
+    }
+    if (field === "defaultPath") {
+      setDefaultPath(value as string);
+      updated.defaultPath = value as string;
+    }
+    if (field === "evaluationMode") {
+      setEvaluationMode(value as string);
+      updated.evaluationMode = value as string;
+    }
+    if (field === "title") {
+      setTitle(value as string);
+      updated.title = value as string;
+    }
+    if (field === "description") {
+      setDescription(value as string);
+      updated.description = value as string;
+    }
+    if (field === "color") {
+      setColor(value as string);
+      updated.color = value as string;
+    }
+    if (field === "icon") {
+      setIcon(value as string);
+      updated.icon = value as string;
+    }
+
     onChange({ ...node, data: updated });
   };
 

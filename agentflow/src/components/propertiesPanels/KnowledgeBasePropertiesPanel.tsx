@@ -59,44 +59,55 @@ export default function KnowledgeBasePropertiesPanel({
       : "retrieve"
   );
 
+  const parseOrDefault = (input: string, defaultVal: any) => {
+    try {
+      return JSON.parse(input);
+    } catch {
+      return defaultVal;
+    }
+  };
+
   const handleFieldChange = (
     field: keyof KnowledgeBaseNodeData,
     value: unknown
   ) => {
-    // Convert metadata values to strings for compatibility
-    const safeMetadata =
+    if (field === "operation") {
+      setOperation(value as "store" | "retrieve" | "search");
+    }
+    if (field === "documents") {
+      setDocuments(value as string);
+    }
+    if (field === "metadata") {
+      setMetadata(value as string);
+    }
+
+    const docs =
+      field === "documents"
+        ? parseOrDefault(value as string, [])
+        : parseOrDefault(documents, []);
+    const metaRaw =
       field === "metadata"
-        ? Object.fromEntries(
-            Object.entries(value as Record<string, unknown>).map(([k, v]) => [
-              k,
-              typeof v === "string" ? v : JSON.stringify(v),
-            ])
-          )
-        : Object.fromEntries(
-            Object.entries(knowledgeData.metadata || {}).map(([k, v]) => [
-              k,
-              typeof v === "string" ? v : JSON.stringify(v),
-            ])
-          );
+        ? parseOrDefault(value as string, {})
+        : parseOrDefault(metadata, {});
+    const safeMetadata = Object.fromEntries(
+      Object.entries(metaRaw).map(([k, v]) => [
+        k,
+        typeof v === "string" ? v : JSON.stringify(v),
+      ])
+    );
 
     const updated: KnowledgeBaseNodeData = {
-      operation,
-      documents:
-        field === "documents"
-          ? (value as unknown[])
-          : knowledgeData.documents || [],
+      ...node.data,
+      operation: field === "operation" ? (value as any) : operation,
+      documents: docs,
       metadata: safeMetadata,
     };
-    if (field === "operation")
-      setOperation(value as "store" | "retrieve" | "search");
-    if (field === "documents") setDocuments(JSON.stringify(value, null, 2));
-    if (field === "metadata") setMetadata(JSON.stringify(value, null, 2));
+
     if (isKnowledgeBaseNodeData(updated)) {
       onChange({
         ...node,
         type: "logic",
         data: {
-          // Ensure context.metadata is Record<string, string>
           message: "",
           context: {
             flowId: node.id,
@@ -138,10 +149,7 @@ export default function KnowledgeBasePropertiesPanel({
         <VSCodeSelect
           value={operation}
           onValueChange={(val: string) =>
-            handleFieldChange(
-              "operation",
-              val as "store" | "retrieve" | "search"
-            )
+            handleFieldChange("operation", val as string)
           }
           options={operationOptions}
           placeholder="Select operation"
@@ -163,14 +171,9 @@ export default function KnowledgeBasePropertiesPanel({
             boxSizing: "border-box",
           }}
           value={documents}
-          onChange={(
-            e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-          ) => {
-            setDocuments(e.target.value);
-            try {
-              handleFieldChange("documents", JSON.parse(e.target.value));
-            } catch {}
-          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+            handleFieldChange("documents", e.target.value)
+          }
           placeholder={`[
   {
     "title": "Document 1",
@@ -195,14 +198,9 @@ export default function KnowledgeBasePropertiesPanel({
             boxSizing: "border-box",
           }}
           value={metadata}
-          onChange={(
-            e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-          ) => {
-            setMetadata(e.target.value);
-            try {
-              handleFieldChange("metadata", JSON.parse(e.target.value));
-            } catch {}
-          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+            handleFieldChange("metadata", e.target.value)
+          }
           placeholder={`{
   "source": "user"
 }`}

@@ -40,7 +40,12 @@ export default function ChatInterfacePropertiesPanel({
   );
 
   // Only update known fields, preserve extra fields
-  const handleFieldChange = (field: keyof ChatNodeData, value: unknown) => {
+  const handleFieldChange = <K extends keyof ChatNodeData>(
+    field: K,
+    value: ChatNodeData[K],
+    setter: (value: ChatNodeData[K]) => void
+  ) => {
+    setter(value);
     const updatedData = {
       ...node.data,
       [field]: value,
@@ -88,20 +93,18 @@ export default function ChatInterfacePropertiesPanel({
         <VSCodeInput
           style={inputStyle}
           value={title}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setTitle(e.target.value);
-            handleFieldChange("title", e.target.value);
-          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("title", e.target.value, setTitle)
+          }
           placeholder="Chat title"
         />
         <label style={labelStyle}>Placeholder</label>
         <VSCodeInput
           style={inputStyle}
           value={placeholder}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setPlaceholder(e.target.value);
-            handleFieldChange("placeholder", e.target.value);
-          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleFieldChange("placeholder", e.target.value, setPlaceholder)
+          }
           placeholder="Type your message..."
         />
         <div style={{ marginTop: theme.spacing.md }}>
@@ -109,10 +112,13 @@ export default function ChatInterfacePropertiesPanel({
             <input
               type="checkbox"
               checked={enableFileUpload}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setEnableFileUpload(e.target.checked);
-                handleFieldChange("enableFileUpload", e.target.checked);
-              }}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleFieldChange(
+                  "enableFileUpload",
+                  e.target.checked,
+                  setEnableFileUpload
+                )
+              }
               style={{ marginRight: theme.spacing.sm }}
             />
             Enable File Upload
@@ -123,10 +129,13 @@ export default function ChatInterfacePropertiesPanel({
             <input
               type="checkbox"
               checked={showHistory}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setShowHistory(e.target.checked);
-                handleFieldChange("showHistory", e.target.checked);
-              }}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                handleFieldChange(
+                  "showHistory",
+                  e.target.checked,
+                  setShowHistory
+                )
+              }
               style={{ marginRight: theme.spacing.sm }}
             />
             Show History
