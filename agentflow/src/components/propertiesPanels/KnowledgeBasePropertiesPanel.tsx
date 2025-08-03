@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { VSCodeSelect, VSCodeInput } from "./vsCodeFormComponents";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
+import { Database, FileText, Info } from "lucide-react";
 
 import { PanelSection } from "./PanelSection";
 
@@ -145,7 +146,11 @@ export default function KnowledgeBasePropertiesPanel({
         overflowX: "hidden",
       }}
     >
-      <PanelSection title="Operation" description="Choose what this node does">
+      <PanelSection
+        title="Operation"
+        description="Choose what this node does"
+        icon={<Database size={16} />}
+      >
         <VSCodeSelect
           value={operation}
           onValueChange={(val: string) =>
@@ -155,7 +160,11 @@ export default function KnowledgeBasePropertiesPanel({
           placeholder="Select operation"
         />
       </PanelSection>
-      <PanelSection title="Documents" description="JSON array of documents">
+      <PanelSection
+        title="Documents"
+        description="JSON array of documents"
+        icon={<FileText size={16} />}
+      >
         <VSCodeInput
           style={{
             minHeight: 48,
@@ -182,7 +191,11 @@ export default function KnowledgeBasePropertiesPanel({
 ]`}
         />
       </PanelSection>
-      <PanelSection title="Metadata" description="Additional metadata as JSON">
+      <PanelSection
+        title="Metadata"
+        description="Additional metadata as JSON"
+        icon={<Info size={16} />}
+      >
         <VSCodeInput
           style={{
             minHeight: 48,
