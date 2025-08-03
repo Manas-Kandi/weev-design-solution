@@ -3,7 +3,7 @@ import React from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { VSCodeInput } from "./vsCodeFormComponents";
 import { CanvasNode } from "@/types";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 
 interface Message {
   // Define minimal Message structure if needed
@@ -131,11 +131,33 @@ export default function IfElsePropertiesPanel({
         title="Context"
         description="Context and metadata (edit as JSON)"
       >
-        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
+        <label
+          style={{
+            display: "block",
+            marginBottom: theme.spacing.xs,
+            fontSize: theme.typography.fontSize.sm,
+            fontWeight: theme.typography.fontWeight.medium,
+            color: theme.colors.textPrimary,
+            fontFamily: theme.typography.fontFamily,
+          }}
+        >
           Context
         </label>
         <textarea
-          className="w-full min-h-[48px] rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] font-mono focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 resize-vertical"
+          style={{
+            width: "100%",
+            minHeight: 48,
+            borderRadius: theme.borderRadius.sm,
+            background: theme.colors.backgroundTertiary,
+            border: `1px solid ${theme.colors.border}`,
+            padding: theme.spacing.inputPadding,
+            color: theme.colors.textPrimary,
+            fontFamily: theme.typography.fontMono,
+            fontSize: theme.typography.fontSize.base,
+            resize: "vertical",
+            boxSizing: "border-box",
+            transition: "box-shadow 0.2s",
+          }}
           value={JSON.stringify(ifElseData.context ?? {}, null, 2)}
           onChange={(e) => {
             try {
@@ -144,29 +166,87 @@ export default function IfElsePropertiesPanel({
           }}
           placeholder='{"flowId": "...", "metadata": {}}'
         />
-        <div className="mt-1 text-[12px] text-[#858585]">
+        <div
+          style={{
+            marginTop: theme.spacing.xs,
+            fontSize: theme.typography.fontSize.xs,
+            color: theme.colors.textMuted,
+            fontFamily: theme.typography.fontFamily,
+          }}
+        >
           Edit the node context as JSON.
         </div>
       </PanelSection>
       <PanelSection title="History" description="Execution history (read-only)">
-        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
+        <label
+          style={{
+            display: "block",
+            marginBottom: theme.spacing.xs,
+            fontSize: theme.typography.fontSize.sm,
+            fontWeight: theme.typography.fontWeight.medium,
+            color: theme.colors.textPrimary,
+            fontFamily: theme.typography.fontFamily,
+          }}
+        >
           History
         </label>
         <textarea
-          className="w-full min-h-[48px] rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] font-mono focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 resize-vertical"
+          style={{
+            width: "100%",
+            minHeight: 48,
+            borderRadius: theme.borderRadius.sm,
+            background: theme.colors.backgroundTertiary,
+            border: `1px solid ${theme.colors.border}`,
+            padding: theme.spacing.inputPadding,
+            color: theme.colors.textPrimary,
+            fontFamily: theme.typography.fontMono,
+            fontSize: theme.typography.fontSize.base,
+            resize: "vertical",
+            boxSizing: "border-box",
+            transition: "box-shadow 0.2s",
+          }}
           value={JSON.stringify(ifElseData.history ?? [], null, 2)}
           readOnly
         />
-        <div className="mt-1 text-[12px] text-[#858585]">
+        <div
+          style={{
+            marginTop: theme.spacing.xs,
+            fontSize: theme.typography.fontSize.xs,
+            color: theme.colors.textMuted,
+            fontFamily: theme.typography.fontFamily,
+          }}
+        >
           Read-only execution history for this node.
         </div>
       </PanelSection>
       <PanelSection title="State" description="Node state (edit as JSON)">
-        <label className="block mb-1 text-[13px] font-semibold text-[#cccccc]">
+        <label
+          style={{
+            display: "block",
+            marginBottom: theme.spacing.xs,
+            fontSize: theme.typography.fontSize.sm,
+            fontWeight: theme.typography.fontWeight.medium,
+            color: theme.colors.textPrimary,
+            fontFamily: theme.typography.fontFamily,
+          }}
+        >
           State
         </label>
         <textarea
-          className="w-full min-h-[48px] rounded-[4px] bg-[#23272e] border border-[#252525] px-3 py-2 text-[#cccccc] font-mono focus:ring-2 focus:ring-[#00c4ff] transition-all duration-200 resize-vertical"
+          style={{
+            width: "100%",
+            minHeight: 48,
+            borderRadius: theme.borderRadius.sm,
+            background: theme.colors.backgroundTertiary,
+            border: `1px solid ${theme.colors.border}`,
+            padding: theme.spacing.inputPadding,
+            color: theme.colors.textPrimary,
+            fontFamily: theme.typography.fontMono,
+            fontSize: theme.typography.fontSize.base,
+            resize: "vertical",
+            boxSizing: "border-box",
+            transition: "box-shadow 0.2s",
+          }}
           value={JSON.stringify(ifElseData.state ?? {}, null, 2)}
           onChange={(e) => {
             try {
@@ -177,7 +257,14 @@ export default function IfElsePropertiesPanel({
   "key": "value"
 }`}
         />
-        <div className="mt-1 text-[12px] text-[#858585]">
+        <div
+          style={{
+            marginTop: theme.spacing.xs,
+            fontSize: theme.typography.fontSize.xs,
+            color: theme.colors.textMuted,
+            fontFamily: theme.typography.fontFamily,
+          }}
+        >
           Edit the node state as JSON.
         </div>
       </PanelSection>

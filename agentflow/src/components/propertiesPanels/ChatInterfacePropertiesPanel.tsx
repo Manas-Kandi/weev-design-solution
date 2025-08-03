@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 import { VSCodeInput } from "./vsCodeFormComponents";
 
 interface ChatInterfacePropertiesPanelProps {
@@ -52,30 +52,30 @@ export default function ChatInterfacePropertiesPanel({
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: 20,
-    borderRadius: 12,
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     display: "flex",
     flexDirection: "column",
-    gap: 16,
+    gap: theme.spacing.lg,
   };
   const labelStyle: React.CSSProperties = {
-    color: "#b3b3b3",
-    fontSize: 14,
-    fontFamily: "Inter, sans-serif",
-    marginBottom: 4,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    marginBottom: theme.spacing.xs,
   };
   const inputStyle: React.CSSProperties = {
     background: theme.colors.backgroundTertiary,
-    color: "#fff",
+    color: theme.colors.textPrimary,
     border: `1px solid ${theme.colors.border}`,
-    borderRadius: 8,
-    padding: 10,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.inputPadding,
     width: "100%",
-    marginBottom: 16,
-    fontFamily: "Inter, sans-serif",
-    fontSize: 15,
+    marginBottom: theme.spacing.md,
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.base,
   };
 
   return (
@@ -104,7 +104,7 @@ export default function ChatInterfacePropertiesPanel({
           }}
           placeholder="Type your message..."
         />
-        <div style={{ marginTop: 16 }}>
+        <div style={{ marginTop: theme.spacing.md }}>
           <label style={labelStyle}>
             <input
               type="checkbox"
@@ -113,12 +113,12 @@ export default function ChatInterfacePropertiesPanel({
                 setEnableFileUpload(e.target.checked);
                 handleFieldChange("enableFileUpload", e.target.checked);
               }}
-              style={{ marginRight: 8 }}
+              style={{ marginRight: theme.spacing.sm }}
             />
             Enable File Upload
           </label>
         </div>
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: theme.spacing.sm }}>
           <label style={labelStyle}>
             <input
               type="checkbox"
@@ -127,7 +127,7 @@ export default function ChatInterfacePropertiesPanel({
                 setShowHistory(e.target.checked);
                 handleFieldChange("showHistory", e.target.checked);
               }}
-              style={{ marginRight: 8 }}
+              style={{ marginRight: theme.spacing.sm }}
             />
             Show History
           </label>

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode, PromptTemplateNodeData } from "@/types";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 import { VSCodeInput, VSCodeButton } from "./vsCodeFormComponents";
 
 interface PromptTemplatePropertiesPanelProps {
@@ -79,12 +79,11 @@ export default function PromptTemplatePropertiesPanel({
     handleFieldChange("variables", next);
   };
 
-  // Compose panel style from theme
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: "24px",
-    borderRadius: "12px",
+    padding: theme.spacing.xl,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -92,7 +91,7 @@ export default function PromptTemplatePropertiesPanel({
     maxWidth: 360,
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: theme.spacing.lg,
     boxSizing: "border-box",
     overflowY: "auto",
   };
@@ -120,8 +119,8 @@ export default function PromptTemplatePropertiesPanel({
             key={key}
             style={{
               display: "flex",
-              gap: "6px",
-              marginBottom: "6px",
+              gap: theme.spacing.xs,
+              marginBottom: theme.spacing.xs,
             }}
           >
             <VSCodeInput
@@ -153,7 +152,7 @@ export default function PromptTemplatePropertiesPanel({
             </VSCodeButton>
           </div>
         ))}
-        <VSCodeButton style={{ marginTop: "6px" }} onClick={handleAddVariable}>
+        <VSCodeButton style={{ marginTop: theme.spacing.xs }} onClick={handleAddVariable}>
           Add Variable
         </VSCodeButton>
       </PanelSection>
@@ -163,10 +162,12 @@ export default function PromptTemplatePropertiesPanel({
       >
         <label
           style={{
-            fontSize: "15px",
+            fontSize: theme.typography.fontSize.base,
             display: "flex",
             alignItems: "center",
-            gap: "6px",
+            gap: theme.spacing.xs,
+            fontFamily: theme.typography.fontFamily,
+            color: theme.colors.textPrimary,
           }}
         >
           <input
@@ -176,10 +177,10 @@ export default function PromptTemplatePropertiesPanel({
               handleFieldChange("extractVariablesFromInput", e.target.checked)
             }
             style={{
-              accentColor: "#38bdf8",
+              accentColor: theme.colors.info,
               width: 16,
               height: 16,
-              borderRadius: "6px",
+              borderRadius: theme.borderRadius.md,
               border: `1px solid ${theme.colors.border}`,
             }}
           />

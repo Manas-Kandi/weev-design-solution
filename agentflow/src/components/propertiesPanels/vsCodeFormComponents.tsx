@@ -1,6 +1,6 @@
 // VS Code-style form components for AgentFlow properties panels
 import React from "react";
-import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme, themeHelpers } from "./propertiesPanelTheme";
 
 // ...existing code from your message...
 
@@ -76,9 +76,8 @@ export const VSCodeSelect: React.FC<VSCodeSelectProps> = ({
 );
 
 // VSCodeButton
-interface VSCodeButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "danger";
+interface VSCodeButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "secondary" | "danger";
   size?: "small" | "medium";
 }
 export const VSCodeButton: React.FC<VSCodeButtonProps> = ({
@@ -87,43 +86,38 @@ export const VSCodeButton: React.FC<VSCodeButtonProps> = ({
   style,
   ...props
 }) => {
-  // Map "danger" to error color, otherwise use primary
-  const background = variant === "danger" ? "#ef4444" : "#2563eb";
-  const baseStyle: React.CSSProperties = {
-    background,
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    padding: "0 16px",
-    height: "32px",
-    fontWeight: 500,
-    fontFamily: "Inter, sans-serif",
-    fontSize: "15px",
-    cursor: "pointer",
-    transition: "background 0.15s, color 0.15s",
-    outline: "none",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-  };
-  // Adjust size if needed
-  const sizeStyle =
-    size === "small"
-      ? {
-          height: "24px",
-          fontSize: "13px",
-          padding: "0 8px",
-        }
-      : {};
+  const [isHovered, setIsHovered] = React.useState(false);
+  // Use theme helper for consistency
+  const baseStyle = themeHelpers.getButtonStyle(variant === "danger" ? "secondary" : variant);
+  // Override colors for danger variant using theme
+  const variantStyle: React.CSSProperties = variant === "danger" ? {
+    backgroundColor: theme.colors.error,
+    border: `1px solid ${theme.colors.error}`,
+    color: "white",
+  } : {};
+  // Size adjustments using theme tokens
+  const sizeStyle: React.CSSProperties = size === "small" ? {
+    height: theme.spacing.buttonHeight,
+    fontSize: theme.typography.fontSize.xs,
+    padding: `0 ${theme.spacing.sm}`,
+  } : {};
+  // Hover effects
+  const hoverStyle: React.CSSProperties = isHovered ? {
+    filter: "brightness(0.96)",
+    boxShadow: theme.shadows.subtle,
+  } : {};
   return (
     <button
       {...props}
       style={{
         ...baseStyle,
+        ...variantStyle,
         ...sizeStyle,
+        ...hoverStyle,
         ...style,
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     />
   );
 };

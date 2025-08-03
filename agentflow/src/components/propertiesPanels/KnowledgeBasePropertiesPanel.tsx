@@ -1,9 +1,10 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
 import { VSCodeSelect, VSCodeInput } from "./vsCodeFormComponents";
+import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 
 interface KnowledgeBaseNodeData {
   operation?: "store" | "retrieve" | "search";
@@ -121,7 +122,14 @@ export default function KnowledgeBasePropertiesPanel({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "20px",
+        gap: theme.spacing.lg,
+        background: theme.colors.background,
+        padding: theme.spacing.lg,
+        minWidth: 360,
+        maxWidth: 480,
+        height: "100%",
+        boxSizing: "border-box",
+        overflowY: "auto",
       }}
     >
       <PanelSection title="Operation" description="Choose what this node does">
@@ -139,7 +147,19 @@ export default function KnowledgeBasePropertiesPanel({
       </PanelSection>
       <PanelSection title="Documents" description="JSON array of documents">
         <VSCodeInput
-          style={{ minHeight: 48, fontFamily: "Menlo, monospace" }}
+          style={{
+            minHeight: 48,
+            fontFamily: theme.typography.fontMono,
+            fontSize: theme.typography.fontSize.base,
+            background: theme.colors.backgroundTertiary,
+            color: theme.colors.textPrimary,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.borderRadius.sm,
+            padding: theme.spacing.inputPadding,
+            resize: "vertical",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
           value={documents}
           onChange={(
             e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -159,7 +179,19 @@ export default function KnowledgeBasePropertiesPanel({
       </PanelSection>
       <PanelSection title="Metadata" description="Additional metadata as JSON">
         <VSCodeInput
-          style={{ minHeight: 48, fontFamily: "Menlo, monospace" }}
+          style={{
+            minHeight: 48,
+            fontFamily: theme.typography.fontMono,
+            fontSize: theme.typography.fontSize.base,
+            background: theme.colors.backgroundTertiary,
+            color: theme.colors.textPrimary,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.borderRadius.sm,
+            padding: theme.spacing.inputPadding,
+            resize: "vertical",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
           value={metadata}
           onChange={(
             e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

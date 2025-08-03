@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 import { VSCodeInput, VSCodeSelect } from "./vsCodeFormComponents";
 
 interface MessagePropertiesPanelProps {
@@ -84,8 +84,8 @@ export default function MessagePropertiesPanel({
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: "24px",
-    borderRadius: "12px",
+    padding: theme.spacing.xl,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -93,7 +93,7 @@ export default function MessagePropertiesPanel({
     maxWidth: 360,
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: theme.spacing.lg,
     boxSizing: "border-box",
     overflowY: "auto",
   };
@@ -106,13 +106,14 @@ export default function MessagePropertiesPanel({
         <label
           style={{
             display: "block",
-            marginBottom: 4,
-            color: "#f3f3f3",
-            fontWeight: 500,
-            fontSize: "15px",
+            marginBottom: theme.spacing.xs,
+            color: theme.colors.textPrimary,
+            fontWeight: theme.typography.fontWeight.medium,
+            fontSize: theme.typography.fontSize.base,
+            fontFamily: theme.typography.fontFamily,
           }}
         >
-          Title <span style={{ color: "#ef4444" }}>*</span>
+          Title <span style={{ color: theme.colors.error }}>*</span>
         </label>
         <VSCodeInput
           value={safeData.title}
@@ -123,11 +124,11 @@ export default function MessagePropertiesPanel({
           }
           onBlur={() => setTouched((t) => ({ ...t, title: true }))}
         />
-        <span style={{ color: "#b0b0b0", fontSize: 12 }}>
+        <span style={{ color: theme.colors.textMuted, fontSize: theme.typography.fontSize.xs }}>
           Max {TITLE_MAX} characters
         </span>
         {touched.title && errors.title && (
-          <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>
+          <div style={{ color: theme.colors.error, fontSize: theme.typography.fontSize.xs, marginTop: theme.spacing.xs }}>
             {errors.title}
           </div>
         )}
@@ -135,28 +136,30 @@ export default function MessagePropertiesPanel({
         <label
           style={{
             display: "block",
-            marginBottom: 4,
-            color: "#f3f3f3",
-            fontWeight: 500,
-            fontSize: "15px",
+            marginBottom: theme.spacing.xs,
+            color: theme.colors.textPrimary,
+            fontWeight: theme.typography.fontWeight.medium,
+            fontSize: theme.typography.fontSize.base,
+            fontFamily: theme.typography.fontFamily,
           }}
         >
-          Message Content <span style={{ color: "#ef4444" }}>*</span>
+          Message Content <span style={{ color: theme.colors.error }}>*</span>
         </label>
         <textarea
           style={{
             width: "100%",
             minHeight: 64,
-            borderRadius: "6px",
+            borderRadius: theme.borderRadius.md,
             background: theme.colors.backgroundSecondary,
-            color: "#f3f3f3",
+            color: theme.colors.textPrimary,
             border: `1px solid ${theme.colors.border}`,
-            padding: "12px",
-            marginBottom: "20px",
-            transition: "all 0.15s",
-            fontFamily: "Menlo, monospace",
-            fontSize: "15px",
+            padding: theme.spacing.inputPadding,
+            marginBottom: theme.spacing.lg,
+            transition: theme.animation.medium,
+            fontFamily: theme.typography.fontMono,
+            fontSize: theme.typography.fontSize.base,
             resize: "vertical",
+            boxSizing: "border-box",
           }}
           value={safeData.content}
           maxLength={500}
@@ -164,11 +167,11 @@ export default function MessagePropertiesPanel({
           onChange={(e) => handleFieldChange("content", e.target.value)}
           onBlur={() => setTouched((t) => ({ ...t, content: true }))}
         />
-        <span style={{ color: "#b0b0b0", fontSize: 12 }}>
+        <span style={{ color: theme.colors.textMuted, fontSize: theme.typography.fontSize.xs }}>
           Required. This will be sent as the message.
         </span>
         {touched.content && errors.content && (
-          <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>
+          <div style={{ color: theme.colors.error, fontSize: theme.typography.fontSize.xs, marginTop: theme.spacing.xs }}>
             {errors.content}
           </div>
         )}
@@ -176,10 +179,11 @@ export default function MessagePropertiesPanel({
         <label
           style={{
             display: "block",
-            marginBottom: 4,
-            color: "#f3f3f3",
-            fontWeight: 500,
-            fontSize: "15px",
+            marginBottom: theme.spacing.xs,
+            color: theme.colors.textPrimary,
+            fontWeight: theme.typography.fontWeight.medium,
+            fontSize: theme.typography.fontSize.base,
+            fontFamily: theme.typography.fontFamily,
           }}
         >
           Message Type
@@ -199,7 +203,7 @@ export default function MessagePropertiesPanel({
           ]}
           placeholder="Message Type"
         />
-        <span style={{ color: "#b0b0b0", fontSize: 12 }}>
+        <span style={{ color: theme.colors.textMuted, fontSize: theme.typography.fontSize.xs }}>
           Choose the role for this message.
         </span>
       </PanelSection>
@@ -208,8 +212,8 @@ export default function MessagePropertiesPanel({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 8,
-            marginTop: 8,
+            gap: theme.spacing.xs,
+            marginTop: theme.spacing.xs,
           }}
         >
           <input
@@ -218,27 +222,28 @@ export default function MessagePropertiesPanel({
             onChange={(e) => handleFieldChange("passThrough", e.target.checked)}
             id="passThrough"
             style={{
-              accentColor: "#38bdf8",
+              accentColor: theme.colors.info,
               width: 16,
               height: 16,
-              borderRadius: "6px",
+              borderRadius: theme.borderRadius.md,
               border: `1px solid ${theme.colors.border}`,
             }}
           />
           <label
             htmlFor="passThrough"
             style={{
-              color: "#f3f3f3",
-              fontWeight: 500,
-              fontSize: "15px",
+              color: theme.colors.textPrimary,
+              fontWeight: theme.typography.fontWeight.medium,
+              fontSize: theme.typography.fontSize.base,
+              fontFamily: theme.typography.fontFamily,
             }}
           >
             Pass Through Mode
             <span
               style={{
                 display: "block",
-                color: "#b0b0b0",
-                fontSize: 12,
+                color: theme.colors.textMuted,
+                fontSize: theme.typography.fontSize.xs,
               }}
             >
               If enabled, this node will pass its input through instead of using

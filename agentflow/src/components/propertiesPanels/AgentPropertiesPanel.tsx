@@ -11,8 +11,8 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { CanvasNode } from "@/types";
-import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
-import PanelSection from "./PanelSection";
+import { figmaPropertiesTheme as theme, getPanelContainerStyle } from "./propertiesPanelTheme";
+import { PanelSection } from "./PanelSection";
 import {
   VSCodeInput,
   VSCodeSelect,
@@ -42,7 +42,7 @@ interface AgentPropertiesPanelProps {
   onChange: (node: CanvasNode & { data: AgentNodeData }) => void;
 }
 
-export default function EnhancedAgentPropertiesPanel({
+export default function AgentPropertiesPanel({
   node,
   onChange,
 }: AgentPropertiesPanelProps) {
@@ -50,27 +50,15 @@ export default function EnhancedAgentPropertiesPanel({
 
   // Model options with descriptions
   const modelOptions = [
-    {
-      value: "gemini-pro",
-      label: "Gemini Pro",
-      description: "Balanced performance and capability",
-    },
-    {
-      value: "gemini-pro-vision",
-      label: "Gemini Pro Vision",
-      description: "Multimodal with image understanding",
-    },
-    {
-      value: "gemini-ultra",
-      label: "Gemini Ultra",
-      description: "Most capable model (coming soon)",
-    },
+    { value: "gemini-pro", label: "Gemini Pro" },
+    { value: "gemini-pro-vision", label: "Gemini Pro Vision" },
+    { value: "gemini-ultra", label: "Gemini Ultra" },
   ];
 
   const responseFormatOptions = [
-    { value: "text", label: "Text", description: "Plain text response" },
-    { value: "json", label: "JSON", description: "Structured JSON output" },
-    { value: "markdown", label: "Markdown", description: "Formatted markdown" },
+    { value: "text", label: "Text" },
+    { value: "json", label: "JSON" },
+    { value: "markdown", label: "Markdown" },
   ];
 
   const handleFieldChange = (field: keyof AgentNodeData, value: unknown) => {
@@ -78,63 +66,47 @@ export default function EnhancedAgentPropertiesPanel({
     onChange({ ...node, data: updatedData });
   };
 
-  // Panel container style
-  const panelStyle: React.CSSProperties = {
-    width: 360,
-    minWidth: 320,
-    maxWidth: 480,
-    height: "100%",
-    backgroundColor: theme.colors.background,
-    borderLeft: `1px solid ${theme.colors.border}`,
-    display: "flex",
-    flexDirection: "column",
-    overflowY: "auto",
-    fontFamily: "Inter, sans-serif",
-    borderRadius: 12,
-  };
-
+  // Use theme-driven panel container style
+  // Header and content styles (theme-driven, no container)
   const headerStyle: React.CSSProperties = {
-    padding: 24,
+    padding: theme.spacing.lg,
     borderBottom: `1px solid ${theme.colors.border}`,
     backgroundColor: theme.colors.backgroundSecondary,
     display: "flex",
     alignItems: "center",
-    gap: 16,
-    minHeight: "60px",
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    gap: theme.spacing.md,
   };
-
   const headerTitleStyle: React.CSSProperties = {
-    fontSize: 20,
-    fontWeight: 600,
-    color: "#fff",
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textPrimary,
     margin: 0,
+    lineHeight: theme.typography.lineHeight.tight,
+    fontFamily: theme.typography.fontFamily,
   };
-
   const headerSubtitleStyle: React.CSSProperties = {
-    fontSize: 14,
-    color: "#b3b3b3",
-    margin: 0,
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textSecondary,
+    margin: `${theme.spacing.xs} 0 0 0`,
+    lineHeight: theme.typography.lineHeight.normal,
+    fontFamily: theme.typography.fontFamily,
   };
-
   const contentStyle: React.CSSProperties = {
-    padding: 16,
+    padding: theme.spacing.lg,
     display: "flex",
     flexDirection: "column",
-    gap: 24,
+    gap: theme.spacing.lg,
     flex: 1,
   };
-
   return (
-    <div style={panelStyle}>
+    <div style={getPanelContainerStyle()}>
       {/* Panel Header */}
       <div style={headerStyle}>
         <div
           style={{
-            backgroundColor: "#0ea5e9",
-            borderRadius: 8,
-            padding: 8,
+            backgroundColor: theme.colors.buttonPrimary,
+            borderRadius: theme.borderRadius.md,
+            padding: theme.spacing.md,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

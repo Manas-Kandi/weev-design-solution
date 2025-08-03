@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 import {
   VSCodeInput,
   VSCodeSelect,
@@ -65,18 +65,18 @@ export default function TestCasePropertiesPanel({
 
   // Theme-based container style
   const containerStyle: React.CSSProperties = {
-    width: "360px",
-    minWidth: "360px",
-    maxWidth: "360px",
+    width: 360,
+    minWidth: 360,
+    maxWidth: 360,
     height: "100%",
     background: theme.colors.background,
-    color: "#f3f3f3",
-    borderRadius: "12px",
-    padding: "24px",
+    color: theme.colors.textPrimary,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
     overflowY: "auto",
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: theme.spacing.lg,
     boxSizing: "border-box",
   };
 
@@ -85,12 +85,12 @@ export default function TestCasePropertiesPanel({
     width: "100%",
     minHeight: 48,
     background: theme.colors.backgroundTertiary,
-    color: "#f3f3f3",
+    color: theme.colors.textPrimary,
     border: `1px solid ${theme.colors.border}`,
-    borderRadius: "6px",
-    padding: "12px",
-    fontFamily: "Menlo, monospace",
-    fontSize: "15px",
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.inputPadding,
+    fontFamily: theme.typography.fontMono,
+    fontSize: theme.typography.fontSize.base,
     resize: "vertical",
     boxSizing: "border-box",
   };
@@ -108,7 +108,7 @@ export default function TestCasePropertiesPanel({
             handleFieldChange("description", e.target.value);
           }}
           placeholder="Test case description..."
-          style={{ width: "100%" }}
+          style={{ width: "100%", fontFamily: theme.typography.fontFamily, fontSize: theme.typography.fontSize.base, background: theme.colors.backgroundTertiary, color: theme.colors.textPrimary, border: `1px solid ${theme.colors.border}`, borderRadius: theme.borderRadius.sm, padding: theme.spacing.inputPadding, boxSizing: "border-box" }}
         />
       </PanelSection>
       <PanelSection title="Input" description="Input data for the test case.">
@@ -148,7 +148,7 @@ export default function TestCasePropertiesPanel({
           }}
           options={assertTypes}
           placeholder="Choose assertion type"
-          style={{ width: "100%" }}
+          style={{ width: "100%", fontFamily: theme.typography.fontFamily, fontSize: theme.typography.fontSize.base, background: theme.colors.backgroundTertiary, color: theme.colors.textPrimary, border: `1px solid ${theme.colors.border}`, borderRadius: theme.borderRadius.sm, padding: theme.spacing.inputPadding, boxSizing: "border-box" }}
         />
       </PanelSection>
       <PanelSection title="Run Test" description="Execute this test case.">

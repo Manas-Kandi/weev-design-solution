@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { VSCodeButton } from "./vsCodeFormComponents";
 import { CanvasNode } from "@/types";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 
 interface SimulatorPropertiesPanelProps {
   node: CanvasNode;
@@ -35,8 +35,8 @@ export default function SimulatorPropertiesPanel({
   const panelStyle: React.CSSProperties = {
     background: theme.colors.background,
     borderLeft: `1px solid ${theme.colors.border}`,
-    padding: "24px",
-    borderRadius: "12px",
+    padding: theme.spacing.xl,
+    borderRadius: theme.borderRadius.lg,
     minHeight: 0,
     height: "100%",
     width: 360,
@@ -44,7 +44,7 @@ export default function SimulatorPropertiesPanel({
     maxWidth: 360,
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: theme.spacing.lg,
     boxSizing: "border-box",
     overflowY: "auto",
   };
@@ -52,14 +52,15 @@ export default function SimulatorPropertiesPanel({
     width: "100%",
     minHeight: 48,
     background: theme.colors.backgroundSecondary,
-    color: "#f3f3f3",
+    color: theme.colors.textPrimary,
     border: `1px solid ${theme.colors.border}`,
-    borderRadius: "6px",
-    padding: "12px",
-    fontFamily: "Menlo, monospace",
-    fontSize: "15px",
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.inputPadding,
+    fontFamily: theme.typography.fontMono,
+    fontSize: theme.typography.fontSize.base,
     resize: "vertical",
-    marginBottom: "20px",
+    marginBottom: theme.spacing.lg,
+    boxSizing: "border-box",
   };
 
   return (
@@ -98,7 +99,7 @@ export default function SimulatorPropertiesPanel({
       >
         <VSCodeButton
           type="button"
-          style={{ minWidth: 120 }}
+          style={{ minWidth: 120, fontSize: theme.typography.fontSize.base, fontFamily: theme.typography.fontFamily, padding: theme.spacing.inputPadding }}
           onClick={() => {
             // Simulation logic here
           }}

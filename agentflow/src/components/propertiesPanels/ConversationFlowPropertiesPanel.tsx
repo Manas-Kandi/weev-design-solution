@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
+import { VSCodeInput, VSCodeButton } from "./vsCodeFormComponents";
 
 interface ConversationFlowNodeData {
   states: string[];
@@ -34,27 +33,16 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
   setTransitions,
   handleFieldChange,
 }) => {
-  const inputStyle: React.CSSProperties = {
-    width: 90,
-    background: theme.colors.backgroundTertiary,
-    color: "#fff",
-    border: `1px solid ${theme.colors.border}`,
-    borderRadius: 8,
-    padding: 10,
-    fontFamily: "Inter, sans-serif",
-    fontSize: 15,
-    marginRight: 8,
-  };
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 8,
-        marginBottom: 8,
+        gap: theme.spacing.xs,
+        marginBottom: theme.spacing.xs,
       }}
     >
-      <Input
+      <VSCodeInput
         value={tr.from || ""}
         onChange={(e) => {
           const next = [...transitions];
@@ -62,10 +50,10 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
           setTransitions(next);
           handleFieldChange("transitions", next);
         }}
-        style={inputStyle}
         placeholder="From"
+        style={{ width: 90 }}
       />
-      <Input
+      <VSCodeInput
         value={tr.to || ""}
         onChange={(e) => {
           const next = [...transitions];
@@ -73,10 +61,10 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
           setTransitions(next);
           handleFieldChange("transitions", next);
         }}
-        style={inputStyle}
         placeholder="To"
+        style={{ width: 90 }}
       />
-      <Input
+      <VSCodeInput
         value={tr.condition || ""}
         onChange={(e) => {
           const next = [...transitions];
@@ -84,20 +72,21 @@ const TransitionInput: React.FC<TransitionInputProps> = ({
           setTransitions(next);
           handleFieldChange("transitions", next);
         }}
-        style={{ ...inputStyle, width: 120 }}
         placeholder="Condition"
+        style={{ width: 120 }}
       />
-      <Button
-        size="sm"
-        variant="destructive"
+      <VSCodeButton
+        variant="danger"
+        size="small"
         onClick={() => {
           const next = transitions.filter((_, i) => i !== idx);
           setTransitions(next);
           handleFieldChange("transitions", next);
         }}
+        style={{ marginLeft: theme.spacing.xs }}
       >
         Remove
-      </Button>
+      </VSCodeButton>
     </div>
   );
 };
@@ -121,31 +110,15 @@ export default function ConversationFlowPropertiesPanel({
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
-  // Compose panel style from theme
-  const panelStyle: React.CSSProperties = {
-    background: theme.colors.background,
-    borderLeft: `1px solid ${theme.colors.border}`,
-    padding: 20,
-    borderRadius: 12,
-    minHeight: 0,
-    height: "100%",
-    width: 360,
-    minWidth: 360,
-    maxWidth: 360,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    boxSizing: "border-box",
-    overflowY: "auto",
-  };
+  // No custom panelStyle: rely on theme and section/content styles only
 
   return (
-    <div style={panelStyle}>
+    <div style={{ padding: 0, margin: 0, background: theme.colors.background, height: "100%", overflowY: "auto" }}>
       <PanelSection
         title="States"
         description="Comma-separated list of all possible states."
       >
-        <Input
+        <VSCodeInput
           value={states.join(", ")}
           onChange={(e) => {
             const arr = e.target.value
@@ -162,7 +135,7 @@ export default function ConversationFlowPropertiesPanel({
         title="Initial State"
         description="The starting state for the conversation flow."
       >
-        <Input
+        <VSCodeInput
           value={initialState}
           onChange={(e) => {
             setInitialState(e.target.value);
@@ -179,7 +152,7 @@ export default function ConversationFlowPropertiesPanel({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 4,
+            gap: theme.spacing.xs,
           }}
         >
           {transitions.map((tr, idx) => (
@@ -192,8 +165,9 @@ export default function ConversationFlowPropertiesPanel({
               handleFieldChange={handleFieldChange}
             />
           ))}
-          <Button
-            size="sm"
+          <VSCodeButton
+            variant="primary"
+            size="small"
             onClick={() => {
               const next = [
                 ...transitions,
@@ -202,16 +176,17 @@ export default function ConversationFlowPropertiesPanel({
               setTransitions(next);
               handleFieldChange("transitions", next);
             }}
+            style={{ marginTop: theme.spacing.xs }}
           >
             Add Transition
-          </Button>
+          </VSCodeButton>
         </div>
       </PanelSection>
       <PanelSection
         title="Persistence"
         description="Optionally persist the state across executions."
       >
-        <label className="flex items-center gap-2">
+        <label style={{ display: "flex", alignItems: "center", gap: theme.spacing.xs }}>
           <input
             type="checkbox"
             checked={persistState}
@@ -219,6 +194,7 @@ export default function ConversationFlowPropertiesPanel({
               setPersistState(e.target.checked);
               handleFieldChange("persistState", e.target.checked);
             }}
+            style={{ accentColor: theme.colors.textAccent }}
           />
           <span>Persist State</span>
         </label>

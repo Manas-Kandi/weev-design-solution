@@ -1,8 +1,8 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState } from "react";
-import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme, getPanelContainerStyle } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 import {
   VSCodeInput,
   VSCodeSelect,
@@ -67,22 +67,10 @@ export default function DashboardPropertiesPanel({
     onChange({ ...node, data: updated });
   };
 
-  // Compose panel style from theme
-  const panelStyle: React.CSSProperties = {
-    background: theme.colors.background,
-    borderLeft: `1px solid ${theme.colors.border}`,
-    padding: 20,
-    borderRadius: 12,
-    minHeight: 0,
-    height: "100%",
-    width: 360,
-    minWidth: 360,
-    maxWidth: 360,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    boxSizing: "border-box",
-    overflowY: "auto",
+  // Use theme-driven container style
+  const panelStyle = {
+    ...getPanelContainerStyle(),
+    // Add any panel-specific overrides here if needed
   };
 
   return (
@@ -115,7 +103,7 @@ export default function DashboardPropertiesPanel({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 4,
+            gap: theme.spacing.xs,
           }}
         >
           {widgets.map((widget, idx) => (
@@ -124,7 +112,7 @@ export default function DashboardPropertiesPanel({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 4,
+                gap: theme.spacing.xs,
               }}
             >
               <VSCodeInput

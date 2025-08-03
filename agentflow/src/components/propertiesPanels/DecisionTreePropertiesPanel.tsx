@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 import {
   VSCodeInput,
   VSCodeSelect,
@@ -113,37 +113,19 @@ export default function DecisionTreePropertiesPanel({
     onChange({ ...node, data: updated });
   };
 
-  // Compose panel style from theme
-  const panelStyle: React.CSSProperties = {
-    background: theme.colors.background,
-    borderLeft: `1px solid ${theme.colors.border}`,
-    padding: 20,
-    borderRadius: 12,
-    minHeight: 0,
-    height: "100%",
-    width: 360,
-    minWidth: 360,
-    maxWidth: 360,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    boxSizing: "border-box",
-    overflowY: "auto",
-  };
+  // No custom panelStyle: rely on theme and section/content styles only
 
   // Only render the panel if the node is a decision-tree node
   if (!isDecisionTreeNodeData(node.data)) {
     return (
-      <div style={panelStyle}>
-        <div style={{ color: "#fff" }}>
-          This properties panel is only for decision tree nodes.
-        </div>
+      <div style={{ padding: theme.spacing.lg, background: theme.colors.background, color: theme.colors.error, fontFamily: theme.typography.fontFamily }}>
+        This properties panel is only for decision tree nodes.
       </div>
     );
   }
 
   return (
-    <div style={panelStyle}>
+    <div style={{ padding: 0, margin: 0, background: theme.colors.background, height: "100%", overflowY: "auto" }}>
       <PanelSection
         title="Title"
         description="Set a title for this decision tree node."

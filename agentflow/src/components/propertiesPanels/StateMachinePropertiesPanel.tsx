@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import PanelSection from "./PanelSection";
+import { PanelSection } from "./PanelSection";
 import { VSCodeInput, VSCodeButton } from "./vsCodeFormComponents";
 
 interface StateMachinePropertiesPanelProps {
@@ -52,16 +52,18 @@ export default function StateMachinePropertiesPanel({
 
   // Container style from theme helpers
   const containerStyle: React.CSSProperties = {
-    width: "360px",
+    width: 360,
+    minWidth: 360,
+    maxWidth: 360,
     height: "100%",
     background: theme.colors.background,
-    color: "#f3f3f3",
-    borderRadius: "12px",
-    padding: "24px",
+    color: theme.colors.textPrimary,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
     overflowY: "auto",
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: theme.spacing.lg,
     boxSizing: "border-box",
   };
 
@@ -75,7 +77,7 @@ export default function StateMachinePropertiesPanel({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "20px",
+            gap: theme.spacing.lg,
           }}
         >
           {states.map((state, idx) => (
@@ -84,7 +86,7 @@ export default function StateMachinePropertiesPanel({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "20px",
+                gap: theme.spacing.lg,
               }}
             >
               <VSCodeInput
@@ -143,7 +145,7 @@ export default function StateMachinePropertiesPanel({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "20px",
+            gap: theme.spacing.lg,
           }}
         >
           {transitions.map((tr, idx) => (
@@ -152,7 +154,7 @@ export default function StateMachinePropertiesPanel({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "20px",
+                gap: theme.spacing.lg,
               }}
             >
               <VSCodeInput
@@ -224,15 +226,23 @@ export default function StateMachinePropertiesPanel({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "20px",
-            color: "#b0b0b0",
-            margin: "8px 0",
+            gap: theme.spacing.xs,
+            color: theme.colors.textMuted,
+            margin: `${theme.spacing.xs} 0`,
+            fontFamily: theme.typography.fontFamily,
+            fontSize: theme.typography.fontSize.base,
           }}
         >
           <input
             type="checkbox"
             checked={persistState}
-            style={{ width: 18, height: 18 }}
+            style={{
+              width: 18,
+              height: 18,
+              accentColor: theme.colors.info,
+              borderRadius: theme.borderRadius.md,
+              border: `1px solid ${theme.colors.border}`,
+            }}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setPersistState(e.target.checked);
               handleFieldChange("persistState", e.target.checked);

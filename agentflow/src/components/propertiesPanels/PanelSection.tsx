@@ -1,9 +1,9 @@
-// All UI rules for properties panels must come from propertiesPanelTheme.ts
-// Enhanced PanelSection component with VS Code styling
+// ===== SMALL FIX #2: PanelSection Component Consistency =====
+// Update: src/components/propertiesPanels/PanelSection.tsx
+
 import React, { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
-import { useFigmaHover } from "../../utils/figmaInteractions";
 
 interface PanelSectionProps {
   title: string;
@@ -16,7 +16,7 @@ interface PanelSectionProps {
   actions?: React.ReactNode; // For section-level actions
 }
 
-const PanelSection: React.FC<PanelSectionProps> = ({
+export const PanelSection: React.FC<PanelSectionProps> = ({
   title,
   description,
   children,
@@ -27,82 +27,121 @@ const PanelSection: React.FC<PanelSectionProps> = ({
   actions,
 }) => {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
-  const { isHovered, hoverProps } = useFigmaHover<HTMLButtonElement>();
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Get styles based on section level
+  // ===== CONSISTENT SECTION STYLING =====
   const sectionStyle: React.CSSProperties = {
-    border: `1px solid ${theme.colors.border}`,
-    borderRadius: "6px",
     backgroundColor:
-      level === 1 ? theme.colors.background : theme.colors.backgroundSecondary,
-    marginBottom: "16px",
+      level === 1
+        ? theme.colors.backgroundElevated
+        : theme.colors.backgroundSecondary,
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.components.section.marginBottom,
     overflow: "hidden",
-    transition: "all 0.2s",
+    transition: `all ${theme.animation.medium}`,
   };
 
   const headerStyle: React.CSSProperties = {
+    height: theme.components.section.headerHeight,
     backgroundColor: isHovered
       ? theme.colors.backgroundTertiary
-      : level === 1
-      ? theme.colors.backgroundSecondary
-      : theme.colors.backgroundTertiary,
+      : theme.colors.backgroundSecondary,
     borderBottom: collapsed ? "none" : `1px solid ${theme.colors.border}`,
+    padding: `0 ${theme.spacing.lg}`,
+    display: "flex",
+    alignItems: "center",
     justifyContent: "space-between",
-    minHeight: "40px",
-    padding: "0 16px",
+    cursor: "pointer",
+    transition: `all ${theme.animation.fast}`,
+    border: "none",
+    width: "100%",
+    textAlign: "left",
   };
 
   const headerContentStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: theme.spacing.sm,
     flex: 1,
+    minWidth: 0, // Prevent flex item from growing beyond container
   };
 
   const chevronStyle: React.CSSProperties = {
-    transition: "transform 0.12s",
-    transform: collapsed ? "rotate(0deg)" : "rotate(90deg)",
-    color: "#b0b0b0",
     width: "16px",
     height: "16px",
+    color: theme.colors.textSecondary,
+    transition: `transform ${theme.animation.fast}`,
+    transform: collapsed ? "rotate(0deg)" : "rotate(90deg)",
+    flexShrink: 0, // Prevent chevron from shrinking
+  };
+
+  const iconStyle: React.CSSProperties = {
+    color: theme.colors.textAccent,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "16px",
+    height: "16px",
+    flexShrink: 0,
+  };
+
+  const titleContentStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "2px",
+    flex: 1,
+    minWidth: 0,
   };
 
   const titleStyle: React.CSSProperties = {
-    fontSize: level === 1 ? "15px" : "13px",
-    fontWeight: level === 1 ? 600 : 500,
-    color: "#f3f3f3",
+    fontSize:
+      level === 1 ? theme.typography.fontSize.sm : theme.typography.fontSize.xs,
+    fontWeight:
+      level === 1
+        ? theme.typography.fontWeight.semibold
+        : theme.typography.fontWeight.medium,
+    color: theme.colors.textPrimary,
     margin: 0,
+    lineHeight: theme.typography.lineHeight.tight,
+    fontFamily: theme.typography.fontFamily,
   };
 
   const descriptionStyle: React.CSSProperties = {
-    fontSize: "12px",
-    color: "#b0b0b0",
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textMuted,
     margin: 0,
-    fontStyle: "italic",
+    fontStyle: "normal", // Remove italic
+    lineHeight: theme.typography.lineHeight.normal,
+    fontFamily: theme.typography.fontFamily,
   };
 
   const actionsStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: theme.spacing.sm,
     opacity: isHovered ? 1 : 0.7,
-    transition: "opacity 0.12s",
+    transition: `opacity ${theme.animation.fast}`,
+    flexShrink: 0,
   };
 
+  // ===== PROPER COLLAPSIBLE ANIMATION =====
   const contentStyle: React.CSSProperties = {
-    padding: collapsed ? "0" : "16px 24px",
-    maxHeight: collapsed ? "0px" : "1000px", // Animate height
+    maxHeight: collapsed ? "0px" : "1000px", // Use maxHeight for smooth animation
     overflow: "hidden",
-    transition: "all 0.2s",
-    backgroundColor: level === 1 ? theme.colors.background : "transparent",
+    transition: `max-height ${theme.animation.medium}, padding ${theme.animation.medium}`,
+    padding: collapsed ? "0" : theme.spacing.sectionPadding,
   };
 
   const contentInnerStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
+    gap: theme.spacing.fieldGap,
     opacity: collapsed ? 0 : 1,
-    transition: "opacity 0.2s",
+    transition: `opacity ${theme.animation.medium}`,
+    // Add a slight delay to opacity animation when expanding
+    transitionDelay: collapsed ? "0ms" : "100ms",
   };
 
   return (
@@ -110,36 +149,18 @@ const PanelSection: React.FC<PanelSectionProps> = ({
       <button
         type="button"
         style={headerStyle}
-        onClick={() => setCollapsed((prev) => !prev)}
+        onClick={() => setCollapsed(!collapsed)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         aria-expanded={!collapsed}
         aria-controls={`panel-section-${title
           .replace(/\s+/g, "-")
           .toLowerCase()}`}
-        {...hoverProps}
       >
         <div style={headerContentStyle}>
-          <ChevronRight size={16} style={chevronStyle} />
-          {icon && (
-            <div
-              style={{
-                color: "#38bdf8",
-                display: "flex",
-                alignItems: "center",
-                width: "16px",
-                height: "16px",
-              }}
-            >
-              {icon}
-            </div>
-          )}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              gap: "2px",
-            }}
-          >
+          <ChevronRight style={chevronStyle} />
+          {icon && <div style={iconStyle}>{icon}</div>}
+          <div style={titleContentStyle}>
             <h3 style={titleStyle}>{title}</h3>
             {description && <p style={descriptionStyle}>{description}</p>}
           </div>
@@ -150,6 +171,7 @@ const PanelSection: React.FC<PanelSectionProps> = ({
           </div>
         )}
       </button>
+
       <div
         id={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
         style={contentStyle}
@@ -160,5 +182,3 @@ const PanelSection: React.FC<PanelSectionProps> = ({
     </section>
   );
 };
-
-export default PanelSection;
