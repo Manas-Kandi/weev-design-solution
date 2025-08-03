@@ -200,9 +200,11 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* Override with Figma colors for dark theme */
-    background-color: var(--figma-bg);
+    /* Ensure the background is always Figma BG and no margin/padding at top */
+    background-color: var(--figma-bg) !important;
     color: var(--figma-text);
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   h1,

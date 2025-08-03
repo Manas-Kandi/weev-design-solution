@@ -55,20 +55,21 @@ export default function DesignerLayout({
   testButtonDisabled = false,
 }: DesignerLayoutProps) {
   const layoutStyle: React.CSSProperties = {
-    "--toolbar-height": "calc(var(--space-xl) + 48px)",
+    "--topbar-height": "40px",
+    "--toolbar-height": "48px",
+    "--header-total-height": "88px", // 40px + 48px
   } as React.CSSProperties;
 
   return (
     <div
       className="h-screen w-full flex overflow-hidden bg-[var(--figma-bg)]"
-      style={layoutStyle}
+      style={{ ...layoutStyle, paddingTop: '40px' }}
     >
       {/* Left Sidebar */}
       {left}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <TabBar />
         {/* Toolbar */}
         <div style={toolbarStyle}>
           <div className="flex items-center gap-1">

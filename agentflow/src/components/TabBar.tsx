@@ -42,7 +42,22 @@ export default function TabBar({
   };
 
   return (
-    <div className="flex items-center justify-between h-8 px-2 bg-[var(--figma-surface)] border-b border-[var(--figma-border)]">
+    <div
+  className="flex items-center justify-between w-full px-4 border-b"
+  style={{
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    height: "40px",
+    background: "rgba(26,26,26,0.5)", // var(--figma-surface) with more opacity
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
+    borderBottom: "1px solid rgba(255,255,255,0.08)", // subtle glass border
+    boxShadow: "0 4px 16px 0 rgba(0,0,0,0.18)",
+    zIndex: 1000,
+  }}
+>
       <div className="flex items-center gap-1 overflow-hidden">
         {tabs.map((tab) => (
           <div

@@ -5,6 +5,7 @@ import { Project, CanvasNode, Connection, NodeType } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
 import ProjectDashboard from "@/components/ProjectDashboard";
 import DesignerLayout from "@/components/DesignerLayout";
+import TabBar from "@/components/TabBar";
 import { ComponentLibrary } from "@/components/ComponentLibrary";
 import DesignerCanvas from "@/components/DesignerCanvas";
 import PropertiesPanel from "@/components/PropertiesPanel";
@@ -326,43 +327,47 @@ export default function AgentFlowPage() {
   }
 
   return (
-    <DesignerLayout
-      left={
-        <ComponentLibrary
-          onAddNode={handleAddNode}
-          onBackToProjects={() => setCurrentView("projects")}
-        />
-      }
-      center={
-        <DesignerCanvas
-          nodes={nodes}
-          connections={connections}
-          selectedNode={selectedNode}
-          onNodeSelect={setSelectedNode}
-          onNodeUpdate={(updatedNode) => {
-            setNodes(
-              nodes.map((n) => (n.id === updatedNode.id ? updatedNode : n))
-            );
-          }}
-          onConnectionsChange={setConnections}
-          onCreateConnection={async () => {
-            // TODO: Implement connection creation logic if needed
-          }}
-          showTester={showTester}
-          isTesting={isTesting}
-          testFlowResult={testFlowResult}
-          setShowTester={setShowTester}
-          setTestFlowResult={setTestFlowResult}
-        />
-      }
-      right={
-        <PropertiesPanel
-          selectedNode={selectedNode}
-          onChange={handleNodeUpdate}
-        />
-      }
-      onTestFlow={handleTestFlow}
-      testButtonDisabled={isTesting}
-    />
+    <>
+      <TabBar />
+      <DesignerLayout
+        left={
+          <ComponentLibrary
+            onAddNode={handleAddNode}
+            onBackToProjects={() => setCurrentView("projects")}
+          />
+        }
+        center={
+          <DesignerCanvas
+            nodes={nodes}
+            connections={connections}
+            selectedNode={selectedNode}
+            onNodeSelect={setSelectedNode}
+            onNodeUpdate={(updatedNode) => {
+              setNodes(
+                nodes.map((n) => (n.id === updatedNode.id ? updatedNode : n))
+              );
+            }}
+            onConnectionsChange={setConnections}
+            onCreateConnection={async () => {
+              // TODO: Implement connection creation logic if needed
+            }}
+            showTester={showTester}
+            isTesting={isTesting}
+            testFlowResult={testFlowResult}
+            setShowTester={setShowTester}
+            setTestFlowResult={setTestFlowResult}
+          />
+        }
+        right={
+          <PropertiesPanel
+            selectedNode={selectedNode}
+            onChange={handleNodeUpdate}
+          />
+        }
+        onTestFlow={handleTestFlow}
+        testButtonDisabled={isTesting}
+      />
+    </>
   );
 }
+
