@@ -328,7 +328,7 @@ export default function AgentFlowPage() {
 
   return (
     <>
-      <TabBar />
+      <TabBar onTest={handleTestFlow} testButtonDisabled={isTesting} />
       <DesignerLayout
         left={
           <ComponentLibrary
@@ -352,10 +352,11 @@ export default function AgentFlowPage() {
               // TODO: Implement connection creation logic if needed
             }}
             showTester={showTester}
-            isTesting={isTesting}
             testFlowResult={testFlowResult}
             setShowTester={setShowTester}
             setTestFlowResult={setTestFlowResult}
+            onTestFlow={handleTestFlow}
+            testButtonDisabled={isTesting}
           />
         }
         right={
@@ -364,8 +365,6 @@ export default function AgentFlowPage() {
             onChange={handleNodeUpdate}
           />
         }
-        onTestFlow={handleTestFlow}
-        testButtonDisabled={isTesting}
       />
     </>
   );

@@ -6,8 +6,7 @@ import { nodeCategories } from "@/data/nodeDefinitions";
 import ChatBoxNode from "./ChatBoxNode";
 
 const canvasStyle: React.CSSProperties = {
-  backgroundColor: theme.bg,
-  backgroundImage: `radial-gradient(circle, ${theme.border} 1px, transparent 1px)`,
+  backgroundColor: "#0D0D0D", // pure dark
 };
 
 const rulerStyle: React.CSSProperties = {
@@ -511,31 +510,7 @@ export default function CanvasEngine(props: Props) {
       tabIndex={0}
       data-start-node-id={startNodeId}
     >
-      {/* Rulers */}
-      <div
-        style={{
-          ...rulerStyle,
-          top: 0,
-          left: 20,
-          right: 0,
-          height: 20,
-          backgroundImage: `repeating-linear-gradient(to right, ${theme.border} 0, ${theme.border} 1px, transparent 1px, transparent 10px)`,
-          backgroundSize: `${10 * viewportTransform.scale}px 100%`,
-          backgroundPosition: `${viewportTransform.x}px 0`,
-        }}
-      />
-      <div
-        style={{
-          ...rulerStyle,
-          top: 20,
-          left: 0,
-          bottom: 0,
-          width: 20,
-          backgroundImage: `repeating-linear-gradient(to bottom, ${theme.border} 0, ${theme.border} 1px, transparent 1px, transparent 10px)`,
-          backgroundSize: `100% ${10 * viewportTransform.scale}px`,
-          backgroundPosition: `0 ${viewportTransform.y}px`,
-        }}
-      />
+
 
       {/* Background Grid and Connections */}
       <svg
@@ -611,33 +586,9 @@ export default function CanvasEngine(props: Props) {
         </div>
       )}
 
-      {/* Zoom to fit button */}
-      <button
-        className="absolute top-4 right-4 px-2 py-1 rounded bg-gray-800 text-white text-xs z-20"
-        onClick={zoomToFit}
-      >
-        Zoom to Fit
-      </button>
 
-      {/* Debug: Manual Connection Test */}
-      <button
-        className="absolute top-16 right-4 px-2 py-1 rounded bg-red-600 text-white text-xs z-20"
-        onClick={() => {
-          if (nodes.length >= 2) {
-            const testConnection: Connection = {
-              id: `test-conn-${Date.now()}`,
-              sourceNode: nodes[0].id,
-              sourceOutput: nodes[0].outputs[0]?.id || "output-1",
-              targetNode: nodes[1].id,
-              targetInput: nodes[1].inputs[0]?.id || "input-1",
-            };
-            console.log("Adding test connection:", testConnection);
-            onConnectionsChange([...connections, testConnection]);
-          }
-        }}
-      >
-        Test Connection
-      </button>
+
+
 
       {/* Nodes Layer */}
       <div

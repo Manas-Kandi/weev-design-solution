@@ -219,46 +219,7 @@ export default function CompactPropertiesPanel({
             </div>
           </div>
         </div>
-        <div
-          style={{
-            backgroundColor: theme.colors.backgroundSecondary,
-            border: `1px solid ${theme.colors.warning}`,
-            borderRadius: theme.borderRadius.sm,
-            padding: theme.spacing.lg,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: theme.spacing.sm,
-              marginBottom: theme.spacing.sm,
-            }}
-          >
-            <Settings size={14} color={theme.colors.warning} />
-            <h4
-              style={{
-                fontSize: theme.typography.fontSize.sm,
-                fontWeight: theme.typography.fontWeight.medium,
-                color: theme.colors.warning,
-                margin: 0,
-              }}
-            >
-              Panel Not Available
-            </h4>
-          </div>
-          <p
-            style={{
-              fontSize: theme.typography.fontSize.xs,
-              color: theme.colors.textSecondary,
-              margin: 0,
-              lineHeight: theme.typography.lineHeight.relaxed,
-            }}
-          >
-            Properties panel for this node type hasn&apos;t been implemented
-            yet. The node will still work in workflows.
-          </p>
-        </div>
+
       </div>
     </div>
   );

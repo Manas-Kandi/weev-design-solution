@@ -283,7 +283,7 @@ export default function AgentPropertiesPanel({
 
           <label
             style={{
-              color: "#b3b3b3",
+              color: "#111111",
               fontSize: 14,
               marginTop: 8,
               marginBottom: 4,
@@ -321,19 +321,19 @@ export default function AgentPropertiesPanel({
         >
           <div
             style={{
-              backgroundColor: "#18181b",
+              backgroundColor: "#111111",
               border: `1px solid ${theme.colors.border}`,
-              borderRadius: 6,
+              borderRadius: 0,
               padding: 16,
               fontFamily: "Menlo, monospace",
-              fontSize: 14,
+              fontSize: 10,
               color: "#b3b3b3",
-              lineHeight: 1.6,
+              lineHeight: 1,
             }}
           >
             <div
               style={{
-                color: "#22c55e",
+                color: "#ffffff",
                 marginBottom: 8,
               }}
             >

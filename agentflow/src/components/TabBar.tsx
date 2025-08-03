@@ -20,11 +20,15 @@ interface Avatar {
 interface TabBarProps {
   initialTabs?: Tab[];
   avatars?: Avatar[];
+  onTest?: () => void;
+  testButtonDisabled?: boolean;
 }
 
 export default function TabBar({
   initialTabs = [{ id: "1", title: "Untitled" }],
   avatars = [],
+  onTest,
+  testButtonDisabled = false,
 }: TabBarProps) {
   const [tabs, setTabs] = useState<Tab[]>(initialTabs);
   const [activeId, setActiveId] = useState<string>(initialTabs[0]?.id);
@@ -48,7 +52,9 @@ export default function TabBar({
       className="flex items-center w-full shadow-xl"
       style={{
         height: 44,
-        background: "#111111", // Ultra-dark as requested
+        background: "rgba(17,17,17,0.9)", // 90% opacity
+        backdropFilter: "blur(12px)", // background blur for glassy effect
+        WebkitBackdropFilter: "blur(12px)", // Safari support
         padding: "0 16px",
         gap: 12,
         border: "none",
@@ -163,6 +169,9 @@ export default function TabBar({
         <button
           type="button"
           className="px-3 py-1.5 bg-[#232a36] hover:bg-[#2a3646] text-white text-xs rounded-full font-semibold transition-all duration-150"
+          onClick={onTest}
+          disabled={testButtonDisabled}
+          style={{ opacity: testButtonDisabled ? 0.6 : 1, cursor: testButtonDisabled ? "not-allowed" : "pointer" }}
         >
           Test
         </button>

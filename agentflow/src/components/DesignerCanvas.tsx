@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { Play } from "lucide-react";
 import CanvasEngine from "@/components/Canvas";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
@@ -14,11 +15,12 @@ interface DesignerCanvasProps {
   onConnectionsChange: (c: Connection[]) => void;
   onCreateConnection: (connectionData: Connection) => Promise<void>;
   showTester: boolean;
-  isTesting: boolean;
   testFlowResult: Record<string, unknown> | null;
   setShowTester: (show: boolean) => void;
   setTestFlowResult: (result: Record<string, unknown> | null) => void;
-  selectedNode: CanvasNode | null; // Add selectedNode as a prop
+  selectedNode: CanvasNode | null;
+  onTestFlow: () => void;
+  testButtonDisabled?: boolean;
 }
 
 export default function DesignerCanvas(props: DesignerCanvasProps) {
@@ -30,27 +32,29 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     onConnectionsChange,
     onCreateConnection,
     showTester,
-    isTesting,
     testFlowResult,
     setShowTester,
     setTestFlowResult,
     selectedNode,
+    onTestFlow,
+    testButtonDisabled = false,
   } = props;
 
-  const [startNodeId, setStartNodeId] = React.useState<string | null>(null);
-  const [testLogs, setTestLogs] = React.useState<
-    Array<{
-      nodeId: string;
-      title: string;
-      type: string;
-      log: string;
-      output?: unknown;
-      error?: string;
-    }>
-  >([]);
-  const [isTestingState, setIsTestingState] = React.useState(false);
+  // --- Local state for test logs and testing status ---
+  const [testLogs, setTestLogs] = useState<{
+    nodeId: string;
+    title: string;
+    type: string;
+    log: string;
+    output?: unknown;
+    error?: string;
+  }[]>([]);
+  const [isTesting, setIsTestingState] = useState(false);
 
-  // --- Node Deletion: Clear KnowledgeBaseNode cache ---
+  // --- Local state for start node selection ---
+  const [startNodeId, setStartNodeId] = useState<string | null>(
+    nodes.length > 0 ? nodes[0].id : null
+  );
   const handleNodeDelete = (nodeId: string) => {
     const node = nodes.find((n) => n.id === nodeId);
     if (node && node.type === "logic" && node.subtype === "knowledge-base") {
@@ -65,6 +69,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
   };
 
   // --- Real-time Test Flow Execution ---
+  // --- Real-time Test Flow Execution ---
+  // (Note: This is not used directly in the UI, but kept for completeness. The onTestFlow prop is used for the test button.)
   const handleTestFlow = async () => {
     if (typeof window === "undefined") return;
     if (typeof document === "undefined") return;
@@ -297,12 +303,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         </div>
       )}
       <div className="absolute top-4 left-4 z-30">
-        <button
-          className="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700"
-          onClick={handleTestFlow}
-        >
-          Test Flow
-        </button>
+        
       </div>
       <CanvasEngine
         nodes={nodes}
