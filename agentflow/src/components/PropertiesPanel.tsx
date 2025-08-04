@@ -15,6 +15,7 @@ import PromptTemplatePropertiesPanel from "./propertiesPanels/PromptTemplateProp
 import SimulatorPropertiesPanel from "./propertiesPanels/SimulatorPropertiesPanel";
 import StateMachinePropertiesPanel from "./propertiesPanels/StateMachinePropertiesPanel";
 import TestCasePropertiesPanel from "./propertiesPanels/TestCasePropertiesPanel";
+import ToolAgentPropertiesPanel from "./propertiesPanels/ToolAgentPropertiesPanel";
 import { CanvasNode } from "@/types";
 
 interface PropertiesPanelProps {
@@ -88,12 +89,23 @@ export default function PropertiesPanel({
     case "agent":
     case "generic":
     case "human-handoff":
-    case "tool-agent":
       content = (
         <AgentPropertiesPanel
           node={
             selectedNode as CanvasNode & {
               data: import("@/types").AgentNodeData;
+            }
+          }
+          onChange={onChange}
+        />
+      );
+      break;
+    case "tool-agent":
+      content = (
+        <ToolAgentPropertiesPanel
+          node={
+            selectedNode as CanvasNode & {
+              data: import("@/types").ToolAgentNodeData;
             }
           }
           onChange={onChange}

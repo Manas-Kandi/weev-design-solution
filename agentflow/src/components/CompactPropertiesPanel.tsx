@@ -32,6 +32,7 @@ import ConversationFlowPropertiesPanel from "./propertiesPanels/ConversationFlow
 import SimulatorPropertiesPanel from "./propertiesPanels/SimulatorPropertiesPanel";
 import DashboardPropertiesPanel from "./propertiesPanels/DashboardPropertiesPanel";
 import ChatInterfacePropertiesPanel from "./propertiesPanels/ChatInterfacePropertiesPanel";
+import ToolAgentPropertiesPanel from "./propertiesPanels/ToolAgentPropertiesPanel";
 
 interface PropertiesPanelProps {
   selectedNode: CanvasNode | null;
@@ -238,6 +239,8 @@ export default function CompactPropertiesPanel({
       case "agent":
       case "generic":
         return wrapPanel(AgentPropertiesPanel);
+      case "tool-agent":
+        return wrapPanel(ToolAgentPropertiesPanel);
       case "message":
         if (isMessageNodeData(selectedNode.data)) {
           return wrapPanel(MessagePropertiesPanel);
