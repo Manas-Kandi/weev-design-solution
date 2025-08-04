@@ -8,33 +8,30 @@ export interface KnowledgeBaseNodeData {
 }
 
 export class KnowledgeBaseNode extends BaseNode {
-  private static cache = new Map<
-    string,
-    { documents: unknown[]; metadata: Record<string, unknown> }
-  >();
+  private static documentCache = new Map<string, unknown[]>();
 
-  async execute(context: NodeContext): Promise<NodeOutput> {
+  static setDocuments(nodeId: string, docs: unknown[]) {
+    this.documentCache.set(nodeId, docs);
+  }
+
+  static getDocuments(nodeId: string): unknown[] | undefined {
+    return this.documentCache.get(nodeId);
+  }
+
+  async execute(_context: NodeContext): Promise<NodeOutput> {
+    void _context;
     const data = this.node.data as KnowledgeBaseNodeData;
     const operation = data.operation || "retrieve"; // store, retrieve, search
-    const inputContext = this.formatInputContext(context);
 
     if (operation === "store") {
-      // Store documents in cache
       const documents = data.documents || [];
-      KnowledgeBaseNode.cache.set(this.node.id, {
-        documents,
-        metadata: data.metadata || {},
-      });
+      KnowledgeBaseNode.setDocuments(this.node.id, documents);
       return `Stored ${documents.length} documents`;
     } else if (operation === "retrieve" || operation === "search") {
-      // Retrieve documents from cache
-      const stored = KnowledgeBaseNode.cache.get(this.node.id);
-      if (!stored) {
+      const stored = KnowledgeBaseNode.getDocuments(this.node.id);
+      if (!stored || stored.length === 0) {
         return "No documents found in knowledge base";
       }
-
-      // For now, return all documents
-      // In production, implement proper search
       return JSON.stringify(stored);
     }
 
@@ -43,9 +40,9 @@ export class KnowledgeBaseNode extends BaseNode {
 
   static clearCache(nodeId?: string) {
     if (nodeId) {
-      this.cache.delete(nodeId);
+      this.documentCache.delete(nodeId);
     } else {
-      this.cache.clear();
+      this.documentCache.clear();
     }
   }
 }
