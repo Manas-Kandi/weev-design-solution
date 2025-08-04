@@ -108,16 +108,50 @@ export default function ConversationFlowPropertiesPanel({
     { from: string; to: string; condition: string }[]
   >(() => node.data?.transitions || []);
 
-  const handleFieldChange = <K extends keyof ConversationFlowNodeData>(
-    field: K,
-    value: ConversationFlowNodeData[K],
-    setter: (value: ConversationFlowNodeData[K]) => void
+  // Field-specific handlers to ensure correct setter types
+  const handleStringFieldChange = (
+    field: keyof ConversationFlowNodeData,
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<string>>
+  ) => {
+    setter(value);
+    onChange({ ...node, data: { ...node.data, [field]: value } });
+  };
+
+  const handleBooleanFieldChange = (
+    field: keyof ConversationFlowNodeData,
+    value: boolean,
+    setter: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    setter(value);
+    onChange({ ...node, data: { ...node.data, [field]: value } });
+  };
+
+  const handleStringArrayFieldChange = (
+    field: keyof ConversationFlowNodeData,
+    value: string[],
+    setter: React.Dispatch<React.SetStateAction<string[]>>
   ) => {
     setter(value);
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
   // No custom panelStyle: rely on theme and section/content styles only
+
+  // Wrapper for transitions to match TransitionInput's expected signature
+  const handleTransitionFieldChange = (
+    field: string,
+    value: unknown,
+    setter: React.Dispatch<
+      React.SetStateAction<{ from: string; to: string; condition: string }[]>
+    >
+  ) => {
+    if (field === "transitions" && Array.isArray(value)) {
+      // Only call the setter if the value is the correct type
+      setter(value);
+      onChange({ ...node, data: { ...node.data, [field]: value } });
+    }
+  };
 
   return (
     <div
@@ -140,7 +174,7 @@ export default function ConversationFlowPropertiesPanel({
               .split(",")
               .map((s) => s.trim())
               .filter(Boolean);
-            handleFieldChange("states", arr, setStates);
+            handleStringArrayFieldChange("states", arr, setStates);
           }}
           placeholder="Comma separated states"
         />
@@ -152,7 +186,11 @@ export default function ConversationFlowPropertiesPanel({
         <VSCodeInput
           value={initialState}
           onChange={(e) =>
-            handleFieldChange("initialState", e.target.value, setInitialState)
+            handleStringFieldChange(
+              "initialState",
+              e.target.value,
+              setInitialState
+            )
           }
           placeholder="Initial state"
         />
@@ -175,14 +213,14 @@ export default function ConversationFlowPropertiesPanel({
               idx={idx}
               transitions={transitions}
               setTransitions={setTransitions}
-              handleFieldChange={handleFieldChange}
+              handleFieldChange={handleTransitionFieldChange}
             />
           ))}
           <VSCodeButton
             variant="primary"
             size="small"
             onClick={() =>
-              handleFieldChange(
+              handleTransitionFieldChange(
                 "transitions",
                 [...transitions, { from: "", to: "", condition: "" }],
                 setTransitions
@@ -209,7 +247,11 @@ export default function ConversationFlowPropertiesPanel({
             type="checkbox"
             checked={persistState}
             onChange={(e) =>
-              handleFieldChange("persistState", e.target.checked, setPersistState)
+              handleBooleanFieldChange(
+                "persistState",
+                e.target.checked,
+                setPersistState
+              )
             }
             style={{ accentColor: theme.colors.textAccent }}
           />

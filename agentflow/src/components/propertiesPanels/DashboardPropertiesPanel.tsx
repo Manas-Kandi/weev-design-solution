@@ -88,7 +88,9 @@ export default function DashboardPropertiesPanel({
       >
         <VSCodeSelect
           value={layout}
-          onValueChange={(v: string) => handleFieldChange("layout", v, setLayout)}
+          onValueChange={(v: string) =>
+            handleFieldChange("layout", v, setLayout)
+          }
           options={layoutOptions}
           placeholder="Choose layout"
         />
@@ -138,7 +140,11 @@ export default function DashboardPropertiesPanel({
             variant="primary"
             size="small"
             onClick={() =>
-              handleFieldChange("widgets", [...widgets, "newWidget"], setWidgets)
+              handleFieldChange(
+                "widgets",
+                [...widgets, "newWidget"],
+                setWidgets
+              )
             }
           >
             Add Widget

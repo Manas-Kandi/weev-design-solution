@@ -60,9 +60,9 @@ export default function KnowledgeBasePropertiesPanel({
       : "retrieve"
   );
 
-  const parseOrDefault = (input: string, defaultVal: any) => {
+  const parseOrDefault = <T,>(input: string, defaultVal: T): T => {
     try {
-      return JSON.parse(input);
+      return JSON.parse(input) as T;
     } catch {
       return defaultVal;
     }
@@ -99,7 +99,10 @@ export default function KnowledgeBasePropertiesPanel({
 
     const updated: KnowledgeBaseNodeData = {
       ...node.data,
-      operation: field === "operation" ? (value as any) : operation,
+      operation:
+        field === "operation"
+          ? (value as "store" | "retrieve" | "search")
+          : operation,
       documents: docs,
       metadata: safeMetadata,
     };
@@ -180,9 +183,9 @@ export default function KnowledgeBasePropertiesPanel({
             boxSizing: "border-box",
           }}
           value={documents}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-            handleFieldChange("documents", e.target.value)
-          }
+          onChange={(
+            e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+          ) => handleFieldChange("documents", e.target.value)}
           placeholder={`[
   {
     "title": "Document 1",
@@ -211,9 +214,9 @@ export default function KnowledgeBasePropertiesPanel({
             boxSizing: "border-box",
           }}
           value={metadata}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-            handleFieldChange("metadata", e.target.value)
-          }
+          onChange={(
+            e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+          ) => handleFieldChange("metadata", e.target.value)}
           placeholder={`{
   "source": "user"
 }`}

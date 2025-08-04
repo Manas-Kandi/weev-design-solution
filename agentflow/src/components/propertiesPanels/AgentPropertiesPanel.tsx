@@ -1,6 +1,6 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 // Enhanced Agent Properties Panel with VS Code styling
-import React, { useState } from "react";
+import React from "react";
 import {
   Bot,
   Settings,
@@ -49,7 +49,7 @@ export default function AgentPropertiesPanel({
   node,
   onChange,
 }: AgentPropertiesPanelProps) {
-  const [data, setData] = useState<AgentNodeData>(() => node.data);
+  const data = node.data;
 
   // Model options with descriptions
   const modelOptions = [
@@ -65,11 +65,8 @@ export default function AgentPropertiesPanel({
   ];
 
   const handleFieldChange = (field: keyof AgentNodeData, value: unknown) => {
-    setData((prev) => {
-      const updatedData = { ...prev, [field]: value };
-      onChange({ ...node, data: { ...node.data, ...updatedData } });
-      return updatedData;
-    });
+    const updatedData = { ...data, [field]: value };
+    onChange({ ...node, data: updatedData });
   };
 
   // Use theme-driven panel container style
@@ -81,9 +78,6 @@ export default function AgentPropertiesPanel({
     display: "flex",
     alignItems: "center",
     gap: theme.spacing.md,
-    position: "sticky",
-    top: 0,
-    zIndex: 2,
   };
   const headerTitleStyle: React.CSSProperties = {
     fontSize: theme.typography.fontSize.md,
@@ -272,16 +266,8 @@ export default function AgentPropertiesPanel({
           icon={<Zap size={16} />}
           defaultCollapsed={true}
         >
-          <PanelSection
-            title="Function Calling"
-            description="Enable or disable function call support"
-            level={2}
-            defaultCollapsed={true}
-            icon={<Settings size={16} />}
-          >
-            {/* TODO: VSCodeToggle not implemented. Insert toggle for Function Calling here. */}
-          </PanelSection>
           {/* TODO: VSCodeSlider not implemented. Insert slider for Confidence Threshold here. */}
+          {/* TODO: VSCodeToggle not implemented. Insert toggle for Function Calling here. */}
           {/* TODO: VSCodeSlider not implemented. Insert slider for Context Window here. */}
           <div />
         </PanelSection>
@@ -297,7 +283,7 @@ export default function AgentPropertiesPanel({
 
           <label
             style={{
-              color: "#111111",
+              color: "#b3b3b3",
               fontSize: 14,
               marginTop: 8,
               marginBottom: 4,
@@ -335,19 +321,19 @@ export default function AgentPropertiesPanel({
         >
           <div
             style={{
-              backgroundColor: "#111111",
+              backgroundColor: "#18181b",
               border: `1px solid ${theme.colors.border}`,
-              borderRadius: 0,
+              borderRadius: 6,
               padding: 16,
               fontFamily: "Menlo, monospace",
-              fontSize: 10,
+              fontSize: 14,
               color: "#b3b3b3",
-              lineHeight: 1,
+              lineHeight: 1.6,
             }}
           >
             <div
               style={{
-                color: "#ffffff",
+                color: "#22c55e",
                 marginBottom: 8,
               }}
             >

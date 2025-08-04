@@ -40,15 +40,29 @@ export default function ChatInterfacePropertiesPanel({
   );
 
   // Only update known fields, preserve extra fields
-  const handleFieldChange = <K extends keyof ChatNodeData>(
-    field: K,
-    value: ChatNodeData[K],
-    setter: (value: ChatNodeData[K]) => void
+  // Setter helpers to ensure correct type for useState
+  const handleStringFieldChange = (
+    field: keyof ChatNodeData,
+    value: string,
+    setter: (value: string) => void
   ) => {
-    setter(value);
+    setter(value ?? "");
     const updatedData = {
       ...node.data,
-      [field]: value,
+      [field]: value ?? "",
+    };
+    onChange({ ...node, data: updatedData });
+  };
+
+  const handleBooleanFieldChange = (
+    field: keyof ChatNodeData,
+    value: boolean,
+    setter: (value: boolean) => void
+  ) => {
+    setter(!!value);
+    const updatedData = {
+      ...node.data,
+      [field]: !!value,
     };
     onChange({ ...node, data: updatedData });
   };
@@ -94,7 +108,7 @@ export default function ChatInterfacePropertiesPanel({
           style={inputStyle}
           value={title}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            handleFieldChange("title", e.target.value, setTitle)
+            handleStringFieldChange("title", e.target.value, setTitle)
           }
           placeholder="Chat title"
         />
@@ -103,7 +117,11 @@ export default function ChatInterfacePropertiesPanel({
           style={inputStyle}
           value={placeholder}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            handleFieldChange("placeholder", e.target.value, setPlaceholder)
+            handleStringFieldChange(
+              "placeholder",
+              e.target.value,
+              setPlaceholder
+            )
           }
           placeholder="Type your message..."
         />
@@ -113,7 +131,7 @@ export default function ChatInterfacePropertiesPanel({
               type="checkbox"
               checked={enableFileUpload}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                handleFieldChange(
+                handleBooleanFieldChange(
                   "enableFileUpload",
                   e.target.checked,
                   setEnableFileUpload
@@ -130,7 +148,7 @@ export default function ChatInterfacePropertiesPanel({
               type="checkbox"
               checked={showHistory}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                handleFieldChange(
+                handleBooleanFieldChange(
                   "showHistory",
                   e.target.checked,
                   setShowHistory

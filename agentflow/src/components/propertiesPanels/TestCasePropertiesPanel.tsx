@@ -61,10 +61,12 @@ export default function TestCasePropertiesPanel({
     setter: (value: string) => void
   ) {
     setter(value);
-    const updatedData: TestCaseNodeData = {
-      ...node.data,
-      [field]: value,
-    };
+    // Only copy keys if node.data is TestCaseNodeData, else start fresh
+    let updatedData: TestCaseNodeData = {};
+    if (isTestCaseNodeData(node.data)) {
+      updatedData = { ...node.data };
+    }
+    updatedData[field] = value;
     onChange({ ...node, data: updatedData });
   }
 

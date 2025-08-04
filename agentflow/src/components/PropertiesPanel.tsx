@@ -53,7 +53,10 @@ export default function PropertiesPanel({
 
   if (!selectedNode) {
     return (
-      <div style={panelStyle} className="flex h-full items-center justify-center">
+      <div
+        style={panelStyle}
+        className="flex h-full items-center justify-center"
+      >
         <div className="flex flex-col items-center text-center text-[#aaa]">
           <MousePointerClick className="mb-4 h-12 w-12 text-[#666]" />
           <span className="text-lg font-medium">No node selected</span>
@@ -99,10 +102,7 @@ export default function PropertiesPanel({
       break;
     case "chat":
       content = (
-        <ChatInterfacePropertiesPanel
-          node={selectedNode}
-          onChange={onChange}
-        />
+        <ChatInterfacePropertiesPanel node={selectedNode} onChange={onChange} />
       );
       break;
     case "conversation":
@@ -124,10 +124,7 @@ export default function PropertiesPanel({
       break;
     case "decision-tree":
       content = (
-        <DecisionTreePropertiesPanel
-          node={selectedNode}
-          onChange={onChange}
-        />
+        <DecisionTreePropertiesPanel node={selectedNode} onChange={onChange} />
       );
       break;
     case "if-else":
@@ -137,10 +134,7 @@ export default function PropertiesPanel({
       break;
     case "knowledge-base":
       content = (
-        <KnowledgeBasePropertiesPanel
-          node={selectedNode}
-          onChange={onChange}
-        />
+        <KnowledgeBasePropertiesPanel node={selectedNode} onChange={onChange} />
       );
       break;
     case "message":
@@ -163,10 +157,7 @@ export default function PropertiesPanel({
       break;
     case "state-machine":
       content = (
-        <StateMachinePropertiesPanel
-          node={selectedNode}
-          onChange={onChange}
-        />
+        <StateMachinePropertiesPanel node={selectedNode} onChange={onChange} />
       );
       break;
     case "test-case":
@@ -177,7 +168,9 @@ export default function PropertiesPanel({
     default:
       content = (
         <div style={{ padding: "32px", textAlign: "center", color: "#aaa" }}>
-          <span style={{ fontWeight: 500, fontSize: 18 }}>Unknown node type</span>
+          <span style={{ fontWeight: 500, fontSize: 18 }}>
+            Unknown node type
+          </span>
           <div style={{ marginTop: 8, fontSize: 14 }}>
             This node type is not yet supported.
           </div>

@@ -46,12 +46,42 @@ export default function StateMachinePropertiesPanel({
     { from: string; to: string; condition: string }[]
   >(() => (isStateMachineNodeData(node.data) ? node.data.transitions : []));
 
-  const handleFieldChange = (
+  // Field-specific handlers to ensure correct setter types
+  const handleStringFieldChange = (
     field: string,
-    value: unknown,
-    setter?: (value: any) => void
+    value: string,
+    setter: React.Dispatch<React.SetStateAction<string>>
   ) => {
-    if (setter) setter(value);
+    setter(value);
+    onChange({ ...node, data: { ...node.data, [field]: value } });
+  };
+
+  const handleBooleanFieldChange = (
+    field: string,
+    value: boolean,
+    setter: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    setter(value);
+    onChange({ ...node, data: { ...node.data, [field]: value } });
+  };
+
+  const handleStringArrayFieldChange = (
+    field: string,
+    value: string[],
+    setter: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    setter(value);
+    onChange({ ...node, data: { ...node.data, [field]: value } });
+  };
+
+  const handleTransitionArrayFieldChange = (
+    field: string,
+    value: { from: string; to: string; condition: string }[],
+    setter: React.Dispatch<
+      React.SetStateAction<{ from: string; to: string; condition: string }[]>
+    >
+  ) => {
+    setter(value);
     onChange({ ...node, data: { ...node.data, [field]: value } });
   };
 
@@ -99,7 +129,7 @@ export default function StateMachinePropertiesPanel({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...states];
                   next[idx] = e.target.value;
-                  handleFieldChange("states", next, setStates);
+                  handleStringArrayFieldChange("states", next, setStates);
                 }}
                 style={{ maxWidth: 160 }}
               />
@@ -108,7 +138,7 @@ export default function StateMachinePropertiesPanel({
                 size="small"
                 onClick={() => {
                   const next = states.filter((_, i) => i !== idx);
-                  handleFieldChange("states", next, setStates);
+                  handleStringArrayFieldChange("states", next, setStates);
                 }}
               >
                 Remove
@@ -118,7 +148,11 @@ export default function StateMachinePropertiesPanel({
           <VSCodeButton
             size="small"
             onClick={() =>
-              handleFieldChange("states", [...states, "newState"], setStates)
+              handleStringArrayFieldChange(
+                "states",
+                [...states, "newState"],
+                setStates
+              )
             }
           >
             Add State
@@ -132,7 +166,11 @@ export default function StateMachinePropertiesPanel({
         <VSCodeInput
           value={initialState}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            handleFieldChange("initialState", e.target.value, setInitialState)
+            handleStringFieldChange(
+              "initialState",
+              e.target.value,
+              setInitialState
+            )
           }
           style={{ maxWidth: 160 }}
         />
@@ -162,7 +200,11 @@ export default function StateMachinePropertiesPanel({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...transitions];
                   next[idx] = { ...next[idx], from: e.target.value };
-                  handleFieldChange("transitions", next, setTransitions);
+                  handleTransitionArrayFieldChange(
+                    "transitions",
+                    next,
+                    setTransitions
+                  );
                 }}
                 style={{ maxWidth: 100 }}
                 placeholder="From"
@@ -172,7 +214,11 @@ export default function StateMachinePropertiesPanel({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...transitions];
                   next[idx] = { ...next[idx], to: e.target.value };
-                  handleFieldChange("transitions", next, setTransitions);
+                  handleTransitionArrayFieldChange(
+                    "transitions",
+                    next,
+                    setTransitions
+                  );
                 }}
                 style={{ maxWidth: 100 }}
                 placeholder="To"
@@ -182,7 +228,11 @@ export default function StateMachinePropertiesPanel({
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const next = [...transitions];
                   next[idx] = { ...next[idx], condition: e.target.value };
-                  handleFieldChange("transitions", next, setTransitions);
+                  handleTransitionArrayFieldChange(
+                    "transitions",
+                    next,
+                    setTransitions
+                  );
                 }}
                 style={{ maxWidth: 160 }}
                 placeholder="Condition"
@@ -192,7 +242,11 @@ export default function StateMachinePropertiesPanel({
                 size="small"
                 onClick={() => {
                   const next = transitions.filter((_, i) => i !== idx);
-                  handleFieldChange("transitions", next, setTransitions);
+                  handleTransitionArrayFieldChange(
+                    "transitions",
+                    next,
+                    setTransitions
+                  );
                 }}
               >
                 Remove
@@ -207,7 +261,11 @@ export default function StateMachinePropertiesPanel({
                 { from: "", to: "", condition: "" },
               ];
               setTransitions(next);
-              handleFieldChange("transitions", next);
+              handleTransitionArrayFieldChange(
+                "transitions",
+                next,
+                setTransitions
+              );
             }}
           >
             Add Transition
@@ -241,7 +299,11 @@ export default function StateMachinePropertiesPanel({
             }}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setPersistState(e.target.checked);
-              handleFieldChange("persistState", e.target.checked);
+              handleBooleanFieldChange(
+                "persistState",
+                e.target.checked,
+                setPersistState
+              );
             }}
           />
           <span>Persist State</span>

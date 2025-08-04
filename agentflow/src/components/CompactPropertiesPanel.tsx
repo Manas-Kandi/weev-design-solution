@@ -219,7 +219,6 @@ export default function CompactPropertiesPanel({
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
@@ -231,6 +230,7 @@ export default function CompactPropertiesPanel({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const wrapPanel = (PanelComponent: React.ComponentType<any>) => (
       <div style={panelStyle} className="figma-scrollbar">
+        {/* Ensure PanelComponent is rendered as a React component */}
         <PanelComponent node={selectedNode} onChange={onChange} />
       </div>
     );
@@ -251,6 +251,7 @@ export default function CompactPropertiesPanel({
         return renderUnknownNodePanel();
       case "if-else":
         if (isIfElseNodeData(selectedNode.data)) {
+          // Ensure IfElsePropertiesPanel is a React component that returns JSX
           return wrapPanel(IfElsePropertiesPanel);
         }
         return renderUnknownNodePanel();
