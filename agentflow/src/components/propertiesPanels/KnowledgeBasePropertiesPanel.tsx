@@ -1,9 +1,10 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { VSCodeSelect, VSCodeInput } from "./vsCodeFormComponents";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Database, FileText, Info } from "lucide-react";
+import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
 
 import { PanelSection } from "./PanelSection";
 
@@ -11,6 +12,11 @@ interface KnowledgeBaseNodeData {
   operation?: "store" | "retrieve" | "search";
   documents?: unknown[];
   metadata?: Record<string, unknown>;
+}
+
+interface UploadedDocument {
+  name: string;
+  content: string;
 }
 
 interface KnowledgeBasePropertiesPanelProps {
@@ -44,10 +50,8 @@ export default function KnowledgeBasePropertiesPanel({
     ? (node.data as KnowledgeBaseNodeData)
     : { operation: "retrieve", documents: [], metadata: {} };
 
-  const [documents, setDocuments] = useState<string>(
-    knowledgeData.documents
-      ? JSON.stringify(knowledgeData.documents, null, 2)
-      : "[]"
+  const [documents, setDocuments] = useState<UploadedDocument[]>(
+    (knowledgeData.documents as UploadedDocument[]) || []
   );
   const [metadata, setMetadata] = useState<string>(
     knowledgeData.metadata
@@ -59,6 +63,12 @@ export default function KnowledgeBasePropertiesPanel({
       ? (knowledgeData.operation as "store" | "retrieve" | "search")
       : "retrieve"
   );
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    KnowledgeBaseNode.setDocuments(node.id, documents);
+  }, [node.id, documents]);
 
   const parseOrDefault = <T,>(input: string, defaultVal: T): T => {
     try {
@@ -74,18 +84,15 @@ export default function KnowledgeBasePropertiesPanel({
   ) => {
     if (field === "operation") {
       setOperation(value as "store" | "retrieve" | "search");
-    }
-    if (field === "documents") {
-      setDocuments(value as string);
-    }
-    if (field === "metadata") {
+    } else if (field === "documents") {
+      const docs = value as UploadedDocument[];
+      setDocuments(docs);
+    } else if (field === "metadata") {
       setMetadata(value as string);
     }
 
     const docs =
-      field === "documents"
-        ? parseOrDefault(value as string, [])
-        : parseOrDefault(documents, []);
+      field === "documents" ? (value as UploadedDocument[]) : documents;
     const metaRaw =
       field === "metadata"
         ? parseOrDefault(value as string, {})
@@ -127,6 +134,20 @@ export default function KnowledgeBasePropertiesPanel({
     }
   };
 
+  const handleFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const newDocs = await Promise.all(
+      Array.from(files).map(async (file) => ({
+        name: file.name,
+        content: await file.text(),
+      }))
+    );
+    handleFieldChange("documents", [...documents, ...newDocs]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   // Only render the panel if the node is a knowledge base node
   if (!isKnowledgeBaseNodeData(node.data)) {
     return null;
@@ -165,34 +186,61 @@ export default function KnowledgeBasePropertiesPanel({
       </PanelSection>
       <PanelSection
         title="Documents"
-        description="JSON array of documents"
+        description="Upload documents"
         icon={<FileText size={16} />}
       >
-        <VSCodeInput
+        <div
           style={{
-            minHeight: 48,
-            fontFamily: theme.typography.fontMono,
-            fontSize: theme.typography.fontSize.base,
-            background: theme.colors.backgroundTertiary,
-            color: theme.colors.textPrimary,
-            border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.borderRadius.sm,
-            padding: theme.spacing.inputPadding,
-            resize: "vertical",
-            width: "100%",
-            boxSizing: "border-box",
+            gridColumn: "1 / -1",
+            display: "flex",
+            flexDirection: "column",
+            gap: theme.spacing.sm,
           }}
-          value={documents}
-          onChange={(
-            e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-          ) => handleFieldChange("documents", e.target.value)}
-          placeholder={`[
-  {
-    "title": "Document 1",
-    "content": "..."
-  }
-]`}
-        />
+        >
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              handleFiles(e.dataTransfer.files);
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              border: `2px dashed ${theme.colors.border}`,
+              borderRadius: theme.borderRadius.sm,
+              padding: theme.spacing.md,
+              textAlign: "center",
+              background: theme.colors.backgroundTertiary,
+              color: theme.colors.textSecondary,
+              cursor: "pointer",
+            }}
+          >
+            <p style={{ margin: 0 }}>
+              Drag & drop files here or click to upload
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              style={{ display: "none" }}
+              onChange={(e) => handleFiles(e.target.files)}
+            />
+          </div>
+          {documents.length > 0 && (
+            <ul
+              style={{
+                listStyle: "none",
+                margin: 0,
+                padding: 0,
+                color: theme.colors.textPrimary,
+                textAlign: "left",
+              }}
+            >
+              {documents.map((doc, idx) => (
+                <li key={idx}>{doc.name}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       </PanelSection>
       <PanelSection
         title="Metadata"
