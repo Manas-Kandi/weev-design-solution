@@ -39,6 +39,9 @@ export default function AgentFlowPage() {
     },
   ]);
   const [connections, setConnections] = useState<Connection[]>([]);
+  const [startNodeId, setStartNodeId] = useState<string | null>(
+    "prompt-node-1"
+  );
   const [selectedNode, setSelectedNode] = useState<CanvasNode | null>(null);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [showTester, setShowTester] = useState(false);
@@ -119,6 +122,7 @@ export default function AgentFlowPage() {
         lastModified: new Date(project.created_at),
         nodeCount: 0, // We'll calculate this separately if needed
         status: project.status || "draft",
+        startNodeId: project.start_node_id || null,
       }));
 
       setProjects(transformedProjects);
@@ -189,6 +193,29 @@ export default function AgentFlowPage() {
     }
   };
 
+  const handleStartNodeChange = async (nodeId: string | null) => {
+    setStartNodeId(nodeId);
+    if (!currentProject) return;
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ start_node_id: nodeId })
+        .eq("id", currentProject.id);
+      if (error) {
+        console.error("Error updating start node:", error);
+      } else {
+        setCurrentProject({ ...currentProject, startNodeId: nodeId });
+        setProjects((prev) =>
+          prev.map((p) =>
+            p.id === currentProject.id ? { ...p, startNodeId: nodeId } : p
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Unexpected error updating start node:", err);
+    }
+  };
+
   const handleCreateProject = async (
     projectData: Omit<Project, "id" | "lastModified" | "nodeCount">
   ) => {
@@ -201,6 +228,7 @@ export default function AgentFlowPage() {
             description: projectData.description,
             status: projectData.status,
             user_id: DEFAULT_USER_ID,
+            start_node_id: startNodeId,
           },
         ])
         .select()
@@ -218,10 +246,12 @@ export default function AgentFlowPage() {
         lastModified: new Date(data.created_at),
         nodeCount: 0,
         status: data.status || "draft",
+        startNodeId: data.start_node_id || null,
       };
 
       setProjects([newProject, ...projects]);
       setCurrentProject(newProject);
+      setStartNodeId(newProject.startNodeId || null);
       setCurrentView("designer");
     } catch (err) {
       console.error("Unexpected error creating project:", err);
@@ -233,6 +263,7 @@ export default function AgentFlowPage() {
     setCurrentProject(project);
     setCurrentView("designer");
     if (project) {
+      setStartNodeId(project.startNodeId || null);
       await fetchNodes(projectId);
       await fetchConnections(projectId);
     }
@@ -340,7 +371,7 @@ export default function AgentFlowPage() {
       const result = await runWorkflow(
         nodes,
         connections,
-        nodes[0]?.id // Use first node as start node for now
+        startNodeId
       );
 
       setTestFlowResult(result);
@@ -403,6 +434,8 @@ export default function AgentFlowPage() {
             setTestFlowResult={setTestFlowResult}
             onTestFlow={handleTestFlow}
             testButtonDisabled={isTesting}
+            startNodeId={startNodeId}
+            onStartNodeChange={handleStartNodeChange}
           />
         }
         right={

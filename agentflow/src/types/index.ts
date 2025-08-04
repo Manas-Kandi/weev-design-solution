@@ -224,6 +224,7 @@ export interface Project {
   lastModified: Date;
   nodeCount: number;
   status: "draft" | "testing" | "deployed";
+  startNodeId?: string | null;
   nodes?: CanvasNode[];
   connections?: Connection[];
 }

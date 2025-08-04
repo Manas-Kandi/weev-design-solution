@@ -78,7 +78,6 @@ export default function CanvasEngine(props: Props) {
     y: number;
     nodeId: string;
   } | null>(null);
-  const [startNodeIdLocal, setStartNodeIdLocal] = useState<string | null>(null);
   const [pulsingNodeId, setPulsingNodeId] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);
