@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Play } from "lucide-react";
 import CanvasEngine from "@/components/Canvas";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
@@ -21,6 +20,8 @@ interface DesignerCanvasProps {
   selectedNode: CanvasNode | null;
   onTestFlow: () => void;
   testButtonDisabled?: boolean;
+  startNodeId: string | null;
+  onStartNodeChange: (id: string | null) => void;
 }
 
 export default function DesignerCanvas(props: DesignerCanvasProps) {
@@ -38,6 +39,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     selectedNode,
     onTestFlow,
     testButtonDisabled = false,
+    startNodeId,
+    onStartNodeChange,
   } = props;
 
   // --- Local state for test logs and testing status ---
@@ -51,10 +54,6 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
   }[]>([]);
   const [isTesting, setIsTestingState] = useState(false);
 
-  // --- Local state for start node selection ---
-  const [startNodeId, setStartNodeId] = useState<string | null>(
-    nodes.length > 0 ? nodes[0].id : null
-  );
   const handleNodeDelete = (nodeId: string) => {
     const node = nodes.find((n) => n.id === nodeId);
     if (node && node.type === "logic" && node.subtype === "knowledge-base") {
@@ -66,6 +65,9 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         (c) => c.sourceNode !== nodeId && c.targetNode !== nodeId
       )
     );
+    if (startNodeId === nodeId) {
+      onStartNodeChange(null);
+    }
   };
 
   // --- Real-time Test Flow Execution ---
@@ -315,7 +317,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         onNodeDrag={handleNodeDrag}
         selectedNodeId={selectedNode ? selectedNode.id : null}
         startNodeId={startNodeId}
-        onStartNodeChange={setStartNodeId}
+        onStartNodeChange={onStartNodeChange}
         onNodeDelete={handleNodeDelete}
       />
       <PropertiesPanel selectedNode={selectedNode} onChange={onNodeUpdate} />

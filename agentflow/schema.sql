@@ -4,6 +4,7 @@ create table projects (
   description text,
   last_modified timestamp with time zone default now(),
   node_count integer default 0,
+  start_node_id text,
   status text check (status in ('draft', 'testing', 'deployed'))
 );
 
