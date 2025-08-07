@@ -14,11 +14,12 @@ interface Folder {
 
 interface FolderTreeProps {
   onSelectProject: (projectId: string) => void;
+  onSelectFolder?: (folderId: string, folderName: string) => void;
   selectedProjectId?: string;
   projects: Project[];
 }
 
-export default function FolderTree({ onSelectProject, selectedProjectId, projects }: FolderTreeProps) {
+export default function FolderTree({ onSelectProject, onSelectFolder, selectedProjectId, projects }: FolderTreeProps) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
@@ -153,12 +154,14 @@ export default function FolderTree({ onSelectProject, selectedProjectId, project
   const handleDrop = async (e: React.DragEvent, folderId: string) => {
     try {
       e.preventDefault();
-      if (!draggedProject) return;
+      // Check for both internal drag (draggedProject) and external drag (window.draggedProjectId)
+      const projectId = draggedProject || (window as any).draggedProjectId;
+      if (!projectId) return;
 
       const { error } = await supabase
         .from('project_folders')
         .insert([{
-          project_id: draggedProject,
+          project_id: projectId,
           folder_id: folderId
         }]);
 
@@ -169,6 +172,8 @@ export default function FolderTree({ onSelectProject, selectedProjectId, project
 
       setDraggedProject(null);
       setDragOverFolderId(null);
+      // Clear the global drag state
+      (window as any).draggedProjectId = null;
       await fetchFolders();
     } catch (err) {
       console.error('Error moving project to folder:', err);
@@ -185,10 +190,13 @@ export default function FolderTree({ onSelectProject, selectedProjectId, project
             "flex items-center gap-1 py-1 px-2 rounded-sm hover:bg-white/[0.02] group",
             dragOverFolderId === folder.id && "bg-white/[0.03]"
           )}
-          style={{ paddingLeft: `${level * 12 + 8}px` }}
+          style={{ paddingLeft: `${level * 16 + 16}px` }}
           onDragOver={(e) => {
             e.preventDefault();
-            setDragOverFolderId(folder.id);
+            // Accept drops from both internal and external projects
+            if (draggedProject || (window as any).draggedProjectId) {
+              setDragOverFolderId(folder.id);
+            }
           }}
           onDragLeave={() => setDragOverFolderId(null)}
           onDrop={(e) => handleDrop(e, folder.id)}
@@ -225,7 +233,12 @@ export default function FolderTree({ onSelectProject, selectedProjectId, project
               autoFocus
             />
           ) : (
-            <span className="flex-1 text-sm">{folder.name}</span>
+            <span 
+              className="flex-1 text-sm cursor-pointer hover:text-white/80 transition-colors" 
+              onClick={() => onSelectFolder?.(folder.id, folder.name)}
+            >
+              {folder.name}
+            </span>
           )}
 
           <button
@@ -245,7 +258,7 @@ export default function FolderTree({ onSelectProject, selectedProjectId, project
               "flex items-center gap-2 py-1 px-2 rounded-md hover:bg-white/5",
               selectedProjectId === project.id && "bg-white/10"
             )}
-            style={{ paddingLeft: `${(level + 1) * 12 + 8}px` }}
+            style={{ paddingLeft: `${(level + 1) * 12 + 12}px` }}
             onClick={() => onSelectProject(project.id)}
             draggable
             onDragStart={() => setDraggedProject(project.id)}
@@ -263,7 +276,7 @@ export default function FolderTree({ onSelectProject, selectedProjectId, project
     <div className="space-y-2">
       <div className="space-y-1">
         <div className="flex items-center justify-between px-2 py-1">
-          <span className="text-sm text-muted-foreground/70">Folders</span>
+          <span className="text-sm text-white/40 pl-2">Folders</span>
           <button
             onClick={() => handleCreateFolder(null)}
             className="opacity-50 hover:opacity-100 transition-opacity mt-0.5"

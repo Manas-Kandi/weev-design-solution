@@ -30,19 +30,17 @@ export default function BillingForm({ subscriptionPlan }: BillingFormProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Subscription Plan</CardTitle>
-        <CardDescription>
+    <div className="space-y-3">
+      <div>
+        <h3 className="text-lg font-medium">Subscription Plan</h3>
+        <p className="text-sm text-muted-foreground">
           You are currently on the <strong>{subscriptionPlan.name}</strong> plan.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button onClick={redirectToCustomerPortal} disabled={loading} variant="outline" size="sm">
-          {loading ? 'Loading...' : 'Manage Subscription'}
-        </Button>
-      </CardContent>
-    </Card>
+        </p>
+      </div>
+      <Button onClick={redirectToCustomerPortal} disabled={loading} variant="outline" size="sm">
+        {loading ? 'Loading...' : 'Manage Subscription'}
+      </Button>
+    </div>
   );
 }
 
