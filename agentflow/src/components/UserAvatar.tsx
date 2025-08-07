@@ -14,7 +14,7 @@ export default function UserAvatar({ name, image, online }: UserAvatarProps) {
       {image ? (
         <Image src={image} alt={name} fill className="rounded-full object-cover" />
       ) : (
-        <div className="w-full h-full rounded-full bg-[var(--figma-border)] flex items-center justify-center text-xs text-[var(--figma-text)]">
+        <div className="w-full h-full rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
           {name.charAt(0).toUpperCase()}
         </div>
       )}

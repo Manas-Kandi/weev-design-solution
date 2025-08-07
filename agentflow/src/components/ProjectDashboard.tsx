@@ -1,12 +1,37 @@
 "use client";
 
+import { useState } from "react";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarMenuBadge,
+  SidebarSeparator,
+  SidebarInset,
+} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { colors } from "@/data/nodeDefinitions";
 import { Project } from "@/types";
-import { Plus, Search, Bot, File, MoreHorizontal } from "lucide-react";
+import {
+  Plus,
+  Search,
+  File,
+  MoreHorizontal,
+  LayoutDashboard,
+  CreditCard,
+  UserCog,
+} from "lucide-react";
+import Image from "next/image";
+import AccountSettings from "@/components/AccountSettings";
+import UserAvatar from "@/components/UserAvatar";
 
 interface ProjectDashboardProps {
   projects: Project[];
@@ -19,175 +44,165 @@ export default function ProjectDashboard({
   onCreateProject,
   onOpenProject,
 }: ProjectDashboardProps) {
-  const getStatusColor = (status: Project["status"]) => {
+  const [activeSection, setActiveSection] = useState<"projects" | "account">(
+    "projects"
+  );
+
+  const statusColor = (status: Project["status"]) => {
     switch (status) {
       case "deployed":
-        return `bg-green-500/20 text-green-400 border-green-500/30`;
+        return "bg-green-500/20 text-green-400 border-green-500/30";
       case "testing":
-        return `bg-yellow-500/20 text-yellow-400 border-yellow-500/30`;
-      case "draft":
-        return `bg-gray-500/20 text-gray-400 border-gray-500/30`;
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
       default:
-        return `bg-gray-500/20 text-gray-400 border-gray-500/30`;
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
     }
   };
 
+  /* -----------------------------  RENDER  ----------------------------- */
   return (
-    <div className="h-screen" style={{ backgroundColor: colors.bg }}>
-      {/* Header */}
-      <div
-        className="border-b"
-        style={{ borderColor: colors.border, backgroundColor: colors.sidebar }}
-      >
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-3">
-            <div
-              className="w-8 h-8 rounded-sm flex items-center justify-center"
-              style={{ backgroundColor: colors.accent }}
-            >
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-medium" style={{ color: colors.text }}>
-                AgentFlow
-              </h1>
-              <p className="text-sm" style={{ color: colors.textSecondary }}>
-                Design intelligent agent systems
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Search
-                className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2"
-                style={{ color: colors.textSecondary }}
-              />
-              <Input
-                placeholder="Search projects..."
-                className="pl-10 w-64 border-0 shadow-none focus:ring-0 focus:border-0"
-                style={{
-                  backgroundColor: colors.panel,
-                  color: colors.text,
-                  borderColor: colors.border,
-                  borderRadius: 0,
-                  boxShadow: 'none',
-                }}
-              />
-            </div>
-            <Button
-              onClick={onCreateProject}
-              className="gap-2 shadow-none border-0 focus:ring-0"
-              style={{
-                backgroundColor: colors.accent,
-                color: 'white',
-                borderRadius: 0,
-                boxShadow: 'none',
-              }}
-            >
-              <Plus className="w-4 h-4" />
-              New Project
-            </Button>
-          </div>
-        </div>
-      </div>
+    <SidebarProvider defaultOpen>
+      <Sidebar className="border-r" style={{ borderColor: colors.border, '--sidebar-width': '14rem' } as React.CSSProperties}>
+                <SidebarContent className="p-2 flex flex-col">
+          <SidebarMenu className="flex-grow">
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" className="justify-start">
+                <Image
+                  src="/weave%20icon%20no%20background.png"
+                  alt="Weev logo"
+                  width={28}
+                  height={28}
+                  priority
+                  className="rounded-sm"
+                />
+                <span className="font-thin text-lg tracking-wide">weev</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            
+            <SidebarSeparator className="my-1" />
 
-      {/* Projects Grid */}
-      <div className="p-6">
-        <div className="mb-6">
-          <h2
-            className="text-lg font-medium mb-2"
-            style={{ color: colors.text }}
-          >
-            Recent Projects
-          </h2>
-          <p
-            className="text-sm"
-            style={{ color: colors.textSecondary }}
-          >{`Continue working on your agent designs`}</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
-            <Card
-              key={project.id}
-              className="p-4 cursor-pointer hover:shadow-lg transition-all duration-200 border"
-              style={{
-                backgroundColor: colors.panel,
-                borderColor: colors.border,
-              }}
-              onClick={() => onOpenProject(project.id)}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <File className="w-4 h-4" style={{ color: colors.textSecondary }} />
-                  <h3 className="font-medium" style={{ color: colors.text }}>
-                    {project.name}
-                  </h3>
-                </div>
-                <button className="p-1 rounded hover:bg-black/20">
-                  <MoreHorizontal
-                    className="w-4 h-4"
-                    style={{ color: colors.textSecondary }}
-                  />
-                </button>
-              </div>
-
-              <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-                {project.description}
-              </p>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Badge
-                    variant="outline"
-                    className={`border ${getStatusColor(project.status)}`}
-                  >
-                    {project.status}
-                  </Badge>
-                  <span
-                    className="text-xs"
-                    style={{ color: colors.textSecondary }}
-                  >
-                    {project.nodeCount} nodes
-                  </span>
-                </div>
-                <span
-                  className="text-xs"
-                  style={{ color: colors.textSecondary }}
-                >
-                  {project.lastModified.toLocaleDateString()}
-                </span>
-              </div>
-            </Card>
-          ))}
-
-          {/* Create New Card */}
-          <Card
-            className="p-4 cursor-pointer hover:shadow-lg transition-all duration-200 border-dashed border-2 flex items-center justify-center min-h-[200px]"
-            style={{
-              backgroundColor: colors.panel,
-              borderColor: colors.border,
-            }}
-            onClick={onCreateProject}
-          >
-            <div className="text-center">
-              <Plus
-                className="w-8 h-8 mx-auto mb-2"
-                style={{ color: colors.textSecondary }}
-              />
-              <p className="text-sm font-medium" style={{ color: colors.text }}>
-                Create New Project
-              </p>
-              <p
-                className="text-xs"
-                style={{ color: colors.textSecondary }}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={activeSection === "projects"}
+                onClick={() => setActiveSection("projects")}
+                className="justify-start"
               >
-                Start designing an agent system
-              </p>
-            </div>
-          </Card>
+                <LayoutDashboard />
+                Projects
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                isActive={activeSection === "account"}
+                onClick={() => setActiveSection("account")}
+                className="justify-start"
+              >
+                <CreditCard />
+                Billing
+                <SidebarMenuBadge>NEW</SidebarMenuBadge>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton disabled  className="justify-start">
+                <UserCog />
+                Account
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        
+          <SidebarMenu>
+             <SidebarSeparator className="my-1" />
+             <SidebarMenuItem>
+              <SidebarMenuButton className="justify-start">
+                <UserAvatar name="Weev User" />
+                <span className="truncate">Weev User</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+      </Sidebar>
+
+      <SidebarInset>
+        {/* ---- Header bar ---- */}
+        <div
+          className="border-b flex items-center justify-between px-6 py-4"
+          style={{ borderColor: colors.border }}
+        >
+          {activeSection === "projects" ? (
+            <>
+              <h1 className="text-xl font-medium">Projects</h1>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search projects..."
+                    className="pl-10 w-64 border-0 shadow-none focus:ring-0 focus:border-0"
+                    style={{ backgroundColor: colors.panel }}
+                  />
+                </div>
+                <Button onClick={onCreateProject} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  New Project
+                </Button>
+              </div>
+            </>
+          ) : (
+            <h1 className="text-xl font-medium">Billing & Account</h1>
+          )}
         </div>
-      </div>
-    </div>
+
+        {/* ---- Main content ---- */}
+        {activeSection === "projects" ? (
+          <div className="p-4">
+                         <ul className="space-y-1">
+               {projects.map((project) => (
+                 <li key={project.id}>
+                   <button
+                     onClick={() => onOpenProject(project.id)}
+                     className="w-full flex items-center justify-between gap-4 rounded-md px-3 py-2 hover:bg-white/5 transition-colors text-left"
+                   >
+                     {/* left block –––––––– */}
+                     <div className="flex items-center gap-3 min-w-0">
+                       <File className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+                       <div className="min-w-0">
+                         <p className="font-medium truncate">{project.name}</p>
+                         <p className="text-xs text-muted-foreground truncate">{project.description}</p>
+                       </div>
+                     </div>
+ 
+                     {/* right meta –––––––– */}
+                     <div className="hidden md:flex items-center gap-4 flex-shrink-0">
+                       <Badge variant="outline" className={`border ${statusColor(project.status)}`}>
+                         {project.status}
+                       </Badge>
+                       <span className="text-xs text-muted-foreground whitespace-nowrap">{project.nodeCount} nodes</span>
+                       <span className="text-xs text-muted-foreground whitespace-nowrap">
+                         {project.lastModified.toLocaleDateString()}
+                       </span>
+                       <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                     </div>
+                   </button>
+                 </li>
+               ))}
+ 
+               {/* create-new row */}
+               <li>
+                 <button
+                   onClick={onCreateProject}
+                   className="w-full flex items-center gap-3 rounded-md px-3 py-2 border border-dashed border-muted-foreground/30 hover:bg-white/5 hover:border-muted-foreground/50 transition-colors"
+                 >
+                   <Plus className="w-4 h-4" />
+                   <span className="font-medium">Create New Project</span>
+                 </button>
+               </li>
+             </ul>
+          </div>
+        ) : (
+          <AccountSettings />
+        )}
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
