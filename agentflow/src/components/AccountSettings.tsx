@@ -50,11 +50,11 @@ export default function AccountSettings() {
             <CardContent className="text-2xl font-bold">{plan.price}</CardContent>
             <CardFooter>
               {plan.priceId ? (
-                <Button size="sm" className="w-full" onClick={() => handleCheckout(plan.priceId!)} disabled={loading}>
+                <Button size="sm" className="w-full" variant="outline" onClick={() => handleCheckout(plan.priceId!)} disabled={loading}>
                   {loading ? 'Loading...' : 'Choose'}
                 </Button>
               ) : (
-                <Button size="sm" className="w-full" disabled={plan.id === "starter"}>
+                <Button size="sm" className="w-full" variant="outline" disabled={plan.id === "starter"}>
                   {plan.id === "starter" ? "Current Plan" : "Contact Us"}
                 </Button>
               )}
@@ -73,7 +73,7 @@ export default function AccountSettings() {
           <p className="text-sm text-muted-foreground">No card on file</p>
         </CardContent>
         <CardFooter>
-          <Button size="sm">Add card</Button>
+          <Button size="sm" variant="outline">Add card</Button>
         </CardFooter>
       </Card>
     </div>

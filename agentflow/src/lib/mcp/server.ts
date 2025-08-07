@@ -1,67 +1,77 @@
-import http from "http";
-import { getSpec, setAgentFlow, getAgentFlow, getNodeConfig } from "./export";
+import express from 'express';
+import { exportToMcpFormat } from './export';
+import { supabase } from '@/lib/supabaseClient';
+import { CanvasNode, Connection } from '@/types';
+import getPort from 'get-port';
+import http from 'http';
 
-const port = parseInt(process.env.MCP_PORT || "3030", 10);
+const app = express();
 
-const server = http.createServer((req, res) => {
-  if (!req.url) {
-    res.statusCode = 404;
-    res.end();
-    return;
+// In-memory store for running servers
+const runningServers: Map<string, http.Server> = new Map();
+
+export const startMcpServer = async (projectId: string): Promise<number> => {
+  if (runningServers.has(projectId)) {
+    console.log(`Server for project ${projectId} is already running.`);
+    const server = runningServers.get(projectId);
+    const address = server?.address();
+    if (typeof address === 'object' && address !== null) {
+      return address.port;
+    }
   }
 
-  if (req.method === "GET" && req.url === "/spec") {
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(getSpec()));
-    return;
-  }
+  const port = await getPort({ port: getPort.makeRange(3001, 3100) });
+  const server = http.createServer(app);
 
-  if (req.method === "GET" && req.url === "/tools/get_agent_flow") {
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(getAgentFlow()));
-    return;
-  }
+  app.get('/get_agent_flow', async (req, res) => {
+    try {
+      // Your existing data fetching logic...
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .select('name')
+        .eq('id', projectId)
+        .single();
+      if (projectError) throw projectError;
+      const { data: nodesData, error: nodesError } = await supabase
+        .from('nodes')
+        .select('*')
+        .eq('project_id', projectId);
+      if (nodesError) throw nodesError;
+      const { data: connectionsData, error: connectionsError } = await supabase
+        .from('connections')
+        .select('*')
+        .eq('project_id', projectId);
+      if (connectionsError) throw connectionsError;
+      
+      const mcpData = exportToMcpFormat(projectData.name, nodesData as CanvasNode[], connectionsData as Connection[]);
+      res.json(mcpData);
+    } catch (error) {
+      console.error('Error fetching project data for MCP:', error);
+      res.status(500).json({ error: 'Failed to fetch project data' });
+    }
+  });
 
-  if (req.method === "GET" && req.url.startsWith("/tools/get_node_config")) {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const id = url.searchParams.get("id") || "";
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(getNodeConfig(id)));
-    return;
-  }
-
-  if (req.method === "POST" && req.url === "/update") {
-    let body = "";
-    req.on("data", (chunk) => {
-      body += chunk;
+  return new Promise((resolve) => {
+    server.listen(port, () => {
+      console.log(`MCP Server started for project ${projectId} on http://localhost:${port}`);
+      runningServers.set(projectId, server);
+      resolve(port);
     });
-    req.on("end", () => {
-      try {
-        const { nodes, connections } = JSON.parse(body || "{}");
-        if (Array.isArray(nodes) && Array.isArray(connections)) {
-          setAgentFlow(nodes, connections);
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ status: "ok" }));
+  });
+};
+
+export const stopMcpServer = (projectId: string): Promise<void> => {
+    return new Promise((resolve) => {
+        const server = runningServers.get(projectId);
+        if (server) {
+            server.close(() => {
+                console.log(`MCP Server for project ${projectId} stopped.`);
+                runningServers.delete(projectId);
+                resolve();
+            });
         } else {
-          res.statusCode = 400;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ error: "Invalid payload" }));
+            console.log(`No server found for project ${projectId}.`);
+            resolve();
         }
-      } catch (error) {
-        console.error(error);
-        res.statusCode = 400;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: "Invalid JSON" }));
-      }
     });
-    return;
-  }
-
-  res.statusCode = 404;
-  res.end();
-});
-
-server.listen(port, () => {
-  console.log(`MCP server listening on port ${port}`);
-});
+};

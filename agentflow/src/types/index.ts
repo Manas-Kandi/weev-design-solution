@@ -227,6 +227,20 @@ export interface Project {
   startNodeId?: string | null;
   nodes?: CanvasNode[];
   connections?: Connection[];
+  created_at: string;
+  user_id: string;
+}
+
+export interface ProjectFile {
+  id: string;
+  project_id: string;
+  name: string;
+  file_path: string;
+  file_type: string;
+  size_bytes: number;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
 }
 
 export interface Tool {

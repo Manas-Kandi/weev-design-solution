@@ -38,11 +38,9 @@ export default function BillingForm({ subscriptionPlan }: BillingFormProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mt-5 space-y-4">
-          <Button onClick={redirectToCustomerPortal} disabled={loading}>
-            {loading ? 'Loading...' : 'Manage Subscription'}
-          </Button>
-        </div>
+        <Button onClick={redirectToCustomerPortal} disabled={loading} variant="outline" size="sm">
+          {loading ? 'Loading...' : 'Manage Subscription'}
+        </Button>
       </CardContent>
     </Card>
   );

@@ -123,6 +123,8 @@ export default function AgentFlowPage() {
         nodeCount: 0, // We'll calculate this separately if needed
         status: project.status || "draft",
         startNodeId: project.start_node_id || null,
+        created_at: project.created_at,
+        user_id: project.user_id || DEFAULT_USER_ID
       }));
 
       setProjects(transformedProjects);
@@ -220,41 +222,104 @@ export default function AgentFlowPage() {
     projectData: Omit<Project, "id" | "lastModified" | "nodeCount">
   ) => {
     try {
-      const { data, error } = await supabase
-        .from("projects")
-        .insert([
-          {
-            name: projectData.name,
-            description: projectData.description,
-            status: projectData.status,
-            user_id: DEFAULT_USER_ID,
-            start_node_id: startNodeId,
-          },
-        ])
-        .select()
-        .single();
+      // Log environment check
+      console.log("Checking Supabase connection...");
+      console.log("Supabase URL exists:", !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log("Supabase Anon Key exists:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-      if (error) {
-        console.error("Error creating project:", error);
+      // Log input data
+      console.log("Creating project with data:", {
+        name: projectData.name,
+        description: projectData.description,
+        status: projectData.status
+      });
+      
+      // Prepare minimal project data
+      const newProjectData = {
+        name: projectData.name || 'Untitled Project',
+        description: projectData.description || '',
+        status: 'draft',
+        user_id: DEFAULT_USER_ID
+      };
+
+      console.log("Attempting to insert project with data:", newProjectData);
+
+      // Try a simple insert first
+      let result;
+      try {
+        result = await supabase
+          .from("projects")
+          .insert(newProjectData)
+          .select()
+          .single();
+        
+        console.log("Insert response:", result);
+      } catch (insertErr) {
+        console.error("Caught error during insert:", insertErr);
+        setStatusMessage("Failed to create project: Network or permission error");
         return;
       }
 
+      const { data: insertedProject, error: insertError } = result;
+
+      if (insertError) {
+        console.error("Database error during insert:", {
+          message: insertError.message,
+          code: insertError.code,
+          details: insertError.details,
+          hint: insertError.hint
+        });
+        setStatusMessage(`Failed to create project: ${insertError.message}`);
+        return;
+      }
+
+      // If insert successful, fetch the created project
+      const { data, error: selectError } = await supabase
+        .from("projects")
+        .select('*')
+        .eq('name', projectData.name)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (selectError) {
+        console.error("Error fetching created project:", selectError);
+        setStatusMessage(`Project created but failed to fetch details`);
+        return;
+      }
+
+      if (!data) {
+        console.error("No data returned from project creation");
+        setStatusMessage("Failed to create project: No data returned");
+        return;
+      }
+
+      // Transform the data to match our Project interface
       const newProject: Project = {
         id: data.id,
         name: data.name,
         description: data.description || "",
         lastModified: new Date(data.created_at),
-        nodeCount: 0,
+        nodeCount: (data.nodes || []).length,
         status: data.status || "draft",
         startNodeId: data.start_node_id || null,
+        created_at: data.created_at,
+        user_id: data.user_id
       };
 
+      // Update state
       setProjects([newProject, ...projects]);
       setCurrentProject(newProject);
-      setStartNodeId(newProject.startNodeId || null);
+      setStartNodeId(null);
+      setNodes([]);
+      setConnections([]);
       setCurrentView("designer");
+      
+      // Show success message
+      setStatusMessage("Project created successfully");
     } catch (err) {
       console.error("Unexpected error creating project:", err);
+      setStatusMessage("Failed to create project: Unexpected error");
     }
   };
 
@@ -400,6 +465,8 @@ export default function AgentFlowPage() {
             name: `New Project ${new Date().toLocaleDateString()}`,
             description: "A new agent flow project",
             status: "draft",
+            created_at: new Date().toISOString(),
+            user_id: DEFAULT_USER_ID
           })
         }
         onOpenProject={handleOpenProject}
