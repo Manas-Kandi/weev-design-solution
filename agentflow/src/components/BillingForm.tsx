@@ -15,13 +15,21 @@ export default function BillingForm({ subscriptionPlan }: BillingFormProps) {
   const redirectToCustomerPortal = async () => {
     setLoading(true);
     try {
-      const { url } = await fetch('/api/stripe/create-portal-link', {
+      const res = await fetch('/api/stripe/create-portal-link', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-      }).then((res) => res.json());
-
+      });
+      const ct = res.headers.get('content-type') || '';
+      const isJson = ct.includes('application/json');
+      const payload = isJson ? await res.json().catch(() => ({})) : await res.text();
+      if (!res.ok) {
+        const msg = isJson ? (payload as any)?.message : String(payload);
+        throw new Error(msg || `Failed to create portal link (HTTP ${res.status})`);
+      }
+      const url = (payload as any)?.url;
+      if (!url) throw new Error('No portal URL returned');
       window.location.assign(url);
     } catch (error) {
       if (error) return alert((error as Error).message);

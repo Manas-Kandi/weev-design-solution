@@ -30,13 +30,20 @@ export default function MCPModal({ isOpen, onClose, projectName, projectId, onSe
         },
         body: JSON.stringify({ projectId }),
       });
-      const data = await response.json();
+      const ct = response.headers.get('content-type') || '';
+      const isJson = ct.includes('application/json');
+      const payload = isJson ? await response.json().catch(() => ({})) : await response.text();
       if (response.ok) {
+        const data: any = isJson ? payload : {};
+        if (typeof data?.port !== 'number') {
+          throw new Error('Start server succeeded but no port was returned');
+        }
         setPort(data.port);
         onServerStatusChange(projectId, true);
         setLogs([`Server started successfully on port ${data.port}.`, 'Waiting for client connection...']);
       } else {
-        throw new Error(data.message || 'Failed to start server');
+        const msg = isJson ? (payload as any)?.message : String(payload);
+        throw new Error(msg || `Failed to start server (HTTP ${response.status})`);
       }
     } catch (error) {
       setIsRunning(false);

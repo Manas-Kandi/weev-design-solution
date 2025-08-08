@@ -68,13 +68,22 @@ export default function AccountSettings() {
   const handleCheckout = async (priceId: string) => {
     setLoading(true);
     try {
-      const { sessionId } = await fetch('/api/stripe', {
+      const res = await fetch('/api/stripe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ price: { id: priceId } }),
-      }).then((res) => res.json());
+      });
+      const ct = res.headers.get('content-type') || '';
+      const isJson = ct.includes('application/json');
+      const payload = isJson ? await res.json().catch(() => ({})) : await res.text();
+      if (!res.ok) {
+        const msg = isJson ? (payload as any)?.message : String(payload);
+        throw new Error(msg || `Checkout session failed (HTTP ${res.status})`);
+      }
+      const sessionId = (payload as any)?.sessionId;
+      if (!sessionId) throw new Error('No sessionId returned');
 
       const stripe = await (window as any).Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
       await stripe.redirectToCheckout({ sessionId });

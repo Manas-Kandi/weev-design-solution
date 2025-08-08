@@ -177,10 +177,17 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
 
   return (
     <section style={sectionStyle} className={className}>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         style={headerStyle}
         onClick={() => setCollapsed(!collapsed)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setCollapsed(!collapsed);
+          }
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         aria-expanded={!collapsed}
@@ -201,7 +208,7 @@ export const PanelSection: React.FC<PanelSectionProps> = ({
             {actions}
           </div>
         )}
-      </button>
+      </div>
 
       <div
         id={`panel-section-${title.replace(/\s+/g, "-").toLowerCase()}`}
