@@ -196,3 +196,60 @@ export const VSCodeButton: React.FC<VSCodeButtonProps> = ({
     </button>
   );
 };
+
+// VSCodeTextArea
+interface VSCodeTextAreaProps
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  loading?: boolean;
+}
+export const VSCodeTextArea: React.FC<VSCodeTextAreaProps> = ({
+  style,
+  loading = false,
+  disabled,
+  rows = 5,
+  ...props
+}) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isFocused, setIsFocused] = React.useState(false);
+
+  const baseStyle = themeHelpers.getInputStyle(
+    isFocused ? "focus" : isHovered ? "hover" : "default"
+  );
+
+  const animationStyle: React.CSSProperties = {
+    transform: isHovered || isFocused ? "scale(1.01)" : "scale(1)",
+    boxShadow: isFocused
+      ? theme.shadows.glow
+      : isHovered
+      ? theme.shadows.subtle
+      : undefined,
+    resize: "vertical",
+    minHeight: 84,
+  };
+
+  const stateStyle: React.CSSProperties =
+    loading || disabled
+      ? { opacity: theme.states.disabled.opacity, cursor: "not-allowed" }
+      : {};
+
+  return (
+    <textarea
+      {...props}
+      rows={rows}
+      disabled={disabled || loading}
+      style={{
+        ...baseStyle,
+        // Textareas shouldn't inherit fixed input height
+        height: "auto",
+        fontFamily: theme.typography.fontMono,
+        ...animationStyle,
+        ...stateStyle,
+        ...style,
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+    />
+  );
+};

@@ -1,4 +1,5 @@
 import React from "react";
+import { ToolAgentRules, ToolAgentSimulationConfig } from "./simulation";
 
 // Node data types shared across the application for type safety
 export interface DashboardNodeData {
@@ -181,6 +182,9 @@ export interface ToolAgentNodeData extends AgentNodeData {
     apiKey?: string;
     parameters?: Record<string, unknown>;
   };
+  // New rule-first configuration
+  rules?: ToolAgentRules;
+  simulation?: ToolAgentSimulationConfig;
 }
 
 export interface CanvasNode {
