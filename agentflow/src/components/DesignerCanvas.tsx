@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import CanvasEngine from "@/components/Canvas";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
@@ -60,6 +60,38 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     error?: string;
   }[]>([]);
   const [isTesting, setIsTestingState] = useState(false);
+
+  // Resizable Tester panel height
+  const [testerHeight, setTesterHeight] = useState<number>(300);
+  const resizeRef = useRef<{ startY: number; startH: number } | null>(null);
+
+  function onResizeMouseMove(e: MouseEvent) {
+    if (!resizeRef.current) return;
+    const dy = e.clientY - resizeRef.current.startY;
+    // Panel is anchored to bottom; dragging up (dy < 0) increases height
+    const next = Math.max(180, Math.min(window.innerHeight - 120, resizeRef.current.startH - dy));
+    setTesterHeight(next);
+  }
+
+  function onResizeMouseUp() {
+    window.removeEventListener("mousemove", onResizeMouseMove);
+    window.removeEventListener("mouseup", onResizeMouseUp);
+    resizeRef.current = null;
+  }
+
+  const onResizeMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    resizeRef.current = { startY: e.clientY, startH: testerHeight };
+    window.addEventListener("mousemove", onResizeMouseMove);
+    window.addEventListener("mouseup", onResizeMouseUp);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    return () => {
+      window.removeEventListener("mousemove", onResizeMouseMove);
+      window.removeEventListener("mouseup", onResizeMouseUp);
+    };
+  }, []);
 
   // Live tester visualization state
   const [nodeStatuses, setNodeStatuses] = useState<
@@ -247,6 +279,16 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
       {/* Tester bottom bar (compact terminal style) */}
       {showTester && (
         <div className="absolute left-0 right-0 bottom-0 z-40 bg-[#0e0f11] border-t border-gray-800/80 shadow-[0_-8px_16px_rgba(0,0,0,0.35)]">
+          {/* Resize handle */}
+          <div
+            className="h-2 cursor-row-resize flex items-center justify-center hover:bg-gray-800/40"
+            onMouseDown={onResizeMouseDown}
+            role="separator"
+            aria-orientation="horizontal"
+            title="Drag to resize"
+          >
+            <div className="w-16 h-1 rounded bg-gray-600" />
+          </div>
           {/* Header */}
           <div className="h-8 px-3 flex items-center justify-between bg-[#121316] border-b border-gray-800/60">
             <div className="text-[11px] tracking-wide text-gray-300 font-medium">
@@ -263,8 +305,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
             </button>
           </div>
           {/* Content */}
-          <div className="h-[260px] overflow-hidden">
-            <div className="h-full overflow-auto figma-scrollbar p-2">
+          <div className="overflow-hidden" style={{ height: testerHeight }}>
+            <div className="h-full overflow-auto overscroll-contain figma-scrollbar p-2">
               {TESTER_V2_ENABLED ? (
                 <TesterV2
                   nodes={nodes}

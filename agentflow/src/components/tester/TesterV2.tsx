@@ -5,7 +5,7 @@ import { CanvasNode, Connection } from "@/types";
 import { TESTER_V2_ENABLED } from "@/lib/flags";
 import { runWorkflow } from "@/lib/workflowRunner";
 import ResultCard from "@/components/tester/ResultCard";
-import { SummaryText, JSONBlock, TableRenderer, KeyValueList } from "@/components/tester/Renderers";
+import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/components/tester/Renderers";
 import type {
   TesterEvent,
   NodeExecutionArtifact,
@@ -68,11 +68,11 @@ function TimelinePanel({
   const fmt = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
 
   return (
-    <div className="mb-3">
+    <div className="mb-2">
       <div className="text-[11px] text-gray-400 mb-1">Timeline</div>
       <div className="relative border border-gray-800 rounded bg-[#0f1115] overflow-x-auto">
         {/* Axis */}
-        <div className="sticky top-0 z-10 text-[10px] text-gray-500 px-2 py-1 border-b border-gray-800 bg-[#0f1115]">
+        <div className="sticky top-0 z-0 text-[10px] text-gray-500 px-2 py-1 border-b border-gray-800 bg-[#0f1115]">
           <div className="flex items-center justify-between">
             <span>0s</span>
             <span>{fmt(total * 0.25)}</span>
@@ -171,7 +171,7 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
           title: existingDraft.title ?? e.title,
           nodeType: existingDraft.nodeType ?? e.nodeType,
           nodeSubtype: existingDraft.nodeSubtype ?? e.nodeSubtype,
-          cause: (existingDraft as any).cause ?? { kind: "all-inputs-ready", inputCount: 0 },
+          cause: existingDraft.cause ?? { kind: "all-inputs-ready", inputCount: 0 },
           startedAt,
           endedAt: e.at,
           durationMs: e.durationMs,
@@ -179,7 +179,7 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
           output: e.output,
           summary: e.summary,
           error: e.error,
-          flowContextBefore: (existingDraft as any).flowContextBefore ?? e.flowContextBefore,
+          flowContextBefore: existingDraft.flowContextBefore ?? e.flowContextBefore,
           flowContextAfter: e.flowContextAfter,
           flowContextDiff: e.flowContextDiff,
         };
@@ -431,7 +431,7 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
       className="w-full rounded-none bg-transparent text-gray-200 p-0"
     >
       {/* Persistent Run Header */}
-      <div className="sticky top-0 z-10 bg-[#0f1115]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1115]/80 pb-2 mb-2 border-b border-gray-800">
+      <div className="sticky top-0 z-20 bg-[#0f1115]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1115]/80 pb-1 mb-2 border-b border-gray-800">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-semibold text-gray-100">Agentic Tester (V2)</h2>
@@ -540,12 +540,12 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
       </div>
 
       {/* Body */}
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-12 gap-3">
         {/* Left: Scenario */}
-        <aside className="col-span-3 rounded-lg border border-gray-800 bg-[#101214] p-3">
+        <aside className="col-span-3 rounded-lg border border-gray-800 bg-[#101214] p-2">
           <div className="text-xs font-medium text-gray-400 mb-2">Scenario</div>
           <textarea
-            className="w-full h-24 border border-gray-800 bg-[#0f1115] text-gray-200 rounded p-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            className="w-full h-20 border border-gray-800 bg-[#0f1115] text-gray-200 rounded p-2 text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
             placeholder="Describe the test scenario..."
             value={scenario}
             onChange={(e) => setScenario(e.target.value)}
@@ -563,7 +563,7 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
         </aside>
 
         {/* Center: Timeline/Results */}
-        <main className="col-span-6 rounded-lg border border-gray-800 bg-[#101214] p-3 min-h-[280px]">
+        <main className="col-span-6 rounded-lg border border-gray-800 bg-[#101214] p-2 min-h-[220px]">
           <div className="text-xs font-medium text-gray-400 mb-2">Run Timeline & Results</div>
           {/* Timeline (Gantt-like) */}
           {(runStartedAt || timelineItems.length > 0) && (
@@ -578,7 +578,7 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
           {artifacts.length === 0 ? (
             <p className="text-sm text-gray-400">No results yet. Click Run to execute the flow.</p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               {artifacts.map((a) => (
                 <li key={a.nodeId}>
                   <ResultCard
@@ -594,7 +594,7 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
         </main>
 
         {/* Right: Inspector */}
-        <section className="col-span-3 rounded-lg border border-gray-800 bg-[#101214] p-3">
+        <section className="col-span-3 rounded-lg border border-gray-800 bg-[#101214] p-2">
           <div className="text-xs font-medium text-gray-400 mb-2">Inspector</div>
           {!selected ? (
             <p className="text-sm text-gray-400">Select a step to view details.</p>
@@ -617,15 +617,16 @@ function InspectorPanel({
   artifact: NodeExecutionArtifact;
   providerModel?: string;
 }) {
-  const [tab, setTab] = useState<"summary" | "output" | "inputs" | "llm" | "trace" | "errors">("summary");
+  type TabId = "summary" | "output" | "inputs" | "llm" | "trace" | "errors";
+  type TabDef = { id: TabId; label: string; disabled?: boolean };
+  const [tab, setTab] = useState<TabId>("summary");
   const outputObj: Record<string, unknown> | null =
     artifact.output && typeof artifact.output === "object" && !Array.isArray(artifact.output)
       ? (artifact.output as Record<string, unknown>)
       : null;
-  const isLLM = !!(outputObj && "gemini" in outputObj);
+  const isLLM = !!(outputObj && ("gemini" in outputObj || "llm" in outputObj));
 
-  const isArrayOfObjects = (v: unknown): v is Record<string, unknown>[] =>
-    Array.isArray(v) && v.every((x) => x && typeof x === "object" && !Array.isArray(x));
+  //
 
   return (
     <div>
@@ -661,19 +662,19 @@ function InspectorPanel({
 
       {/* Tabs (expanded views by default) */}
       <div className="flex items-center gap-1 text-[11px]">
-        {[
+        {([
           { id: "summary", label: "Summary" },
           { id: "output", label: "Output" },
           { id: "inputs", label: "Inputs" },
           { id: "llm", label: "LLM", disabled: !isLLM },
           { id: "trace", label: "Trace" },
           { id: "errors", label: "Errors" },
-        ].map((t) => (
+        ] as TabDef[]).map((t) => (
           <button
             key={t.id}
-            disabled={(t as any).disabled}
-            onClick={() => setTab(t.id as any)}
-            className={`px-2 py-1 rounded ${tab === t.id ? "bg-gray-800 text-gray-100" : "text-gray-400 hover:bg-[#1a1c20]"} ${(t as any).disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={!!t.disabled}
+            onClick={() => setTab(t.id)}
+            className={`px-2 py-1 rounded ${tab === t.id ? "bg-gray-800 text-gray-100" : "text-gray-400 hover:bg-[#1a1c20]"} ${t.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {t.label}
           </button>
@@ -683,11 +684,7 @@ function InspectorPanel({
         {tab === "summary" && <SummaryText text={artifact.summary} maxChars={2000} />}
         {tab === "output" && (
           <div className="text-[11px] text-gray-200">
-            {isArrayOfObjects(artifact.output) ? (
-              <TableRenderer data={artifact.output} />
-            ) : (
-              <JSONBlock value={artifact.output} className="max-h-[420px]" />
-            )}
+            <NodeOutputRenderer artifact={artifact} />
           </div>
         )}
         {tab === "inputs" && (
@@ -698,7 +695,7 @@ function InspectorPanel({
         )}
         {tab === "llm" && isLLM && (
           <div className="text-[11px] text-gray-200">
-            <JSONBlock value={outputObj ? (outputObj["gemini"] as unknown) : undefined} className="max-h-[420px]" />
+            <LLMRawBlock outputObj={outputObj} className="max-h-[420px]" />
           </div>
         )}
         {tab === "trace" && (
