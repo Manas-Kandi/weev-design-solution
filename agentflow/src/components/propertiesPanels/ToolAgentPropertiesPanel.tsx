@@ -19,7 +19,14 @@ export default function ToolAgentPropertiesPanel({
   onChange,
 }: ToolAgentPropertiesPanelProps) {
   const data = node.data;
-  const toolConfig = data.toolConfig || {};
+  const defaultToolConfig: NonNullable<ToolAgentNodeData["toolConfig"]> = {
+    toolType: "web-search",
+    endpoint: "",
+    apiKey: "",
+    parameters: {},
+  };
+  const toolConfig: NonNullable<ToolAgentNodeData["toolConfig"]> =
+    data.toolConfig ?? defaultToolConfig;
 
   const handleConfigChange = (
     field: keyof NonNullable<ToolAgentNodeData["toolConfig"]>,
@@ -27,7 +34,9 @@ export default function ToolAgentPropertiesPanel({
   ) => {
     const updatedData: ToolAgentNodeData = {
       ...data,
-      toolConfig: { ...toolConfig, [field]: value },
+      toolConfig: { ...toolConfig, [field]: value } as NonNullable<
+        ToolAgentNodeData["toolConfig"]
+      >,
     };
     onChange({ ...node, data: updatedData });
   };

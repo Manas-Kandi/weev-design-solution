@@ -52,7 +52,6 @@ export class FlowEngine {
       case "state-machine":
         return new StateMachineNode(node);
       case "ui":
-      case "gui":
         // For UI nodes (like chat interface), we don't execute them
         return null;
       default:
@@ -61,6 +60,70 @@ export class FlowEngine {
         );
         return null;
     }
+  }
+
+  // Validate connections before execution and return only valid ones
+  private validateConnections(
+    emitLog?: (
+      nodeId: string,
+      log: string,
+      output?: NodeOutput,
+      error?: string
+    ) => void
+  ): { validConnections: Connection[]; invalidIds: Set<string> } {
+    const nodeById = new Map(this.nodes.map((n) => [n.id, n] as const));
+    const invalidIds = new Set<string>();
+
+    for (const c of this.connections) {
+      const src = nodeById.get(c.sourceNode);
+      const tgt = nodeById.get(c.targetNode);
+
+      const issue = (msg: string) => {
+        invalidIds.add(c.id);
+        const nid = src?.id || tgt?.id || "flow";
+        if (emitLog) emitLog(nid, msg, undefined, msg);
+        else console.warn(`[FlowEngine] ${msg}`);
+      };
+
+      if (!src) {
+        issue(`Invalid connection ${c.id}: source node '${c.sourceNode}' not found.`);
+        continue;
+      }
+      if (!tgt) {
+        issue(`Invalid connection ${c.id}: target node '${c.targetNode}' not found.`);
+        continue;
+      }
+
+      const srcPort = (src.outputs || []).find((p) => p.id === c.sourceOutput);
+      if (!srcPort) {
+        issue(
+          `Invalid connection ${c.id}: source output '${c.sourceOutput}' not found on node '${src.id}'.`
+        );
+        continue;
+      }
+      const tgtPort = (tgt.inputs || []).find((p) => p.id === c.targetInput);
+      if (!tgtPort) {
+        issue(
+          `Invalid connection ${c.id}: target input '${c.targetInput}' not found on node '${tgt.id}'.`
+        );
+        continue;
+      }
+
+      // Optional type compatibility check
+      if (
+        srcPort.type &&
+        tgtPort.type &&
+        srcPort.type !== tgtPort.type
+      ) {
+        issue(
+          `Type mismatch on connection ${c.id}: '${src.id}.${srcPort.id}:${srcPort.type}' -> '${tgt.id}.${tgtPort.id}:${tgtPort.type}'.`
+        );
+        continue;
+      }
+    }
+
+    const validConnections = this.connections.filter((c) => !invalidIds.has(c.id));
+    return { validConnections, invalidIds };
   }
 
   // --- NEW: Dynamic, output-aware, input-ready execution ---
@@ -76,6 +139,9 @@ export class FlowEngine {
       error?: string
     ) => void
   ): Promise<Record<string, NodeOutput>> {
+    // Validate connections and use only the valid set for this run
+    const { validConnections } = this.validateConnections(emitLog);
+    const connections = validConnections;
     // Map: nodeId -> set of input nodeIds that have completed
     const inputReady: Record<string, Set<string>> = {};
     // Map: nodeId -> number of required inputs
@@ -89,7 +155,7 @@ export class FlowEngine {
     const queue: string[] = [];
     // Build input counts and inputReady for each node (comprehensive fix)
     for (const node of this.nodes) {
-      const incoming = this.connections.filter((c) => c.targetNode === node.id);
+      const incoming = connections.filter((c) => c.targetNode === node.id);
       inputCounts[node.id] = incoming.length;
       inputReady[node.id] = new Set();
     }
@@ -107,7 +173,6 @@ export class FlowEngine {
       if (
         node.type === "ui" ||
         node.subtype === "ui" ||
-        node.type === "gui" ||
         node.subtype === "gui"
       ) {
         const data = node.data as unknown as UINodeData;
@@ -133,7 +198,7 @@ export class FlowEngine {
         }
         this.nodeOutputs[node.id] = uiOutput;
         executed.add(node.id);
-        const outgoing = this.connections.filter(
+        const outgoing = connections.filter(
           (c) => c.sourceNode === node.id
         );
         for (const conn of outgoing) {
@@ -159,9 +224,7 @@ export class FlowEngine {
       startNodeIds = [this.startNodeId];
     } else {
       startNodeIds = this.nodes
-        .filter(
-          (node) => !this.connections.some((c) => c.targetNode === node.id)
-        )
+        .filter((node) => !connections.some((c) => c.targetNode === node.id))
         .map((n) => n.id);
     }
     // Add start nodes to the queue (after UI node downstreams)
@@ -211,7 +274,7 @@ export class FlowEngine {
       // Build context
       const context = {
         nodes: this.nodes,
-        connections: this.connections,
+        connections,
         nodeOutputs: this.nodeOutputs,
         currentNode: node,
       };
@@ -243,7 +306,7 @@ export class FlowEngine {
       }
 
       // Find outgoing connections
-      const outgoing = this.connections.filter((c) => c.sourceNode === node.id);
+      const outgoing = connections.filter((c) => c.sourceNode === node.id);
 
       // Determine which branch(es) to follow
       let nextConnections: typeof outgoing;

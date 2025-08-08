@@ -3,18 +3,13 @@ import { File, Upload, Trash2, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { supabase } from '@/lib/supabaseClient';
 import { Card } from './ui/card';
+import type { ProjectFile } from '@/types';
 
 interface FileManagerProps {
   projectId: string;
 }
 
-interface ProjectFile {
-  id: string;
-  name: string;
-  file_type: string;
-  size_bytes: number;
-  created_at: string;
-}
+// Use canonical ProjectFile type from types/project to ensure consistency with DB schema
 
 export default function FileManager({ projectId }: FileManagerProps) {
   const [files, setFiles] = useState<ProjectFile[]>([]);

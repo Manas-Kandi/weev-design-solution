@@ -185,7 +185,7 @@ export interface ToolAgentNodeData extends AgentNodeData {
 
 export interface CanvasNode {
   id: string;
-  type: "agent" | "gui" | "logic" | "conversation" | "testing" | "ui";
+  type: "agent" | "logic" | "conversation" | "testing" | "ui";
   subtype: string;
   position: { x: number; y: number };
   size: { width: number; height: number };
@@ -299,13 +299,17 @@ export interface Colors {
 export type NodeOutput =
   | string
   | {
+      // Standard fields
+      gemini?: unknown;
+      error?: string;
+      info?: string; // Added for UI node info messages
+      // Backward-compatible fields used by specific nodes
       previousState?: string;
       currentState?: string;
       event?: string;
       transition?: string;
       output?: string;
       message?: string;
-      gemini?: unknown;
-      error?: string;
-      info?: string; // Added for UI node info messages
+      // Allow arbitrary structured outputs from tool/custom nodes
+      [key: string]: unknown;
     };

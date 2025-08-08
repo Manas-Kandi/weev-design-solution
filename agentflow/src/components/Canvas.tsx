@@ -306,6 +306,25 @@ export default function CanvasEngine(props: Props) {
             targetInput: inputId,
           };
           console.log("Creating connection:", connectionData);
+          // Validate connection locally before applying
+          const src = nodes.find((n) => n.id === connectionData.sourceNode);
+          const tgt = nodes.find((n) => n.id === connectionData.targetNode);
+          const srcPort = src?.outputs?.find((p) => p.id === connectionData.sourceOutput);
+          const tgtPort = tgt?.inputs?.find((p) => p.id === connectionData.targetInput);
+          if (!src || !tgt || !srcPort || !tgtPort) {
+            console.warn(
+              `Invalid connection: missing node/port. src=${src?.id ?? 'N/A'} srcPort=${srcPort?.id ?? 'N/A'} tgt=${tgt?.id ?? 'N/A'} tgtPort=${tgtPort?.id ?? 'N/A'}`
+            );
+            setDragConnection(null);
+            return;
+          }
+          if (srcPort.type && tgtPort.type && srcPort.type !== tgtPort.type) {
+            console.warn(
+              `Type mismatch: ${src.id}.${srcPort.id}:${srcPort.type} -> ${tgt.id}.${tgtPort.id}:${tgtPort.type}`
+            );
+            setDragConnection(null);
+            return;
+          }
           // IMMEDIATE UPDATE: Add to local connections first for instant visual feedback
           console.log(
             "Adding connection immediately to props.onConnectionsChange"

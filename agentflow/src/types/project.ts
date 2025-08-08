@@ -2,7 +2,7 @@ export interface Project {
   id: string;
   name: string;
   description: string;
-  status: 'active' | 'archived' | 'testing' | 'deployed';
+  status: 'draft' | 'active' | 'archived' | 'testing' | 'deployed';
   nodeCount: number;
   lastModified: Date;
   created_at: string;

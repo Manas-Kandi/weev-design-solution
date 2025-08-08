@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, File, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabaseClient';
+import type { Project } from '@/types/project';
 
 interface Folder {
   id: string;
