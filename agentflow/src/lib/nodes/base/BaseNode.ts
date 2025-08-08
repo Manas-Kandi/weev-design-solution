@@ -1,4 +1,5 @@
 import { CanvasNode, Connection, NodeOutput } from "@/types";
+import type { FlowContextBag, FlowMode } from "@/types/flow-io";
 import { callGemini } from "@/lib/geminiClient";
 
 export interface NodeContext {
@@ -6,6 +7,15 @@ export interface NodeContext {
   connections: Connection[];
   nodeOutputs: Record<string, NodeOutput>;
   currentNode: CanvasNode;
+  // --- Optional v2 context fields (non-breaking) ---
+  // Inputs addressed by the target node's input port names
+  inputs?: Record<string, NodeOutput>;
+  // The target node's own configuration
+  config?: any;
+  // Transitive, namespaced context of upstream nodes
+  flowContext?: FlowContextBag;
+  // Dual-mode flag for migration (default: NewMode)
+  mode?: FlowMode;
 }
 
 export interface NodeExecutor {
@@ -28,87 +38,72 @@ export abstract class BaseNode implements NodeExecutor {
 
   // Helper to get input values from connected nodes
   protected getInputValues(context: NodeContext): string[] {
+    // Prefer v2 inputs if present (already respecting block/transform)
+    if (context.inputs && Object.keys(context.inputs).length > 0) {
+      const toText = (val: NodeOutput): string => {
+        if (typeof val === "string") return val;
+        if (val && typeof val === "object") {
+          if (typeof (val as any).output === "string") return (val as any).output;
+          if (typeof (val as any).message === "string") return (val as any).message;
+          if ("gemini" in (val as any) && (val as any).gemini) {
+            const g: any = (val as any).gemini;
+            const t = g?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (typeof t === "string") return t;
+          }
+        }
+        try {
+          return JSON.stringify(val);
+        } catch {
+          return String(val);
+        }
+      };
+      return Object.values(context.inputs).map(toText).filter(Boolean) as string[];
+    }
+
+    // Legacy path: derive from connections and nodeOutputs
     const incoming = context.connections.filter(
       (c) => c.targetNode === this.node.id
     );
-    console.log(
-      "[DEBUG] getInputValues: node",
-      this.node.id,
-      "incoming connections",
-      incoming
-    );
     return incoming
       .map((conn) => {
-        const upstreamNode = context.nodes.find(
-          (n) => n.id === conn.sourceNode
-        );
-        // --- PATCH: Always use nodeOutputs for UI nodes if available ---
-        if (
-          upstreamNode &&
-          (upstreamNode.type === "ui" || upstreamNode.subtype === "ui")
-        ) {
+        const upstreamNode = context.nodes.find((n) => n.id === conn.sourceNode);
+        // UI node special handling
+        if (upstreamNode && (upstreamNode.type === "ui" || upstreamNode.subtype === "ui")) {
           const output = context.nodeOutputs[conn.sourceNode];
-          console.log("[DEBUG] getInputValues (UI node)", {
-            currentNode: this.node.id,
-            upstreamNode: upstreamNode.id,
-            output,
-            data: upstreamNode.data,
-          });
           if (typeof output === "string" && output) return output;
-          if (
-            output &&
-            typeof output === "object" &&
-            "message" in output &&
-            output.message
-          )
-            return output.message as string;
-          if (
-            output &&
-            typeof output === "object" &&
-            "content" in output &&
-            output.content
-          )
-            return output.content as string;
-          // Fallback to node data
+          if (output && typeof output === "object" && (output as any).message)
+            return (output as any).message as string;
+          if (output && typeof output === "object" && (output as any).content)
+            return (output as any).content as string;
           type UIData = { content?: string; message?: string };
           const data = upstreamNode.data as UIData;
           return data?.content || data?.message || "";
         }
         const output = context.nodeOutputs[conn.sourceNode];
-        console.log("[DEBUG] getInputValues (other node)", {
-          currentNode: this.node.id,
-          upstreamNode: upstreamNode?.id,
-          output,
-        });
         if (typeof output === "string") return output;
-        if (output && typeof output === "object" && "gemini" in output) {
-          type GeminiOutput = {
-            candidates?: Array<{
-              content?: {
-                parts?: Array<{
-                  text?: string;
-                }>;
-              };
-            }>;
-          };
-          const geminiOutput = output.gemini as GeminiOutput;
-          // Optionally extract text from Gemini output
-          if (geminiOutput?.candidates?.[0]?.content?.parts?.[0]?.text) {
-            return geminiOutput.candidates[0].content.parts[0].text as string;
-          }
+        if (output && typeof output === "object" && "gemini" in (output as any)) {
+          const geminiOutput = (output as any).gemini as any;
+          const text = geminiOutput?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (typeof text === "string") return text;
         }
-        return JSON.stringify(output);
+        try {
+          return JSON.stringify(output);
+        } catch {
+          return String(output);
+        }
       })
       .filter(Boolean);
   }
 
   // Helper to format all inputs as context
   protected formatInputContext(context: NodeContext): string {
+    if (context.mode === "LegacyMode") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[AgentFlow][Deprecation] NodeContext LegacyMode in use for node ${this.node.id}. Please migrate nodes to v2 (namespaced flowContext, inputs map).`
+      );
+    }
     const inputs = this.getInputValues(context);
-    console.log("[DEBUG] formatInputContext", {
-      node: this.node.id,
-      inputs,
-    });
     return inputs.join("\n\n");
   }
 }

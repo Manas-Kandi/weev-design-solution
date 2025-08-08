@@ -12,6 +12,7 @@ import { BaseNode } from "../nodes/base/BaseNode";
 import { PromptTemplateNode } from "../nodes/conversation/PromptTemplateNode";
 import { DecisionTreeNode } from "../nodes/logic/DecisionTreeNode";
 import { StateMachineNode } from "../nodes/logic/StateMachineNode";
+import { applyContextControlsToOutput, snapshotNodeForFlowContext } from "./flowContext";
 
 export class FlowEngine {
   private nodes: CanvasNode[];
@@ -272,11 +273,52 @@ export class FlowEngine {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Build context
+      // Build V2 inputs map with per-edge controls
+      const incoming = connections.filter((c) => c.targetNode === node.id);
+      const inputs: Record<string, NodeOutput> = {};
+      for (const conn of incoming) {
+        const upstreamOutput = this.nodeOutputs[conn.sourceNode];
+        // Skip if input not yet available (defensive)
+        if (typeof upstreamOutput === "undefined") continue;
+        const controls = (conn as any).contextControls as
+          | { weight?: number; blocked?: boolean; control?: any }
+          | undefined;
+        if (controls?.blocked) continue; // blocked edge → exclude entirely
+        const { output: transformed } = applyContextControlsToOutput(
+          upstreamOutput,
+          controls
+        );
+        inputs[conn.targetInput] = transformed;
+      }
+
+      // Build transitive, namespaced flowContext (respect blocked edges)
+      const upstreamIds = this.getUpstreamNodeIds(node.id, connections);
+      const flowContext: Record<string, ReturnType<typeof snapshotNodeForFlowContext>> = {} as any;
+      for (const uid of upstreamIds) {
+        const upNode = this.nodes.find((n) => n.id === uid);
+        if (!upNode) continue;
+        const upOut = this.nodeOutputs[uid];
+        // If there's a direct edge from uid → node.id, capture advisory weight
+        const direct = incoming.find((c) => c.sourceNode === uid);
+        const weight = (direct as any)?.contextControls?.weight as number | undefined;
+        flowContext[uid] = snapshotNodeForFlowContext({
+          node: { id: upNode.id, type: upNode.type, subtype: upNode.subtype, data: upNode.data },
+          output: upOut,
+          weight,
+        });
+      }
+
       const context = {
+        // Legacy fields (back-compat)
         nodes: this.nodes,
         connections,
         nodeOutputs: this.nodeOutputs,
         currentNode: node,
+        // V2 fields
+        inputs,
+        config: node.data,
+        flowContext,
+        mode: "NewMode" as const,
       };
 
       // Execute node
@@ -356,6 +398,33 @@ export class FlowEngine {
     }
 
     return this.nodeOutputs;
+  }
+
+  // Compute all upstream node IDs for a given node, respecting blocked edges.
+  // We perform a BFS over the reverse graph from target node.
+  private getUpstreamNodeIds(targetNodeId: string, connections: Connection[]): Set<string> {
+    const upstream = new Set<string>();
+    const queue: string[] = [targetNodeId];
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      const incoming = connections.filter((c) => c.targetNode === current);
+      for (const conn of incoming) {
+        const controls = (conn as any).contextControls as
+          | { blocked?: boolean }
+          | undefined;
+        if (controls?.blocked) continue; // do not traverse blocked edges
+        upstream.add(conn.sourceNode);
+        queue.push(conn.sourceNode);
+      }
+    }
+
+    // Remove the target itself if present
+    upstream.delete(targetNodeId);
+    return upstream;
   }
 }
 

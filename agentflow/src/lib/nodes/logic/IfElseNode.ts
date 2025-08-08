@@ -7,7 +7,30 @@ export class IfElseNode extends BaseNode {
     // Use the strict IfElseNodeData type
     const data = this.node.data as import("@/types").IfElseNodeData;
     const condition = data.condition || "";
-    const inputValues = this.getInputValues(context);
+    // Prefer V2 inputs (respecting transforms/block); fallback to legacy helper
+    const v2Inputs = context.inputs
+      ? Object.values(context.inputs)
+      : [];
+    const toText = (val: import("@/types").NodeOutput): string => {
+      if (typeof val === "string") return val;
+      if (val && typeof val === "object") {
+        // Common fields
+        if (typeof (val as any).output === "string") return (val as any).output;
+        if (typeof (val as any).message === "string") return (val as any).message;
+        // Gemini extraction
+        if ("gemini" in val && val.gemini) {
+          const g: any = (val as any).gemini;
+          const t = g?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (typeof t === "string") return t;
+        }
+      }
+      try {
+        return JSON.stringify(val);
+      } catch {
+        return String(val);
+      }
+    };
+    const inputValues = v2Inputs.length > 0 ? v2Inputs.map(toText) : this.getInputValues(context);
     const input = inputValues.length === 1 ? inputValues[0] : inputValues;
     const nodeContext = data.context || {};
 
@@ -38,6 +61,7 @@ Remember: Only output TRUE or FALSE.
     try {
       const response = await callGemini("", {
         model: "gemini-2.5-flash-lite",
+        temperature: 0, // Deterministic for logic nodes
         contents: [
           {
             role: "user",

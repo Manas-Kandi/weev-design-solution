@@ -16,11 +16,15 @@ import SimulatorPropertiesPanel from "./propertiesPanels/SimulatorPropertiesPane
 import StateMachinePropertiesPanel from "./propertiesPanels/StateMachinePropertiesPanel";
 import TestCasePropertiesPanel from "./propertiesPanels/TestCasePropertiesPanel";
 import ToolAgentPropertiesPanel from "./propertiesPanels/ToolAgentPropertiesPanel";
-import { CanvasNode } from "@/types";
+import { CanvasNode, Connection } from "@/types";
+import { ContextControlsSection } from "./propertiesPanels/ContextControlsSection";
 
 interface PropertiesPanelProps {
   selectedNode: CanvasNode | null;
   onChange: (updatedNode: CanvasNode) => void;
+  nodes: CanvasNode[];
+  connections: Connection[];
+  onConnectionsChange: (next: Connection[]) => void;
 }
 
 const panelStyle: React.CSSProperties = {
@@ -41,6 +45,9 @@ const panelStyle: React.CSSProperties = {
 export default function PropertiesPanel({
   selectedNode,
   onChange,
+  nodes,
+  connections,
+  onConnectionsChange,
 }: PropertiesPanelProps) {
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -190,7 +197,17 @@ export default function PropertiesPanel({
       );
   }
 
-  return <AnimatedPanel key={nodeType}>{content}</AnimatedPanel>;
+  return (
+    <AnimatedPanel key={nodeType}>
+      {content}
+      <ContextControlsSection
+        node={selectedNode as CanvasNode}
+        nodes={nodes}
+        connections={connections}
+        onConnectionsChange={onConnectionsChange}
+      />
+    </AnimatedPanel>
+  );
 }
 
 function AnimatedPanel({ children }: { children: React.ReactNode }) {

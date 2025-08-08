@@ -509,6 +509,9 @@ export default function AgentFlowPage() {
           <PropertiesPanel
             selectedNode={selectedNode}
             onChange={handleNodeUpdate}
+            nodes={nodes}
+            connections={connections}
+            onConnectionsChange={setConnections}
           />
         }
       />
