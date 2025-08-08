@@ -21,6 +21,23 @@ export default function ToolAgentPropertiesPanel({
   onChange,
 }: ToolAgentPropertiesPanelProps) {
   const data = node.data;
+  // LLM provider/model configuration for Live mode
+  const llmProviderOptions = [
+    { value: "nvidia", label: "NVIDIA (default)" },
+    { value: "gemini", label: "Google Gemini" },
+  ];
+  const nvidiaModels = [
+    { value: "meta/llama-3.1-70b-instruct", label: "Llama 3.1 70B Instruct" },
+    { value: "meta/llama-3.1-8b-instruct", label: "Llama 3.1 8B Instruct" },
+    { value: "gpt-oss-120b", label: "GPT‑OSS 120B" },
+    { value: "gpt-oss-20b", label: "GPT‑OSS 20B" },
+  ];
+  const geminiModels = [
+    { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
+    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
+  ];
+  const activeLLMProvider = (data?.provider as "nvidia" | "gemini") || "nvidia";
+  const llmModelOptions = activeLLMProvider === "gemini" ? geminiModels : nvidiaModels;
   const defaultToolConfig: NonNullable<ToolAgentNodeData["toolConfig"]> = {
     toolType: "web-search",
     endpoint: "",
@@ -326,6 +343,35 @@ export default function ToolAgentPropertiesPanel({
               />
             </div>
           </div>
+        </PanelSection>
+
+        <PanelSection
+          title="LLM Settings (Live Mode)"
+          description="Choose which LLM to use when running without simulation"
+          icon={<Wrench size={16} />}
+          defaultCollapsed={true}
+        >
+          <label style={labelStyle}>Provider</label>
+          <VSCodeSelect
+            value={data?.provider ?? "nvidia"}
+            options={llmProviderOptions}
+            onValueChange={(v) => {
+              const nextProvider = v as "nvidia" | "gemini";
+              const defaultModel = nextProvider === "gemini" ? "gemini-2.5-flash-lite" : "meta/llama-3.1-70b-instruct";
+              const updated: ToolAgentNodeData = { ...data, provider: nextProvider, model: data?.model && llmModelOptions.some(m => m.value === data.model) ? data.model : defaultModel };
+              onChange({ ...node, data: updated });
+            }}
+          />
+
+          <label style={{ ...labelStyle, marginTop: theme.spacing.md }}>Model</label>
+          <VSCodeSelect
+            value={data?.model ?? (activeLLMProvider === "gemini" ? "gemini-2.5-flash-lite" : "meta/llama-3.1-70b-instruct")}
+            options={llmModelOptions}
+            onValueChange={(v) => {
+              const updated: ToolAgentNodeData = { ...data, model: v };
+              onChange({ ...node, data: updated });
+            }}
+          />
         </PanelSection>
 
         <PanelSection

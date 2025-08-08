@@ -45,6 +45,16 @@ export abstract class BaseNode implements NodeExecutor {
         if (val && typeof val === "object") {
           if (typeof (val as any).output === "string") return (val as any).output;
           if (typeof (val as any).message === "string") return (val as any).message;
+          // Unified LLM wrapper
+          if ("llm" in (val as any) && (val as any).llm) {
+            const raw: any = (val as any).llm;
+            // NVIDIA (OpenAI-compatible) shape
+            const nvidiaText: string | undefined = raw?.choices?.[0]?.message?.content;
+            if (typeof nvidiaText === "string") return nvidiaText;
+            // Gemini raw shape (for completeness if passed through)
+            const gemText: string | undefined = raw?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (typeof gemText === "string") return gemText;
+          }
           if ("gemini" in (val as any) && (val as any).gemini) {
             const g: any = (val as any).gemini;
             const t = g?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -81,10 +91,25 @@ export abstract class BaseNode implements NodeExecutor {
         }
         const output = context.nodeOutputs[conn.sourceNode];
         if (typeof output === "string") return output;
-        if (output && typeof output === "object" && "gemini" in (output as any)) {
-          const geminiOutput = (output as any).gemini as any;
-          const text = geminiOutput?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (typeof text === "string") return text;
+        if (output && typeof output === "object") {
+          if (typeof (output as any).output === "string") return (output as any).output as string;
+          if ("llm" in (output as any) && (output as any).llm) {
+            const raw: any = (output as any).llm;
+            const nvidiaText: string | undefined = raw?.choices?.[0]?.message?.content;
+            if (typeof nvidiaText === "string") return nvidiaText;
+            const gemText: string | undefined = raw?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (typeof gemText === "string") return gemText;
+          }
+          if ("gemini" in (output as any)) {
+            const geminiOutput = (output as any).gemini as any;
+            const text = geminiOutput?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (typeof text === "string") return text;
+          }
+          if ("provider" in (output as any) && (output as any).provider) {
+            const provider: any = (output as any).provider;
+            const text = provider?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (typeof text === "string") return text;
+          }
         }
         try {
           return JSON.stringify(output);

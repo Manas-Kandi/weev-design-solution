@@ -1,6 +1,6 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput } from "@/types";
-import { callGemini } from "@/lib/geminiClient";
+import { callLLM } from "@/lib/llmClient";
 
 export class IfElseNode extends BaseNode {
   async execute(context: NodeContext): Promise<NodeOutput> {
@@ -59,23 +59,13 @@ Remember: Only output TRUE or FALSE.
 `;
 
     try {
-      const response = await callGemini("", {
-        model: "gemini-2.5-flash-lite",
-        temperature: 0, // Deterministic for logic nodes
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: systemPrompt }],
-          },
-        ],
-      });
-      const resultText = response.candidates?.[0]?.content?.parts?.[0]?.text
-        ?.trim()
-        .toUpperCase();
+      const llm = await callLLM(systemPrompt, { temperature: 0 });
+      const resultText = (llm.text || "").trim().toUpperCase();
       const isTrue = resultText === "TRUE";
       return {
         output: isTrue ? "true" : "false",
-        gemini: response,
+        llm: llm.raw,
+        provider: llm.provider,
         info: JSON.stringify({
           condition,
           input,

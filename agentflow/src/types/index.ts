@@ -156,6 +156,7 @@ export interface AgentNodeData {
   config?: Record<string, unknown>;
   prompt?: string;
   model?: string;
+  provider?: "nvidia" | "gemini";
   condition?: string;
   systemPrompt?: string;
   personality?: string;

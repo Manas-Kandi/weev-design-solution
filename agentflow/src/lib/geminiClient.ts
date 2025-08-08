@@ -1,34 +1,30 @@
-// Gemini API utility for workflow execution
-// Throw an explicit error if the API key is missing
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  throw new Error('NEXT_PUBLIC_GEMINI_API_KEY environment variable is required');
-}
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
-
+// Gemini API utility for workflow execution (v1beta)
 export async function callGemini(prompt: string, params: Record<string, unknown> = {}) {
-  // Use passed-in contents array if provided
-  const contents = params.contents || [{ role: 'user', parts: [{ text: prompt }] }];
+  const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!GEMINI_API_KEY) {
+    throw new Error('NEXT_PUBLIC_GEMINI_API_KEY environment variable is required');
+  }
+  // Resolve model into URL path; default to gemini-2.5-flash-lite
+  const model = (params.model as string) || 'gemini-2.5-flash-lite';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
-  // Only allow Gemini-accepted fields in the payload
-  const ALLOWED_FIELDS = [
-    "model",
-    "contents",
-    "temperature",
-    "topK",
-    "topP",
-    "candidateCount",
-    "stopSequences",
-    "safetySettings",
-  ];
-  const { contents: _, ...rest } = params;
-  const filtered = Object.fromEntries(
-    Object.entries(rest).filter(([k]) => ALLOWED_FIELDS.includes(k))
-  );
-  const body = {
+  // Use passed-in contents array if provided
+  const contents = (params as any).contents || [{ role: 'user', parts: [{ text: prompt }] }];
+
+  // Map config fields into generationConfig (per Gemini spec); omit candidateCount
+  const generationConfig: any = {};
+  if (typeof (params as any).temperature === 'number') generationConfig.temperature = (params as any).temperature;
+  if (typeof (params as any).topK === 'number') generationConfig.topK = (params as any).topK;
+  if (typeof (params as any).topP === 'number') generationConfig.topP = (params as any).topP;
+  if (Array.isArray((params as any).stopSequences)) generationConfig.stopSequences = (params as any).stopSequences;
+  if (typeof (params as any).maxOutputTokens === 'number') generationConfig.maxOutputTokens = (params as any).maxOutputTokens;
+
+  const body: any = {
     contents,
-    ...filtered,
   };
+  if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
+  if ((params as any).safetySettings) body.safetySettings = (params as any).safetySettings;
+
   // DEBUG: Log the outgoing Gemini request body
   if (typeof window !== "undefined" && window?.localStorage) {
     window.localStorage.setItem("__gemini_debug_body__", JSON.stringify(body, null, 2));
@@ -38,7 +34,7 @@ export async function callGemini(prompt: string, params: Record<string, unknown>
   console.log("[Gemini Debug] Outgoing Gemini payload:", body);
 
 
-  const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+  const res = await fetch(`${url}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)

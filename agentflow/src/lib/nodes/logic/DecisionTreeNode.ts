@@ -1,6 +1,6 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput } from "@/types";
-import { callGemini } from "@/lib/geminiClient";
+import { callLLM } from "@/lib/llmClient";
 
 interface DecisionRule {
   condition: string;
@@ -61,14 +61,8 @@ Condition: ${condition}
 `;
 
     try {
-      const response = await callGemini(evalPrompt, {
-        model: "gemini-2.5-flash-lite",
-        temperature: 0,
-      });
-
-      const result = response.candidates?.[0]?.content?.parts?.[0]?.text
-        ?.trim()
-        .toUpperCase();
+      const llm = await callLLM(evalPrompt, { temperature: 0 });
+      const result = (llm.text || "").trim().toUpperCase();
       return result === "TRUE";
     } catch {
       return false;
@@ -100,14 +94,8 @@ Return only the output path, nothing else.
 `;
 
     try {
-      const response = await callGemini(evalPrompt, {
-        model: "gemini-2.5-flash-lite",
-        temperature: 0,
-      });
-
-      const result =
-        response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-        defaultPath;
+      const llm = await callLLM(evalPrompt, { temperature: 0 });
+      const result = (llm.text || "").trim() || defaultPath;
       return result;
     } catch (error) {
       return {

@@ -1,16 +1,8 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
-import { NodeOutput } from "@/types";
-import { callGemini } from "@/lib/geminiClient";
+import { NodeOutput, AgentNodeData } from "@/types";
+import { callLLM } from "@/lib/llmClient";
 
-// Define AgentNodeData type if not imported from elsewhere
-export interface AgentNodeData {
-  systemPrompt?: string;
-  personality?: string;
-  escalationLogic?: string;
-  confidenceThreshold?: number;
-  prompt?: string;
-  model?: string;
-}
+// Using AgentNodeData from types
 
 export class AgentNode extends BaseNode {
   async execute(context: NodeContext): Promise<NodeOutput> {
@@ -56,10 +48,12 @@ export class AgentNode extends BaseNode {
     const finalPrompt = prompts.filter(Boolean).join("\n\n");
 
     try {
-      const response = await callGemini(finalPrompt, {
-        model: data.model || "gemini-2.5-flash-lite",
+      const llm = await callLLM(finalPrompt, {
+        model: data.model,
+        temperature: typeof data.temperature === "number" ? data.temperature : undefined,
+        provider: (data as any).provider as any,
       });
-      return { gemini: response };
+      return { output: llm.text, llm: llm.raw, provider: llm.provider } as unknown as NodeOutput;
     } catch (error) {
       return {
         error: error instanceof Error ? error.message : "Unknown error",

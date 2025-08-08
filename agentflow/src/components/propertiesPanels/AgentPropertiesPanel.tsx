@@ -30,6 +30,7 @@ interface AgentNodeData {
   escalationThreshold?: number;
   escalationMessage?: string;
   model?: string;
+  provider?: "nvidia" | "gemini";
   temperature?: number;
   maxTokens?: number;
   responseFormat?: string;
@@ -51,12 +52,23 @@ export default function AgentPropertiesPanel({
 }: AgentPropertiesPanelProps) {
   const data = node.data;
 
-  // Model options with descriptions
-  const modelOptions = [
-    { value: "gemini-pro", label: "Gemini Pro" },
-    { value: "gemini-pro-vision", label: "Gemini Pro Vision" },
-    { value: "gemini-ultra", label: "Gemini Ultra" },
+  // LLM provider and model options
+  const llmProviderOptions = [
+    { value: "nvidia", label: "NVIDIA (default)" },
+    { value: "gemini", label: "Google Gemini" },
   ];
+  const nvidiaModels = [
+    { value: "meta/llama-3.1-70b-instruct", label: "Llama 3.1 70B Instruct" },
+    { value: "meta/llama-3.1-8b-instruct", label: "Llama 3.1 8B Instruct" },
+    { value: "gpt-oss-120b", label: "GPT‑OSS 120B" },
+    { value: "gpt-oss-20b", label: "GPT‑OSS 20B" },
+  ];
+  const geminiModels = [
+    { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
+    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
+  ];
+  const activeProvider = (data?.provider as "nvidia" | "gemini") || "nvidia";
+  const modelOptions = activeProvider === "gemini" ? geminiModels : nvidiaModels;
 
   const responseFormatOptions = [
     { value: "text", label: "Text" },
@@ -121,8 +133,8 @@ export default function AgentPropertiesPanel({
           <h2 style={headerTitleStyle}>Agent Configuration</h2>
           <p style={headerSubtitleStyle}>
             {`${data?.name ?? data?.title ?? "Unnamed Agent"} • ${
-              data?.model ?? "No model selected"
-            }`}
+              data?.provider ?? "nvidia"
+            } • ${data?.model ?? (activeProvider === "gemini" ? "gemini-2.5-flash-lite" : "meta/llama-3.1-70b-instruct")}`}
           </p>
         </div>
       </div>
@@ -190,10 +202,31 @@ export default function AgentPropertiesPanel({
               marginBottom: 4,
             }}
           >
+            Provider
+          </label>
+          <VSCodeSelect
+            value={data?.provider ?? "nvidia"}
+            options={llmProviderOptions}
+            onValueChange={(value: string) => {
+              const nextProvider = value as "nvidia" | "gemini";
+              const defaultModel = nextProvider === "gemini" ? "gemini-2.5-flash-lite" : "meta/llama-3.1-70b-instruct";
+              const nextModelOptions = nextProvider === "gemini" ? geminiModels : nvidiaModels;
+              handleFieldChange("provider", nextProvider);
+              handleFieldChange("model", data?.model && nextModelOptions.some(m => m.value === data.model) ? data.model : defaultModel);
+            }}
+          />
+          <label
+            style={{
+              color: "#b3b3b3",
+              fontSize: 14,
+              marginTop: 8,
+              marginBottom: 4,
+            }}
+          >
             Model
           </label>
           <VSCodeSelect
-            value={data?.model ?? "gemini-pro"}
+            value={data?.model ?? (activeProvider === "gemini" ? "gemini-2.5-flash-lite" : "meta/llama-3.1-70b-instruct")}
             options={modelOptions}
             onValueChange={(value: string) => handleFieldChange("model", value)}
           />
@@ -340,9 +373,9 @@ export default function AgentPropertiesPanel({
               ✓ Agent Configuration Preview
             </div>
             <div>
-              Model:{" "}
+              Model: {" "}
               <span style={{ color: "#0ea5e9" }}>
-                {data?.model ?? "gemini-pro"}
+                {data?.provider ?? "nvidia"} • {data?.model ?? (activeProvider === "gemini" ? "gemini-2.5-flash-lite" : "meta/llama-3.1-70b-instruct")}
               </span>
             </div>
             <div>
