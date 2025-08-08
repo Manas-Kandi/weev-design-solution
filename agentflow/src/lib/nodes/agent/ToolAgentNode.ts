@@ -30,10 +30,13 @@ export class ToolAgentNode extends BaseNode {
 
     // Prefer simulation-first execution if configured
     const simulation = data.simulation;
+    const globalSim = context.runOptions?.simulation;
+    const overrides = context.runOptions?.overrides || {};
     const rules = data.rules;
 
     // 1) Simulation Mode → run provider registry (default if mode undefined and provider exists)
     const shouldSimulate = (() => {
+      if (globalSim?.useSimulators) return true;
       if (!simulation) return false;
       if (simulation.mode === "simulate") return true;
       if (!simulation.mode) return !!simulation.providerId; // default to simulate when provider configured
@@ -54,12 +57,24 @@ export class ToolAgentNode extends BaseNode {
           return { error: "Simulation: No operation selected or available" };
         }
         try {
+          // Optional global latency simulation
+          if (globalSim?.latencyMs && typeof globalSim.latencyMs.min === 'number' && typeof globalSim.latencyMs.max === 'number') {
+            const { min, max } = globalSim.latencyMs;
+            const delay = Math.max(0, Math.floor(min + Math.random() * Math.max(0, max - min)));
+            if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+          }
+          // Optional global failure injection if node-level not specified
+          const injectError = sim.injectError ?? (
+            typeof globalSim?.failurePercent === 'number' && globalSim.failurePercent > 0
+              ? (Math.random() * 100 < globalSim.failurePercent ? { type: 'global', message: 'Injected failure by simulation settings' } : null)
+              : null
+          );
           const result = await provider.run({
             operation: op,
             params: sim.params || {},
             scenarioId: sim.scenarioId,
             latencyMs: sim.latencyMs,
-            injectError: sim.injectError || null,
+            injectError,
           });
           // Return structured JSON so the Results panel shows it nicely
           return { data: result, metadata: { provider: provider.id, operation: op, mode: "simulate" } } as unknown as NodeOutput;
@@ -81,14 +96,15 @@ export class ToolAgentNode extends BaseNode {
 
     try {
       const llm = await callLLM(toolPrompt, {
-        model: (data as any).model,
-        provider: (data as any).provider,
+        model: overrides.model ?? (data as any).model,
+        provider: (overrides.provider as any) ?? (data as any).provider,
         // Tool agent expects structured data; ask NVIDIA (OpenAI-compatible) for JSON content
         response_format: 'json',
         // Strong system to enforce simulation output instead of errors
         system: this.buildSystemPrompt({ toolType: toolConfig.toolType, rulesNl: rules?.nl || "", userInput: data.prompt || "" }),
         // Slightly lower temperature for consistent structured outputs
-        temperature: 0.3,
+        temperature: typeof overrides.temperature === 'number' ? overrides.temperature : 0.3,
+        seed: overrides.seed,
       });
 
       // Clean artifacts like control tokens and code fences

@@ -1,5 +1,6 @@
 import { CanvasNode, Connection, NodeOutput } from "@/types";
 import type { FlowContextBag, FlowMode } from "@/types/flow-io";
+import type { RunExecutionOptions } from "@/types/run";
 import { callGemini } from "@/lib/geminiClient";
 
 export interface NodeContext {
@@ -16,6 +17,8 @@ export interface NodeContext {
   flowContext?: FlowContextBag;
   // Dual-mode flag for migration (default: NewMode)
   mode?: FlowMode;
+  // Execution-level options (scenario, simulation, overrides)
+  runOptions?: RunExecutionOptions;
 }
 
 export interface NodeExecutor {
@@ -129,6 +132,19 @@ export abstract class BaseNode implements NodeExecutor {
       );
     }
     const inputs = this.getInputValues(context);
-    return inputs.join("\n\n");
+    const parts: string[] = [];
+    if (inputs.length) parts.push(inputs.join("\n\n"));
+    const scenario = context.runOptions?.scenario;
+    if (scenario && (scenario.description || scenario.timezone || scenario.workingHours || scenario.businessRules)) {
+      const lines: string[] = [];
+      if (scenario.description) lines.push(`Description: ${scenario.description}`);
+      if (scenario.timezone) lines.push(`Timezone: ${scenario.timezone}`);
+      if (scenario.workingHours && (scenario.workingHours.start || scenario.workingHours.end)) {
+        lines.push(`Working Hours: ${scenario.workingHours.start ?? ""}-${scenario.workingHours.end ?? ""}`);
+      }
+      if (scenario.businessRules) lines.push(`Business Rules: ${scenario.businessRules}`);
+      parts.push(["Scenario Context:", ...lines].join("\n"));
+    }
+    return parts.join("\n\n");
   }
 }

@@ -1,4 +1,5 @@
 import { CanvasNode, Connection, NodeOutput } from "@/types";
+import type { RunExecutionOptions } from "@/types/run";
 import { AgentNode } from "../nodes/agent/AgentNode";
 import { ToolAgentNode } from "../nodes/agent/ToolAgentNode";
 import { IfElseNode } from "../nodes/logic/IfElseNode";
@@ -32,10 +33,12 @@ export class FlowEngine {
   private nodeOutputs: Record<string, NodeOutput> = {};
   private executionOrder: CanvasNode[] = [];
   private startNodeId: string | null = null;
+  private options?: RunExecutionOptions;
 
-  constructor(nodes: CanvasNode[], connections: Connection[]) {
+  constructor(nodes: CanvasNode[], connections: Connection[], options?: RunExecutionOptions) {
     this.nodes = nodes;
     this.connections = connections;
+    this.options = options;
   }
 
   setStartNode(nodeId: string) {
@@ -383,6 +386,7 @@ export class FlowEngine {
         config: node.data,
         flowContext,
         mode: "NewMode" as const,
+        runOptions: this.options,
       };
 
       // Execute node

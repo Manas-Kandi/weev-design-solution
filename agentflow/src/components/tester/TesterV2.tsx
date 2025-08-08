@@ -22,6 +22,105 @@ interface TesterV2Props {
   onTesterEvent?: (event: TesterEvent) => void; // mirror events to parent (DesignerCanvas)
 }
 
+// --- Timeline (Gantt-like) panel ---
+function TimelinePanel({
+  items,
+  startTs,
+  endTs,
+  selectedId,
+  onSelect,
+}: {
+  items: Array<{
+    nodeId: string;
+    title: string;
+    startedAt: number;
+    endedAt: number;
+    status: "running" | "success" | "error";
+  }>;
+  startTs: number;
+  endTs: number;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const total = Math.max(1, endTs - startTs);
+
+  // Place items into non-overlapping lanes (waves) by time
+  type Lane = { lastEnd: number; items: typeof items };
+  const lanes: Lane[] = [];
+  for (const it of items) {
+    let placed = false;
+    for (const lane of lanes) {
+      if (it.startedAt >= lane.lastEnd) {
+        lane.items.push(it);
+        lane.lastEnd = it.endedAt;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      lanes.push({ lastEnd: it.endedAt, items: [it] });
+    }
+  }
+
+  const colorFor = (s: "running" | "success" | "error"): string =>
+    s === "running" ? "#60a5fa" : s === "success" ? "#10b981" : "#ef4444";
+
+  const fmt = (ms: number): string => `${(ms / 1000).toFixed(2)}s`;
+
+  return (
+    <div className="mb-3">
+      <div className="text-[11px] text-gray-400 mb-1">Timeline</div>
+      <div className="relative border border-gray-800 rounded bg-[#0f1115] overflow-x-auto">
+        {/* Axis */}
+        <div className="sticky top-0 z-10 text-[10px] text-gray-500 px-2 py-1 border-b border-gray-800 bg-[#0f1115]">
+          <div className="flex items-center justify-between">
+            <span>0s</span>
+            <span>{fmt(total * 0.25)}</span>
+            <span>{fmt(total * 0.5)}</span>
+            <span>{fmt(total * 0.75)}</span>
+            <span>{fmt(total)}</span>
+          </div>
+        </div>
+        {/* Lanes */}
+        <div className="p-2 space-y-2 min-w-full">
+          {lanes.map((lane, i) => (
+            <div key={i} className="relative h-6">
+              {/* Lane label */}
+              <div className="absolute left-0 -translate-x-[100%] pr-2 h-full flex items-center text-[10px] text-gray-500 select-none">
+                Wave {i + 1}
+              </div>
+              {/* Bars */}
+              {lane.items.map((it) => {
+                const leftPct = ((it.startedAt - startTs) / total) * 100;
+                const widthPct = Math.max(0.5, ((it.endedAt - it.startedAt) / total) * 100);
+                const isSel = selectedId === it.nodeId;
+                return (
+                  <button
+                    key={it.nodeId + it.startedAt}
+                    title={`${it.title}\n${fmt(it.endedAt - it.startedAt)} • ${new Date(it.startedAt).toLocaleTimeString()} → ${new Date(it.endedAt).toLocaleTimeString()}`}
+                    onClick={() => onSelect(it.nodeId)}
+                    className={`absolute h-5 rounded-sm border transition-[box-shadow] focus:outline-none ${
+                      isSel ? "ring-2 ring-blue-400/60" : ""
+                    }`}
+                    style={{
+                      left: `${leftPct}%`,
+                      width: `${widthPct}%`,
+                      backgroundColor: colorFor(it.status),
+                      borderColor: "rgba(0,0,0,0.25)",
+                      boxShadow: isSel
+                        ? "0 0 0 1px rgba(59,130,246,0.6), 0 0 10px rgba(59,130,246,0.4)"
+                        : "0 1px 0 rgba(0,0,0,0.15)",
+                    }}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 // Initial scaffold: summary-first shell with header, placeholder regions for Timeline and Inspector.
 export default function TesterV2({ nodes, connections, onClose, onTesterEvent: onExternalTesterEvent }: TesterV2Props) {
   const [scenario, setScenario] = useState("");
@@ -120,9 +219,19 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
     setRunEndedAt(null);
 
     try {
-      await runWorkflow(nodes, connections, /* startNodeId */ null, /* emitLog */ undefined, {
-        emitTesterEvent: onTesterEvent,
-      });
+      await runWorkflow(
+        nodes,
+        connections,
+        /* startNodeId */ null,
+        /* emitLog */ undefined,
+        {
+          emitTesterEvent: onTesterEvent,
+        },
+        {
+          scenario: { description: scenario || undefined },
+          overrides: { seed: (seed || "").trim() || undefined },
+        }
+      );
     } catch (err) {
       // Surface a synthetic error finish event
       const at = Date.now();
@@ -274,6 +383,47 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
     URL.revokeObjectURL(url);
   }, [artifacts, connections, elapsedMs, events, nodes, providerModels, runEndedAt, runStartedAt, runTitle, scenario, seed, statusLabel]);
 
+  // --- Timeline data (Gantt-like) ---
+  type TimelineItem = {
+    nodeId: string;
+    title: string;
+    startedAt: number;
+    endedAt: number; // for running items, this is nowTs
+    status: "running" | "success" | "error";
+  };
+
+  const timelineItems = useMemo<TimelineItem[]>(() => {
+    const items: TimelineItem[] = [];
+    // Finished artifacts
+    for (const a of artifacts) {
+      if (a.startedAt && a.endedAt) {
+        items.push({
+          nodeId: a.nodeId,
+          title: a.title || a.nodeId,
+          startedAt: a.startedAt,
+          endedAt: a.endedAt,
+          status: a.status === "error" ? "error" : "success",
+        });
+      }
+    }
+    // Running drafts
+    draftsRef.current.forEach((draft, nodeId) => {
+      const s = (draft.startedAt as number) || 0;
+      if (s > 0) {
+        items.push({
+          nodeId,
+          title: (draft.title as string) || nodeId,
+          startedAt: s,
+          endedAt: nowTs,
+          status: "running",
+        });
+      }
+    });
+    // Sort by start
+    items.sort((a, b) => a.startedAt - b.startedAt || a.endedAt - b.endedAt);
+    return items;
+  }, [artifacts, nowTs]);
+
   return (
     <div
       role="dialog"
@@ -415,6 +565,16 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
         {/* Center: Timeline/Results */}
         <main className="col-span-6 rounded-lg border border-gray-800 bg-[#101214] p-3 min-h-[280px]">
           <div className="text-xs font-medium text-gray-400 mb-2">Run Timeline & Results</div>
+          {/* Timeline (Gantt-like) */}
+          {(runStartedAt || timelineItems.length > 0) && (
+            <TimelinePanel
+              items={timelineItems}
+              startTs={runStartedAt ?? (timelineItems.length ? timelineItems[0].startedAt : nowTs)}
+              endTs={runEndedAt ?? nowTs}
+              selectedId={selectedId}
+              onSelect={(id) => setSelectedId(id)}
+            />
+          )}
           {artifacts.length === 0 ? (
             <p className="text-sm text-gray-400">No results yet. Click Run to execute the flow.</p>
           ) : (
@@ -464,7 +624,8 @@ function InspectorPanel({
       : null;
   const isLLM = !!(outputObj && "gemini" in outputObj);
 
-  const isArrayOfObjects = (v: unknown) => Array.isArray(v) && v.every((x) => x && typeof x === "object" && !Array.isArray(x));
+  const isArrayOfObjects = (v: unknown): v is Record<string, unknown>[] =>
+    Array.isArray(v) && v.every((x) => x && typeof x === "object" && !Array.isArray(x));
 
   return (
     <div>
@@ -523,7 +684,7 @@ function InspectorPanel({
         {tab === "output" && (
           <div className="text-[11px] text-gray-200">
             {isArrayOfObjects(artifact.output) ? (
-              <TableRenderer data={artifact.output as unknown[]} />
+              <TableRenderer data={artifact.output} />
             ) : (
               <JSONBlock value={artifact.output} className="max-h-[420px]" />
             )}

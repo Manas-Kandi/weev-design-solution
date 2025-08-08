@@ -48,10 +48,14 @@ export class AgentNode extends BaseNode {
     const finalPrompt = prompts.filter(Boolean).join("\n\n");
 
     try {
+      const overrides = context.runOptions?.overrides || {};
       const llm = await callLLM(finalPrompt, {
-        model: data.model,
-        temperature: typeof data.temperature === "number" ? data.temperature : undefined,
-        provider: (data as any).provider as any,
+        model: overrides.model ?? data.model,
+        temperature: typeof overrides.temperature === "number"
+          ? overrides.temperature
+          : (typeof data.temperature === "number" ? data.temperature : undefined),
+        provider: (overrides.provider as any) ?? ((data as any).provider as any),
+        seed: overrides.seed,
       });
       return { output: llm.text, llm: llm.raw, provider: llm.provider } as unknown as NodeOutput;
     } catch (error) {

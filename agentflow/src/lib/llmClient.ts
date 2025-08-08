@@ -19,6 +19,8 @@ export interface CallLLMOptions {
   system?: string; // optional system prompt
   // If set to 'json', request JSON object responses via OpenAI-compatible response_format
   response_format?: 'json';
+  // Optional deterministic seed (NVIDIA/OpenAI-compatible only). Ignored by Gemini.
+  seed?: number | string;
 }
 
 function cleanAssistantText(text: string): string {
@@ -95,6 +97,13 @@ export async function callLLM(prompt: string, opts: CallLLMOptions = {}): Promis
     };
     if (opts.response_format === 'json') {
       body.response_format = { type: 'json_object' };
+    }
+    // Seed support (only include if numeric)
+    if (typeof opts.seed !== 'undefined') {
+      const seedNum = typeof opts.seed === 'string' ? Number(opts.seed) : opts.seed;
+      if (Number.isFinite(seedNum)) {
+        body.seed = seedNum;
+      }
     }
 
     // Use server-side direct call; client-side via Next.js proxy to avoid CORS
