@@ -1,4 +1,5 @@
 import { CanvasNode, Connection } from "@/types";
+import type { TesterEvent } from "@/types/tester";
 import { FlowEngine } from "./flow/FlowEngine";
 
 // Helper to safely get node title
@@ -25,7 +26,10 @@ export async function runWorkflow(
     log: string,
     output?: unknown,
     error?: string
-  ) => void
+  ) => void,
+  hooks?: {
+    emitTesterEvent?: (event: TesterEvent) => void;
+  }
 ) {
   const engine = new FlowEngine(nodes, connections);
 
@@ -41,5 +45,5 @@ export async function runWorkflow(
     }
   }
 
-  return await engine.execute(emitLog);
+  return await engine.execute(emitLog, hooks);
 }

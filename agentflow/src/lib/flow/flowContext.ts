@@ -6,7 +6,9 @@ import type {
   ContextControls,
   FlowContextEntry,
   TransformSpec,
+  FlowContextBag,
 } from "@/types/flow-io";
+import type { FlowContextDiff } from "@/types/tester";
 
 // Defaults per product guidance
 export const DEFAULT_BYTE_LIMIT = 2048; // ~2KB
@@ -214,4 +216,36 @@ export function applyContextControlsToOutput(
   if (!controls) return { output };
   const transformed = applyTransformSpecToOutput(output, controls.control);
   return { output: transformed, weight: controls.weight };
+}
+
+// Compute a shallow diff between two FlowContext bags
+export function diffFlowContext(
+  before: FlowContextBag | undefined,
+  after: FlowContextBag | undefined
+): FlowContextDiff {
+  const a = before ?? {};
+  const b = after ?? {};
+  const aKeys = new Set(Object.keys(a));
+  const bKeys = new Set(Object.keys(b));
+
+  const added: string[] = [];
+  const removed: string[] = [];
+  const changed: { nodeId: string; fields: string[] }[] = [];
+
+  for (const k of bKeys) if (!aKeys.has(k)) added.push(k);
+  for (const k of aKeys) if (!bKeys.has(k)) removed.push(k);
+
+  const intersect = [...aKeys].filter((k) => bKeys.has(k));
+  for (const k of intersect) {
+    const aEntry = a[k];
+    const bEntry = b[k];
+    const fields: string[] = [];
+    const eq = (x: unknown, y: unknown) => safeStringify(x) === safeStringify(y);
+    if (!eq(aEntry?.config, bEntry?.config)) fields.push("config");
+    if (!eq(aEntry?.output, bEntry?.output)) fields.push("output");
+    if (!eq(aEntry?.metadata, bEntry?.metadata)) fields.push("metadata");
+    if (fields.length > 0) changed.push({ nodeId: k, fields });
+  }
+
+  return { added, removed, changed };
 }

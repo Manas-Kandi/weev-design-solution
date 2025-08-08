@@ -12,7 +12,19 @@ import { BaseNode } from "../nodes/base/BaseNode";
 import { PromptTemplateNode } from "../nodes/conversation/PromptTemplateNode";
 import { DecisionTreeNode } from "../nodes/logic/DecisionTreeNode";
 import { StateMachineNode } from "../nodes/logic/StateMachineNode";
-import { applyContextControlsToOutput, snapshotNodeForFlowContext } from "./flowContext";
+import {
+  applyContextControlsToOutput,
+  snapshotNodeForFlowContext,
+  diffFlowContext,
+} from "./flowContext";
+import type {
+  TesterEvent,
+  NodeStartEvent,
+  NodeFinishEvent,
+  FlowStartedEvent,
+  FlowFinishedEvent,
+  CauseOfExecution,
+} from "@/types/tester";
 
 export class FlowEngine {
   private nodes: CanvasNode[];
@@ -90,6 +102,7 @@ export class FlowEngine {
         issue(`Invalid connection ${c.id}: source node '${c.sourceNode}' not found.`);
         continue;
       }
+
       if (!tgt) {
         issue(`Invalid connection ${c.id}: target node '${c.targetNode}' not found.`);
         continue;
@@ -131,6 +144,7 @@ export class FlowEngine {
   /**
    * Executes the workflow from the start node(s), supporting real-time log emission.
    * @param emitLog Optional callback: (nodeId, log, output, error) => void
+   * @param hooks Optional tester hooks for structured events
    */
   async execute(
     emitLog?: (
@@ -138,8 +152,13 @@ export class FlowEngine {
       log: string,
       output?: NodeOutput,
       error?: string
-    ) => void
+    ) => void,
+    hooks?: {
+      emitTesterEvent?: (event: TesterEvent) => void;
+    }
   ): Promise<Record<string, NodeOutput>> {
+    const VISUAL_DELAY_MS = 500; // enforced per product rule
+    const emitTester = hooks?.emitTesterEvent;
     // Validate connections and use only the valid set for this run
     const { validConnections } = this.validateConnections(emitLog);
     const connections = validConnections;
@@ -228,9 +247,33 @@ export class FlowEngine {
         .filter((node) => !connections.some((c) => c.targetNode === node.id))
         .map((n) => n.id);
     }
-    // Add start nodes to the queue (after UI node downstreams)
-    for (const id of startNodeIds) {
-      if (!queue.includes(id)) queue.push(id);
+    const runStartedAt = Date.now();
+    // Emit flow-started tester event
+    if (emitTester) {
+      const evt: FlowStartedEvent = {
+        type: "flow-started",
+        at: runStartedAt,
+        meta: {
+          nodeCount: this.nodes.length,
+          connectionCount: connections.length,
+          startNodeIds,
+          testerSchemaVersion: "0.1",
+          engine: {
+            visualDelayMs: VISUAL_DELAY_MS,
+            startNodePriority: true,
+            parallelScheduling: true,
+            topologicalGuarantee: true,
+          },
+        },
+      };
+      emitTester(evt);
+    }
+    // Add start nodes to the FRONT of the queue to ensure start node priority
+    for (let i = startNodeIds.length - 1; i >= 0; i--) {
+      const id = startNodeIds[i];
+      const existingIdx = queue.indexOf(id);
+      if (existingIdx !== -1) queue.splice(existingIdx, 1);
+      queue.unshift(id);
     }
 
     // Queue of nodes ready to execute
@@ -239,6 +282,7 @@ export class FlowEngine {
     // Loop detection
     const visitCounts: Record<string, number> = {};
 
+    let visitIndex = 0;
     while (queue.length > 0) {
       const nodeId = queue.shift()!;
       if (executed.has(nodeId)) continue;
@@ -268,9 +312,6 @@ export class FlowEngine {
       ) {
         continue;
       }
-
-      // Add delay for visual feedback
-      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Build context
       // Build V2 inputs map with per-edge controls
@@ -308,6 +349,29 @@ export class FlowEngine {
         });
       }
 
+      // Emit node-started tester event
+      const cause: CauseOfExecution = inputCounts[node.id] === 0
+        ? { kind: "start-node" }
+        : { kind: "all-inputs-ready", inputCount: inputCounts[node.id] };
+      const nodeStartAt = Date.now();
+      if (emitTester) {
+        const startEvt: NodeStartEvent = {
+          type: "node-started",
+          at: nodeStartAt,
+          nodeId: node.id,
+          title: getNodeTitle(node),
+          nodeType: node.type,
+          nodeSubtype: node.subtype,
+          cause,
+          topoIndex: visitIndex,
+          flowContextBefore: flowContext as any,
+        };
+        emitTester(startEvt);
+      }
+
+      // Add delay for visual feedback (must occur before execution)
+      await new Promise((resolve) => setTimeout(resolve, VISUAL_DELAY_MS));
+
       const context = {
         // Legacy fields (back-compat)
         nodes: this.nodes,
@@ -334,6 +398,26 @@ export class FlowEngine {
       }
       this.nodeOutputs[node.id] = output;
       executed.add(node.id);
+
+      const nodeEndAt = Date.now();
+      const durationMs = nodeEndAt - nodeStartAt;
+      const status =
+        typeof output === "object" && output !== null && "error" in (output as any)
+          ? ("error" as const)
+          : ("success" as const);
+
+      // Build flowContextAfter by adding this node's snapshot
+      const flowContextAfter: typeof flowContext = {
+        ...flowContext,
+        [node.id]: snapshotNodeForFlowContext({
+          node: { id: node.id, type: node.type, subtype: node.subtype, data: node.data },
+          output,
+        }),
+      };
+      const fcDiff = diffFlowContext(flowContext as any, flowContextAfter as any);
+
+      // Generate a compact human-readable summary
+      const summary = this.generateSummary(node, output);
 
       // Emit log for real-time panel
       if (emitLog) {
@@ -387,6 +471,34 @@ export class FlowEngine {
         nextConnections = outgoing;
       }
 
+      // Emit node-finished tester event (after determining nextConnections)
+      if (emitTester) {
+        const forwardedConnectionIds = (nextConnections || []).map((c) => c.id);
+        const forwardedTargetNodeIds = (nextConnections || []).map((c) => c.targetNode);
+        const finishEvt: NodeFinishEvent = {
+          type: "node-finished",
+          at: nodeEndAt,
+          nodeId: node.id,
+          title: getNodeTitle(node),
+          nodeType: node.type,
+          nodeSubtype: node.subtype,
+          status,
+          durationMs,
+          visualDelayMs: VISUAL_DELAY_MS,
+          output,
+          summary,
+          error: errorMsg,
+          flowContextBefore: flowContext as any,
+          flowContextAfter: flowContextAfter as any,
+          flowContextDiff: fcDiff,
+          forwardedConnectionIds,
+          forwardedTargetNodeIds,
+        };
+        emitTester(finishEvt);
+      }
+
+      visitIndex += 1;
+
       // Mark downstream nodes as having received input from this node
       for (const conn of nextConnections) {
         inputReady[conn.targetNode].add(node.id);
@@ -397,6 +509,15 @@ export class FlowEngine {
       }
     }
 
+    const finishedAt = Date.now();
+    if (emitTester) {
+      const finishedEvt: FlowFinishedEvent = {
+        type: "flow-finished",
+        at: finishedAt,
+        durationMs: finishedAt - runStartedAt,
+      };
+      emitTester(finishedEvt);
+    }
     return this.nodeOutputs;
   }
 
@@ -425,6 +546,47 @@ export class FlowEngine {
     // Remove the target itself if present
     upstream.delete(targetNodeId);
     return upstream;
+  }
+
+  // Create a compact, human-readable summary for tester UI cards
+  private generateSummary(node: CanvasNode, output: NodeOutput): string {
+    const type = node.subtype || node.type;
+    const truncate = (s: string, n = 160) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+    const asJSON = (v: unknown) => {
+      try {
+        return truncate(JSON.stringify(v));
+      } catch {
+        return "<unserializable>";
+      }
+    };
+
+    if (typeof output === "string") {
+      return truncate(output.trim());
+    }
+    if (output && typeof output === "object" && "error" in output) {
+      const msg = (output as any).error as string;
+      return `Error: ${truncate(String(msg || "Unknown error"))}`;
+    }
+    if (type === "if-else") {
+      // IfElse node typically returns "true" | "false" | { output: string }
+      let v = "";
+      if (typeof (output as any)?.output === "string") v = (output as any).output;
+      else if (typeof output === "string") v = output;
+      else v = asJSON(output);
+      return `If/Else → ${v}`;
+    }
+    if (type === "decision-tree") {
+      let v = "";
+      if (typeof (output as any)?.output === "string") v = (output as any).output;
+      else if (typeof output === "string") v = output;
+      else v = asJSON(output);
+      return `Branch → ${v}`;
+    }
+    if (output && typeof output === "object" && "gemini" in output) {
+      return "LLM response"; // details shown in inspector tab
+    }
+    // Fallback for structured tool/agent outputs
+    return asJSON(output);
   }
 }
 

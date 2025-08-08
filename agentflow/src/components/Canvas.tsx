@@ -30,6 +30,9 @@ interface Props {
   startNodeId: string | null; // NEW: controlled start node
   onStartNodeChange: (id: string | null) => void; // NEW: propagate up
   onNodeDelete?: (nodeId: string) => void; // <-- Add this line
+  // Tester visualization props
+  nodeStatuses?: Record<string, "running" | "success" | "error">;
+  pulsingConnectionIds?: string[];
 }
 
 export default function CanvasEngine(props: Props) {
@@ -44,6 +47,8 @@ export default function CanvasEngine(props: Props) {
     onNodeUpdate,
     startNodeId,
     onStartNodeChange,
+    nodeStatuses = {},
+    pulsingConnectionIds = [],
   } = props;
 
   // Canvas state
@@ -441,18 +446,28 @@ export default function CanvasEngine(props: Props) {
         targetScreen.y
       }, ${targetScreen.x} ${targetScreen.y}`;
 
+      const isPulsing = pulsingConnectionIds.includes(connection.id);
       return (
         <path
           key={connection.id}
           d={path}
-          stroke={theme.accent}
+          stroke={isPulsing ? "#60a5fa" : theme.accent}
           strokeWidth="2"
           fill="none"
+          strokeDasharray={isPulsing ? "6 6" : undefined}
+          style={
+            isPulsing
+              ? ({
+                  animation: "edgePulse 0.6s linear infinite",
+                  filter: "drop-shadow(0 0 6px rgba(96,165,250,0.8))",
+                } as React.CSSProperties)
+              : undefined
+          }
           className="drop-shadow-sm"
         />
       );
     },
-    [getPortPosition, canvasToScreen]
+    [getPortPosition, canvasToScreen, pulsingConnectionIds]
   );
 
   // Context menu actions
@@ -538,6 +553,10 @@ export default function CanvasEngine(props: Props) {
       tabIndex={0}
       data-start-node-id={startNodeId}
     >
+      {/* Edge pulse keyframes */}
+      <style>{`
+        @keyframes edgePulse { to { stroke-dashoffset: -20; } }
+      `}</style>
 
 
       {/* Background Grid and Connections */}
@@ -631,6 +650,15 @@ export default function CanvasEngine(props: Props) {
           const IconComponent = getNodeIcon(node);
           const isSelected = selectedNodeIds.includes(node.id);
           const isStart = node.id === startNodeId;
+          const status = nodeStatuses[node.id];
+          const glowShadow =
+            status === "running"
+              ? "0 0 0 3px rgba(59,130,246,0.5), 0 0 14px rgba(59,130,246,0.7)"
+              : status === "success"
+              ? "0 0 0 3px rgba(16,185,129,0.5), 0 0 14px rgba(16,185,129,0.7)"
+              : status === "error"
+              ? "0 0 0 3px rgba(239,68,68,0.5), 0 0 14px rgba(239,68,68,0.7)"
+              : undefined;
 
           // Chat Interface Node Rendering
           if (node.type === "ui" && node.subtype === "chat") {
@@ -670,11 +698,13 @@ export default function CanvasEngine(props: Props) {
                   isStart ? "#30d158" : isSelected ? theme.accent : theme.border
                 }`,
                 borderRadius: "8px",
-                boxShadow: isSelected
-                  ? "0 0 0 2px rgba(59, 130, 246, 0.3)"
-                  : isStart
-                  ? "0 0 0 3px #30d15855"
-                  : "0 1px 3px rgba(0, 0, 0, 0.1)",
+                boxShadow:
+                  glowShadow ||
+                  (isSelected
+                    ? "0 0 0 2px rgba(59, 130, 246, 0.3)"
+                    : isStart
+                    ? "0 0 0 3px #30d15855"
+                    : "0 1px 3px rgba(0, 0, 0, 0.1)"),
                 zIndex: isSelected ? 10 : isStart ? 9 : 1,
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node.id)}

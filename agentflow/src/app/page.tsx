@@ -11,6 +11,7 @@ import DesignerCanvas from "@/components/DesignerCanvas";
 import PropertiesPanel from "@/components/PropertiesPanel";
 import { nodeCategories } from "@/data/nodeDefinitions";
 import { runWorkflow } from "@/lib/workflowRunner";
+import { TESTER_V2_ENABLED } from "@/lib/flags";
 
 const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -429,16 +430,17 @@ export default function AgentFlowPage() {
   };
 
   const handleTestFlow = async () => {
+    // If Tester V2 is enabled, open the new modal and delegate run to it
+    if (TESTER_V2_ENABLED) {
+      setShowTester(true);
+      return;
+    }
+
+    // Legacy behavior (V1): run immediately and show side results panel
     setIsTesting(true);
     setTestFlowResult(null);
-
     try {
-      const result = await runWorkflow(
-        nodes,
-        connections,
-        startNodeId
-      );
-
+      const result = await runWorkflow(nodes, connections, startNodeId);
       setTestFlowResult(result);
     } catch (err) {
       console.error("Error running workflow:", err);

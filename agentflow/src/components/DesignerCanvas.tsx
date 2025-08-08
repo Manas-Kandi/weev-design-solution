@@ -1,10 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import CanvasEngine from "@/components/Canvas";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
 import ConversationTester from "@/components/ConversationTester";
+import TesterV2 from "@/components/tester/TesterV2";
+import { TESTER_V2_ENABLED } from "@/lib/flags";
 import PropertiesPanel from "./PropertiesPanel";
 import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
+import type {
+  TesterEvent,
+  NodeStartEvent,
+  NodeFinishEvent,
+} from "@/types/tester";
 
 interface DesignerCanvasProps {
   nodes: CanvasNode[];
@@ -54,6 +61,14 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
   }[]>([]);
   const [isTesting, setIsTestingState] = useState(false);
 
+  // Live tester visualization state
+  const [nodeStatuses, setNodeStatuses] = useState<
+    Record<string, "running" | "success" | "error">
+  >({});
+  const [pulsingConnectionIds, setPulsingConnectionIds] = useState<string[]>(
+    []
+  );
+
   const handleNodeDelete = (nodeId: string) => {
     const node = nodes.find((n) => n.id === nodeId);
     if (node && node.type === "logic" && node.subtype === "knowledge-base") {
@@ -69,6 +84,53 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
       onStartNodeChange(null);
     }
   };
+
+  // Mirror TesterV2 events into live canvas visuals
+  const handleTesterEvent = useCallback((evt: TesterEvent) => {
+    switch (evt.type) {
+      case "flow-started": {
+        // Reset transient visuals at the beginning of a run
+        setPulsingConnectionIds([]);
+        setNodeStatuses({});
+        break;
+      }
+      case "node-started": {
+        const e = evt as NodeStartEvent;
+        setNodeStatuses((prev) => ({ ...prev, [e.nodeId]: "running" }));
+        break;
+      }
+      case "node-finished": {
+        const e = evt as NodeFinishEvent;
+        setNodeStatuses((prev) => {
+          const next = { ...prev } as Record<
+            string,
+            "running" | "success" | "error"
+          >;
+          if (e.status === "success" || e.status === "error") {
+            next[e.nodeId] = e.status;
+          } else {
+            // skipped → remove glow
+            delete next[e.nodeId];
+          }
+          return next;
+        });
+        if (Array.isArray(e.forwardedConnectionIds) && e.forwardedConnectionIds.length) {
+          const ids = e.forwardedConnectionIds;
+          setPulsingConnectionIds((prev) => Array.from(new Set([...prev, ...ids])));
+          // Clear these pulses after one animation cycle
+          setTimeout(() => {
+            setPulsingConnectionIds((prev) => prev.filter((id) => !ids.includes(id)));
+          }, 600);
+        }
+        break;
+      }
+      case "flow-finished": {
+        // Ensure no lingering pulses
+        setTimeout(() => setPulsingConnectionIds([]), 200);
+        break;
+      }
+    }
+  }, []);
 
   // --- Real-time Test Flow Execution ---
   // --- Real-time Test Flow Execution ---
@@ -182,39 +244,53 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
           ))}
         </div>
       )}
-      {/* Conversation Tester Modal */}
+      {/* Tester bottom bar (compact terminal style) */}
       {showTester && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg w-[600px] max-w-full p-6 relative">
+        <div className="absolute left-0 right-0 bottom-0 z-40 bg-[#0e0f11] border-t border-gray-800/80 shadow-[0_-8px_16px_rgba(0,0,0,0.35)]">
+          {/* Header */}
+          <div className="h-8 px-3 flex items-center justify-between bg-[#121316] border-b border-gray-800/60">
+            <div className="text-[11px] tracking-wide text-gray-300 font-medium">
+              Tester
+            </div>
             <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+              className="text-xs text-gray-400 hover:text-white transition"
               onClick={() => {
                 setShowTester(false);
                 setTestFlowResult(null);
               }}
             >
-              ✕
+              Close
             </button>
-            {isTesting ? (
-              <div className="flex flex-col items-center justify-center h-48">
-                <span className="animate-spin text-3xl mb-2">⏳</span>
-                <span className="text-gray-700">Running workflow...</span>
-              </div>
-            ) : (
-              <ConversationTester
-                nodes={nodes}
-                connections={connections}
-                onClose={() => {
-                  setShowTester(false);
-                  setTestFlowResult(null);
-                }}
-              />
-            )}
+          </div>
+          {/* Content */}
+          <div className="h-[260px] overflow-hidden">
+            <div className="h-full overflow-auto figma-scrollbar p-2">
+              {TESTER_V2_ENABLED ? (
+                <TesterV2
+                  nodes={nodes}
+                  connections={connections}
+                  onClose={() => {
+                    setShowTester(false);
+                    setTestFlowResult(null);
+                  }}
+                  onTesterEvent={handleTesterEvent}
+                />
+              ) : (
+                <ConversationTester
+                  nodes={nodes}
+                  connections={connections}
+                  onClose={() => {
+                    setShowTester(false);
+                    setTestFlowResult(null);
+                  }}
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
-      {/* Results Panel */}
-      {testFlowResult && (
+      {/* Results Panel (hidden when Tester V2 is enabled) */}
+      {(!TESTER_V2_ENABLED && testFlowResult) && (
         <div className="absolute top-16 right-4 w-96 max-h-[60vh] overflow-auto figma-scrollbar bg-gray-900 text-white p-4 rounded shadow z-20">
           <h4 className="font-bold mb-2">Flow Results</h4>
           <div className="space-y-3">
@@ -319,6 +395,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         startNodeId={startNodeId}
         onStartNodeChange={onStartNodeChange}
         onNodeDelete={handleNodeDelete}
+        nodeStatuses={nodeStatuses}
+        pulsingConnectionIds={pulsingConnectionIds}
       />
       <PropertiesPanel
         selectedNode={selectedNode}
