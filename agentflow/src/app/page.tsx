@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Project, CanvasNode, Connection, NodeType } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
-import ProjectDashboard from "@/components/ProjectDashboard";
+import ProjectDashboard from "@/components/dashboard/ProjectDashboard";
 import DesignerLayout from "@/components/DesignerLayout";
 import TabBar from "@/components/TabBar";
 import { ComponentLibrary } from "@/components/ComponentLibrary";

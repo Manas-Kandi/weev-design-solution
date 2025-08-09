@@ -1,0 +1,199 @@
+/* ProjectDashboard.css - CSS Module for ProjectDashboard component */
+
+/* Sidebar styles */
+.sidebar-border {
+  border-right: 1px solid;
+}
+
+.sidebar-width {
+  --sidebar-width: 14rem;
+}
+
+/* Header styles */
+.header-border {
+  border-bottom: 1px solid;
+}
+
+.search-input {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.new-project-button {
+  gap: 0.5rem;
+  margin-left: 1rem;
+}
+
+/* Project card styles */
+.project-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.project-card-hover:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.project-gradient {
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+}
+
+.project-card-draggable {
+  cursor: move;
+}
+
+.project-icon-container {
+  padding: 0.375rem;
+  border-radius: 0.5rem;
+  backdrop-filter: blur(4px);
+  border: 1px solid;
+  border-color: rgba(255, 255, 255, 0.1);
+  margin-top: 0.125rem;
+  transition: all 0.2s;
+  transition-duration: 200ms;
+}
+
+.project-icon-container-hover:hover {
+  backdrop-filter: blur(8px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.project-name {
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.project-description {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.project-info-container {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .project-info-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+  }
+}
+
+.project-info-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+/* Folder view styles */
+.folder-view-back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color 0.2s;
+}
+
+.folder-view-back-button-hover:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.folder-view-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.folder-view-project-count {
+  font-size: 1rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.folder-view-empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.folder-view-empty-state-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 0.75rem;
+  opacity: 0.3;
+}
+
+.folder-view-empty-state-text {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Recent projects styles */
+.recent-projects-section {
+  margin-bottom: 2rem;
+}
+
+.recent-projects-header {
+  font-size: 1rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 1rem;
+}
+
+/* All projects styles */
+.all-projects-section {
+  margin-bottom: 2rem;
+}
+
+.all-projects-header {
+  font-size: 1rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 1rem;
+}
+
+/* Divider styles */
+.projects-divider {
+  border-top: 1px solid;
+}
+
+/* User avatar styles */
+.user-avatar-container {
+  position: relative;
+}
+
+.user-avatar-gradient {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.1));
+  backdrop-filter: blur(4px);
+  border: 1px solid;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-avatar-z-index {
+  position: relative;
+  z-index: 10;
+}
+
+/* Account section styles */
+.account-section-header {
+  font-size: 1.25rem;
+  font-weight: 500;
+}

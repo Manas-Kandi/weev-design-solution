@@ -20,13 +20,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { colors } from "@/data/nodeDefinitions";
 import { Project } from "@/types";
-import MCPModal from '@/components/MCPModal';
+import MCPModal from './components/MCPModal';
 import { Plus, Search, CreditCard, UserCog, MoreHorizontal, File, Clock, Folder, Zap, Star, Circle, Diamond, Triangle, Hexagon, Square, Heart, Bookmark } from "lucide-react";
 import FolderTree from "./FolderTree";
 import Image from "next/image";
 import AccountSettings from "@/components/AccountSettings";
 import UserAvatar from "@/components/UserAvatar";
 import ProjectDetails from "./ProjectDetails";
+import styles from './css/ProjectDashboard.module.css';
 
 interface ProjectDashboardProps {
   projects: Project[];
@@ -142,7 +143,7 @@ export default function ProjectDashboard({
   return (
     <SidebarProvider defaultOpen>
 
-      <Sidebar className="border-r" style={{ borderColor: colors.border, '--sidebar-width': '14rem' } as React.CSSProperties}>
+      <Sidebar className={`border-r ${styles.sidebarBorder} ${styles.sidebarWidth}`} style={{ borderColor: colors.border } as React.CSSProperties}>
                 <SidebarContent className="p-1.5 flex flex-col gap-1">
           <SidebarMenu className="gap-0.5">
             <SidebarMenuItem>
@@ -201,9 +202,9 @@ export default function ProjectDashboard({
              <SidebarSeparator className="my-3" />
              <SidebarMenuItem>
               <SidebarMenuButton className="justify-start py-2">
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/10 backdrop-blur-sm border border-white/10"></div>
-                  <div className="relative z-10">
+                <div className={styles.userAvatarContainer}>
+                  <div className={styles.userAvatarGradient}></div>
+                  <div className={styles.userAvatarZIndex}>
                     <UserAvatar name="Manas Kandimalla" />
                   </div>
                 </div>
@@ -214,7 +215,7 @@ export default function ProjectDashboard({
         </SidebarContent>
       </Sidebar>
 
-      <SidebarInset className="border-b" style={{ borderColor: colors.border }}>
+      <SidebarInset className={`border-b ${styles.headerBorder}`} style={{ borderColor: colors.border }}>
         {/* ---- Header bar ---- */}
         <div className="flex items-center justify-between px-4 py-4">
           {activeSection === "projects" ? (
@@ -225,21 +226,21 @@ export default function ProjectDashboard({
                   placeholder="Search projects..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full border-0 shadow-none focus:ring-0 focus:border-0"
+                  className={`pl-10 w-full ${styles.searchInput}`}
                   style={{ backgroundColor: colors.panel }}
                 />
               </div>
               <Button 
                 onClick={onCreateProject} 
                 variant="ghost" 
-                className="gap-2 hover:bg-white/5 ml-4"
+                className={styles.newProjectButton}
               >
                 <Plus className="w-4 h-4" />
                 New Project
               </Button>
             </div>
           ) : (
-            <h1 className="text-xl font-medium">Billing & Account</h1>
+            <h1 className={styles.accountSectionHeader}>Billing & Account</h1>
           )}
         </div>
 
@@ -256,10 +257,10 @@ export default function ProjectDashboard({
           ) : selectedFolder ? (
             <div className="p-4 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)] custom-scrollbar">
               {/* Folder View Header */}
-              <div className="flex items-center gap-3 mb-6">
+              <div className={styles.folderViewHeader}>
                 <button
                   onClick={handleBackToAllProjects}
-                  className="flex items-center gap-2 text-white/60 hover:text-white/80 transition-colors"
+                  className={`${styles.folderViewBackButton} ${styles.folderViewBackButtonHover}`}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -268,17 +269,17 @@ export default function ProjectDashboard({
                 </button>
               </div>
               <div className="space-y-4">
-                <h2 className="text-base font-light text-white/60">{selectedFolder.name} ({folderProjects.length} projects)</h2>
+                <h2 className={styles.folderViewProjectCount}>{selectedFolder.name} ({folderProjects.length} projects)</h2>
                 <div className="space-y-3">
                   {folderProjects.map((project) => (
                     <button
                       key={project.id}
                       onClick={() => setSelectedProject(project)}
-                      className="group w-full flex items-center justify-between gap-4 px-4 py-3 hover:bg-white/[0.02] transition-all text-left rounded-lg"
+                      className={`group w-full flex items-center justify-between gap-4 px-4 py-3 text-left rounded-lg ${styles.projectCard} ${styles.projectCardHover}`}
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         <div 
-                          className="p-1.5 rounded-lg backdrop-blur-sm border border-white/10 mt-0.5 transition-all duration-200 group-hover:backdrop-blur-md group-hover:border-white/20"
+                          className={`p-1.5 rounded-lg backdrop-blur-sm border border-white/10 mt-0.5 transition-all duration-200 group-hover:backdrop-blur-md group-hover:border-white/20 ${styles.projectGradient}`}
                           style={{ 
                             background: getProjectGradient(project.id),
                             '--hover-gradient': getProjectGradient(project.id).replace(/0\.(\d+)/g, (match, p1) => {
@@ -307,10 +308,10 @@ export default function ProjectDashboard({
                     </button>
                   ))}
                   {folderProjects.length === 0 && (
-                    <div className="text-center py-8 text-white/40">
-                      <Folder className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <div className={styles.folderViewEmptyState}>
+                      <Folder className={`w-12 h-12 mx-auto mb-3 ${styles.folderViewEmptyStateIcon}`} />
                       <p>No projects in this folder yet</p>
-                      <p className="text-sm mt-1">Drag projects from the main view to add them here</p>
+                      <p className={styles.folderViewEmptyStateText}>Drag projects from the main view to add them here</p>
                     </div>
                   )}
                 </div>
@@ -320,7 +321,7 @@ export default function ProjectDashboard({
             <div className="p-4 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)] custom-scrollbar">
               {/* Recent Projects Section */}
               <div className="space-y-4">
-                <h2 className="text-base font-light text-white/60">Recent Projects</h2>
+                <h2 className={styles.recentProjectsHeader}>Recent Projects</h2>
                 <div className="space-y-3">
                   {projects.slice(0, 3).map((project) => (
                     <button
@@ -334,7 +335,7 @@ export default function ProjectDashboard({
                       onDragEnd={() => {
                         (window as any).draggedProjectId = null;
                       }}
-                      className="group w-full flex items-center justify-between gap-4 px-4 py-3 hover:bg-white/[0.02] transition-all text-left rounded-lg cursor-move"
+                      className={`group w-full flex items-center justify-between gap-4 px-4 py-3 text-left rounded-lg ${styles.projectCard} ${styles.projectCardHover} ${styles.projectCardDraggable}`}
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         <div 
@@ -370,11 +371,11 @@ export default function ProjectDashboard({
               </div>
 
               {/* Divider */}
-              <div className="border-t" style={{ borderColor: colors.border }}></div>
+              <div className={`border-t ${styles.projectsDivider}`} style={{ borderColor: colors.border }}></div>
 
               {/* All Projects Section */}
               <div className="space-y-4">
-                <h2 className="text-base font-light text-white/60">All Projects</h2>
+                <h2 className={styles.allProjectsHeader}>All Projects</h2>
                 <div className="space-y-3">
                   {filteredProjects.map((project) => (
                     <button
@@ -388,7 +389,7 @@ export default function ProjectDashboard({
                       onDragEnd={() => {
                         (window as any).draggedProjectId = null;
                       }}
-                      className="group w-full flex items-center justify-between gap-4 px-4 py-3 hover:bg-white/[0.02] transition-all text-left rounded-lg cursor-move"
+                      className={`group w-full flex items-center justify-between gap-4 px-4 py-3 text-left rounded-lg ${styles.projectCard} ${styles.projectCardHover} ${styles.projectCardDraggable}`}
                     >
                       <div className="flex items-start gap-3 min-w-0">
                         <div 

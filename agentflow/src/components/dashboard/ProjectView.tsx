@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Card } from './ui/card';
-import { Button } from './ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Share2 } from 'lucide-react';
-import FileManager from './FileManager';
-import MCPModal from './MCPModal';
+import FileManager from './components/FileManager';
+import MCPModal from './components/MCPModal';
 
 interface ProjectViewProps {
   project: {

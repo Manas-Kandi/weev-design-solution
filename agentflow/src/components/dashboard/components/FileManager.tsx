@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { File, Upload, Trash2, Download } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { supabase } from '@/lib/supabaseClient';
-import { Card } from './ui/card';
 import type { ProjectFile } from '@/types';
 
 // Build Authorization header from Supabase session

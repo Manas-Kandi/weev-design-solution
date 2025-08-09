@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Project } from '@/types';
-import { Button } from './ui/button';
-import { Card } from './ui/card';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Share2, ArrowLeft } from 'lucide-react';
-import FileManager from './FileManager';
-import MCPModal from './MCPModal';
+import FileManager from './components/FileManager';
+import MCPModal from './components/MCPModal';
 
 interface ProjectDetailsProps {
   project: Project;

@@ -1,0 +1,84 @@
+/* ProjectDetails.css - CSS Module for ProjectDetails component */
+
+/* Main container */
+.project-details-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Header styles */
+.project-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-header-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.project-title {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.project-description {
+  color: #94a3b8; /* muted-foreground */
+}
+
+/* Button group */
+.header-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.share-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.open-canvas-button {
+  padding: 0.5rem 1rem;
+}
+
+/* Tab content styles */
+.overview-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.project-details-card {
+  padding: 1.5rem;
+}
+
+.project-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.project-details-heading {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.project-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.project-status-text {
+  font-size: 0.875rem;
+  color: #94a3b8; /* muted-foreground */
+}
+
+.project-date-text {
+  font-size: 0.875rem;
+  color: #94a3b8; /* muted-foreground */
+}
