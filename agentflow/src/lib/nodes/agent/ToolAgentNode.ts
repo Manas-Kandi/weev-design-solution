@@ -96,8 +96,9 @@ export class ToolAgentNode extends BaseNode {
 
     try {
       const llm = await callLLM(toolPrompt, {
-        model: overrides.model ?? (data as any).model,
-        provider: (overrides.provider as any) ?? (data as any).provider,
+        // Rely on global defaults for provider/model (NVIDIA). Only honor explicit overrides.
+        model: overrides.model,
+        provider: overrides.provider as any,
         // Tool agent expects structured data; ask NVIDIA (OpenAI-compatible) for JSON content
         response_format: 'json',
         // Strong system to enforce simulation output instead of errors

@@ -71,22 +71,23 @@ export async function callLLM(prompt: string, opts: CallLLMOptions = {}): Promis
 
   if (provider === "nvidia") {
     if (!NVIDIA_API_KEY) {
-      // If NVIDIA not configured, transparently fall back to Gemini
-      return callLLM(prompt, { ...opts, provider: "gemini" });
+      throw new Error("NVIDIA provider selected but NVIDIA_API_KEY/NEXT_PUBLIC_NVIDIA_API_KEY is not configured");
     }
     // Normalize NVIDIA model IDs: GPT-OSS models must be referenced as openai/gpt-oss-XXb per NIM
     const rawModel = opts.model || NVIDIA_DEFAULT_MODEL;
-    const model = /^gpt-oss-\d+/i.test(rawModel) ? `openai/${rawModel}` : rawModel;
-    // Default system to ensure final answer is returned in assistant content and no chain-of-thought is surfaced
-    const defaultSystem =
-      "You are a helpful assistant. Return ONLY a single valid JSON object or array in the assistant message content. Do NOT include explanations, markdown, code fences, or control tokens like <|return|> or <|eot_id|>. Do NOT include chain-of-thought or reasoning.";
+    const normalized = /^gpt-oss-\d+/i.test(rawModel) ? `openai/${rawModel}` : rawModel;
+    const fallbackModel = "meta/llama-3.1-70b-instruct";
+    // Default system; if JSON requested, enforce JSON-only, else be generic
+    const defaultSystem = opts.response_format === 'json'
+      ? "You are a helpful assistant. Return ONLY a single valid JSON object or array in the assistant message content. Do NOT include explanations, markdown, code fences, or control tokens like <|return|> or <|eot_id|>. Do NOT include chain-of-thought or reasoning."
+      : "You are a helpful assistant.";
     const messages = [
       { role: "system", content: defaultSystem },
       ...(opts.system ? [{ role: "system", content: opts.system }] : []),
       { role: "user", content: prompt },
     ];
-    const body: any = {
-      model,
+    const makeBody = (modelName: string) => ({
+      model: modelName,
       messages,
       temperature: opts.temperature ?? 0.7,
       top_p: opts.top_p ?? 0.95,
@@ -94,17 +95,12 @@ export async function callLLM(prompt: string, opts: CallLLMOptions = {}): Promis
       stream: false,
       // Prevent control tokens from appearing in content
       stop: ["<|return|>", "<|eot_id|>"],
-    };
-    if (opts.response_format === 'json') {
-      body.response_format = { type: 'json_object' };
-    }
-    // Seed support (only include if numeric)
-    if (typeof opts.seed !== 'undefined') {
-      const seedNum = typeof opts.seed === 'string' ? Number(opts.seed) : opts.seed;
-      if (Number.isFinite(seedNum)) {
-        body.seed = seedNum;
-      }
-    }
+      ...(opts.response_format === 'json' ? { response_format: { type: 'json_object' } } : {}),
+      ...(typeof opts.seed !== 'undefined' && Number.isFinite(typeof opts.seed === 'string' ? Number(opts.seed) : (opts.seed as number))
+        ? { seed: typeof opts.seed === 'string' ? Number(opts.seed) : opts.seed }
+        : {}),
+    });
+    // (seed/response_format handled inside makeBody)
 
     // Use server-side direct call; client-side via Next.js proxy to avoid CORS
     const isBrowser = typeof window !== "undefined";
@@ -112,53 +108,62 @@ export async function callLLM(prompt: string, opts: CallLLMOptions = {}): Promis
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Accept": "application/json",
+      ...(isBrowser ? {} : { Authorization: `Bearer ${NVIDIA_API_KEY}` }),
     };
-    if (!isBrowser) {
-      headers["Authorization"] = `Bearer ${NVIDIA_API_KEY}`;
-    }
-    let res: Response;
-    try {
-      res = await fetch(url, {
+
+    const doRequest = async (modelName: string) => {
+      const resp = await fetch(url, {
         method: "POST",
         headers,
-        body: JSON.stringify(body),
+        body: JSON.stringify(makeBody(modelName)),
       });
-    } catch (e: any) {
-      throw new Error(`Network error calling NVIDIA: ${e?.message || e || "Failed to fetch"}`);
+      const text = await resp.text();
+      return { resp, text };
+    };
+
+    let attemptModel = normalized;
+    let { resp, text } = await doRequest(attemptModel);
+    if (!resp.ok) {
+      // Detect model-not-found/404 and retry with fallback model once
+      const status = resp.status;
+      const looks404 = status === 404 || /404/i.test(text) || /model/i.test(text) && /not\s+found/i.test(text) || /page not found/i.test(text);
+      if (looks404 && attemptModel !== fallbackModel) {
+        attemptModel = fallbackModel;
+        ({ resp, text } = await doRequest(attemptModel));
+      }
     }
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`NVIDIA LLM error ${res.status} (url=${url}): ${errText}`);
+    if (!resp.ok) {
+      throw new Error(`NVIDIA LLM error ${resp.status} (url=${url}): ${text}`);
     }
-    const data = await res.json();
+    const data = JSON.parse(text);
     const choice = data?.choices?.[0];
-    let text: string = choice?.message?.content ?? "";
+    let assistantText: string = choice?.message?.content ?? "";
     const reasoning: string | null = choice?.message?.reasoning_content ?? null;
     // Clean artifacts and ensure JSON extraction when requested
-    text = cleanAssistantText(text);
+    assistantText = cleanAssistantText(assistantText);
     if (opts.response_format === 'json') {
       // If assistant content is empty or not valid JSON, try from reasoning
       let parsedOk = false;
-      if (text) {
-        try { JSON.parse(text); parsedOk = true; } catch {}
+      if (assistantText) {
+        try { JSON.parse(assistantText); parsedOk = true; } catch {}
       }
       if (!parsedOk) {
         // First, try to extract from assistant text itself (handles trailing tokens)
-        let extracted = tryExtractJson(text);
+        let extracted = tryExtractJson(assistantText);
         if (!extracted && reasoning) {
           extracted = tryExtractJson(reasoning);
         }
         if (extracted) {
-          text = cleanAssistantText(extracted);
-          try { JSON.parse(text); parsedOk = true; } catch {}
+          assistantText = cleanAssistantText(extracted);
+          try { JSON.parse(assistantText); parsedOk = true; } catch {}
         }
       }
     }
-    return { provider: "nvidia", raw: data, text, reasoning };
+    return { provider: "nvidia", raw: data, text: assistantText, reasoning };
   }
 
-  // Gemini path
+  // Gemini path (only when explicitly requested)
   const response = await callGemini(prompt, {
     model: opts.model || "gemini-2.5-flash-lite",
     temperature: opts.temperature,

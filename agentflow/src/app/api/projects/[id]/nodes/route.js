@@ -136,18 +136,15 @@ export async function DELETE(req) {
       await supabaseAdmin.from('projects').select('id').eq('id', projectId).eq('user_id', userId).maybeSingle();
     } catch {}
 
-    // Handle both UUID and legacy string IDs
-    let query = supabaseAdmin
+    // Handle string IDs properly - the id column is text type
+    const { error } = await supabaseAdmin
       .from('nodes')
       .delete()
+      .eq('id', id)
       .eq('project_id', projectId);
 
-    // Try to delete by ID - let the database handle UUID validation
-    query = query.eq('id', id);
-
-    const { error } = await query;
-
     if (error) {
+      console.error('Error deleting node:', { id, projectId, error: error.message });
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
@@ -189,9 +186,9 @@ export async function POST(req) {
       await supabaseAdmin.from('projects').select('id').eq('id', body.project_id).eq('user_id', userId).maybeSingle();
     } catch {}
 
-    // Allow both UUID and string IDs for flexibility
+    // Allow string IDs like "prompt-node-1" - the database will handle them
     const insert = {
-      id: body.id && body.id.includes('-') ? body.id : undefined, // Only use provided ID if it looks like a UUID
+      id: body.id, // Accept whatever ID is provided (string or UUID)
       project_id: body.project_id,
       type: body.type,
       subtype: body.subtype ?? null,

@@ -1,12 +1,13 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput } from "@/types";
 import { callLLM } from "@/lib/llmClient";
+import { getRuleText } from "../util/rules";
 
 export class IfElseNode extends BaseNode {
   async execute(context: NodeContext): Promise<NodeOutput> {
     // Use the strict IfElseNodeData type
-    const data = this.node.data as import("@/types").IfElseNodeData;
-    const condition = data.condition || "";
+    const data = this.node.data as import("@/types").IfElseNodeData & Record<string, unknown>;
+    const condition = (data.condition && String(data.condition)) || getRuleText(data) || "";
     // Prefer V2 inputs (respecting transforms/block); fallback to legacy helper
     const v2Inputs = context.inputs
       ? Object.values(context.inputs)
@@ -39,27 +40,12 @@ export class IfElseNode extends BaseNode {
     }
 
     // Compose a robust system prompt for natural language rule evaluation
-    const systemPrompt = `
-You are an expert flow router for an AI workflow tool. Your job is to evaluate routing rules written in natural language or simple logic.
-
-- The user will provide a rule (the "Condition") and an input (the "Input").
-- Interpret the rule as flexibly as possible and decide if the input matches the rule.
-- Respond ONLY with "TRUE" or "FALSE" (no explanation).
-- Examples:
-  - Condition: If the message contains 'refund', route to Support.  Input: I want a refund.  → TRUE
-  - Condition: If the user asks about pricing, route to Sales.  Input: What does it cost?  → TRUE
-  - Condition: If the input is empty, return false.  Input:   → FALSE
-
----
-Condition: ${condition}
-Input: ${typeof input === "string" ? input : JSON.stringify(input)}
-Context: ${JSON.stringify(nodeContext)}
----
-Remember: Only output TRUE or FALSE.
-`;
+    const systemPrompt = `You are a deterministic flow router. Return only TRUE or FALSE. No explanation. Favor clear substring/intent matches. Empty/unknown inputs → FALSE.`;
+    const userPrompt = `Condition: ${condition}\nInput: ${typeof input === "string" ? input : JSON.stringify(input)}\nContext: ${JSON.stringify(nodeContext)}`;
 
     try {
-      const llm = await callLLM(systemPrompt, { temperature: 0 });
+      const overrides = context.runOptions?.overrides || {};
+      const llm = await callLLM(userPrompt, { temperature: 0, provider: overrides.provider as any, model: overrides.model });
       const resultText = (llm.text || "").trim().toUpperCase();
       const isTrue = resultText === "TRUE";
       return {

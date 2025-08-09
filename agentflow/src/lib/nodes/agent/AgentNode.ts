@@ -1,6 +1,7 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput, AgentNodeData } from "@/types";
 import { callLLM } from "@/lib/llmClient";
+import { getRuleText, buildSystemFromRules } from "../util/rules";
 
 // Using AgentNodeData from types
 
@@ -12,9 +13,14 @@ export class AgentNode extends BaseNode {
     const prompts: string[] = [];
 
     // System prompt
-    if ("systemPrompt" in data && data.systemPrompt) {
-      prompts.push(`System: ${data.systemPrompt}`);
-    }
+    const rulesText = getRuleText(data as unknown as Record<string, unknown>);
+    const combinedSystem = [
+      ("systemPrompt" in data && data.systemPrompt) ? String(data.systemPrompt) : undefined,
+      buildSystemFromRules({ rulesNl: rulesText, fallback: undefined }),
+    ]
+      .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+      .join("\n");
+    if (combinedSystem) prompts.push(`System: ${combinedSystem}`);
 
     // Personality
     if ("personality" in data && data.personality) {
@@ -50,12 +56,14 @@ export class AgentNode extends BaseNode {
     try {
       const overrides = context.runOptions?.overrides || {};
       const llm = await callLLM(finalPrompt, {
-        model: overrides.model ?? data.model,
+        // Do NOT pass node-level provider/model; rely on global defaults unless explicitly overridden
+        model: overrides.model,
+        provider: overrides.provider as any,
         temperature: typeof overrides.temperature === "number"
           ? overrides.temperature
-          : (typeof data.temperature === "number" ? data.temperature : undefined),
-        provider: (overrides.provider as any) ?? ((data as any).provider as any),
+          : (typeof (data as any).temperature === "number" ? (data as any).temperature : 0.2),
         seed: overrides.seed,
+        system: combinedSystem || undefined,
       });
       return { output: llm.text, llm: llm.raw, provider: llm.provider } as unknown as NodeOutput;
     } catch (error) {

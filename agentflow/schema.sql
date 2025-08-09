@@ -10,7 +10,7 @@ create table projects (
 
 -- Table to store individual nodes that make up a project flow
 create table nodes (
-  id text primary key default uuid_generate_v4(),
+  id text primary key, -- Allow both UUIDs and string IDs
   project_id text references projects(id) on delete cascade,
   type text not null,
   subtype text,

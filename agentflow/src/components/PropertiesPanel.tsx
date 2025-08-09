@@ -16,6 +16,7 @@ import SimulatorPropertiesPanel from "./propertiesPanels/SimulatorPropertiesPane
 import StateMachinePropertiesPanel from "./propertiesPanels/StateMachinePropertiesPanel";
 import TestCasePropertiesPanel from "./propertiesPanels/TestCasePropertiesPanel";
 import ToolAgentPropertiesPanel from "./propertiesPanels/ToolAgentPropertiesPanel";
+import RuleBoxPropertiesPanel from "./propertiesPanels/RuleBoxPropertiesPanel";
 import { CanvasNode, Connection } from "@/types";
 import { ContextControlsSection } from "./propertiesPanels/ContextControlsSection";
 
@@ -97,13 +98,11 @@ export default function PropertiesPanel({
     case "generic":
     case "human-handoff":
       content = (
-        <AgentPropertiesPanel
-          node={
-            selectedNode as CanvasNode & {
-              data: import("@/types").AgentNodeData;
-            }
-          }
+        <RuleBoxPropertiesPanel
+          node={selectedNode}
           onChange={onChange}
+          title="Agent Rules"
+          subtitle="Type natural-language rules for this agent."
         />
       );
       break;
@@ -126,13 +125,11 @@ export default function PropertiesPanel({
       break;
     case "conversation":
       content = (
-        <ConversationFlowPropertiesPanel
-          node={
-            selectedNode as CanvasNode & {
-              data: import("@/types").ConversationFlowNodeData;
-            }
-          }
+        <RuleBoxPropertiesPanel
+          node={selectedNode}
           onChange={onChange}
+          title="Conversation Rules"
+          subtitle="Define dialogue behavior in plain language."
         />
       );
       break;
@@ -143,12 +140,22 @@ export default function PropertiesPanel({
       break;
     case "decision-tree":
       content = (
-        <DecisionTreePropertiesPanel node={selectedNode} onChange={onChange} />
+        <RuleBoxPropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+          title="Decision Rules"
+          subtitle="Describe branching logic succinctly."
+        />
       );
       break;
     case "if-else":
       content = (
-        <IfElsePropertiesPanel node={selectedNode} onChange={onChange} />
+        <RuleBoxPropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+          title="Condition Rules"
+          subtitle="Write the condition in NL; engine enforces determinism."
+        />
       );
       break;
     case "knowledge-base":
@@ -158,14 +165,21 @@ export default function PropertiesPanel({
       break;
     case "message":
       content = (
-        <MessagePropertiesPanel node={selectedNode} onChange={onChange} />
+        <RuleBoxPropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+          title="Message Rules"
+          subtitle="Describe how to format and route messages."
+        />
       );
       break;
     case "template":
       content = (
-        <PromptTemplatePropertiesPanel
+        <RuleBoxPropertiesPanel
           node={selectedNode}
           onChange={onChange}
+          title="Template Rules"
+          subtitle="Define prompt behavior and variables in NL."
         />
       );
       break;
@@ -176,12 +190,22 @@ export default function PropertiesPanel({
       break;
     case "state-machine":
       content = (
-        <StateMachinePropertiesPanel node={selectedNode} onChange={onChange} />
+        <RuleBoxPropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+          title="State Rules"
+          subtitle="Describe states and transitions in NL."
+        />
       );
       break;
     case "test-case":
       content = (
-        <TestCasePropertiesPanel node={selectedNode} onChange={onChange} />
+        <RuleBoxPropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+          title="Test Rules"
+          subtitle="Define expected behavior and assertions in NL."
+        />
       );
       break;
     default:
