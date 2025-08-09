@@ -1,0 +1,132 @@
+/* ===== Empty States & Accessibility Styles ===== */
+
+/* Empty states */
+.mb-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  border: 2px dashed var(--borders-light);
+  border-radius: 8px;
+  background-color: var(--bg-secondary-light);
+}
+
+.dark .mb-empty-state {
+  border-color: var(--borders-dark);
+  background-color: var(--bg-secondary-dark);
+}
+
+.mb-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.mb-empty-state h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary-light);
+}
+
+.dark .mb-empty-state h3 {
+  color: var(--text-primary-dark);
+}
+
+.mb-empty-state p {
+  font-size: 14px;
+  max-width: 240px;
+  line-height: 1.4;
+}
+
+.mb-empty-state button {
+  margin-top: 1rem;
+  padding: 8px 16px;
+  background-color: var(--accent-primary-light);
+  color: white;
+  border: none;
+  border-radius: var(--radius-button);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dark .mb-empty-state button {
+  background-color: var(--accent-primary-dark);
+}
+
+.mb-empty-state button:hover {
+  background-color: rgba(0, 158, 207, 0.8);
+}
+
+.dark .mb-empty-state button:hover {
+  background-color: rgba(60, 223, 255, 0.8);
+}
+
+/* Accessibility Focus Styles */
+.md-block-header button:focus-visible,
+.card-action-button:focus-visible,
+.md-view-toggle button:focus-visible,
+.md-search-input:focus-visible,
+.project-card:focus-visible {
+  outline: 2px solid var(--accent-primary-light);
+  outline-offset: 2px;
+}
+
+.dark .md-block-header button:focus-visible,
+.dark .card-action-button:focus-visible,
+.dark .md-view-toggle button:focus-visible,
+.dark .md-search-input:focus-visible,
+.dark .project-card:focus-visible {
+  outline-color: var(--accent-primary-dark);
+}
+
+/* Keyboard Navigation Indicators */
+.keyboard-user .project-card:focus,
+.keyboard-user .md-block-header button:focus,
+.keyboard-user .card-action-button:focus {
+  outline: 2px solid var(--accent-primary-light);
+  outline-offset: 2px;
+}
+
+.dark.keyboard-user .project-card:focus,
+.dark.keyboard-user .md-block-header button:focus,
+.dark.keyboard-user .card-action-button:focus {
+  outline-color: var(--accent-primary-dark);
+}
+
+/* Skip to content link for keyboard users */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  padding: 8px 16px;
+  background-color: var(--accent-primary-light);
+  color: white;
+  z-index: 1000;
+  transition: top 0.2s;
+}
+
+.skip-to-content:focus {
+  top: 0;
+}
+
+/* Block collapsed state */
+.md-block-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 14px;
+  background-color: var(--bg-secondary-light);
+  border-radius: var(--radius-card);
+}
+
+.dark .md-block-collapsed {
+  background-color: var(--bg-secondary-dark);
+}
