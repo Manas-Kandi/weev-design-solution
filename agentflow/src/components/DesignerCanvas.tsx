@@ -29,6 +29,7 @@ interface DesignerCanvasProps {
   testButtonDisabled?: boolean;
   startNodeId: string | null;
   onStartNodeChange: (id: string | null) => void;
+  onDeleteNode: (nodeId: string) => void;
 }
 
 export default function DesignerCanvas(props: DesignerCanvasProps) {
@@ -48,6 +49,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     testButtonDisabled = false,
     startNodeId,
     onStartNodeChange,
+    onDeleteNode,
   } = props;
 
   // --- Local state for test logs and testing status ---
@@ -115,6 +117,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     if (startNodeId === nodeId) {
       onStartNodeChange(null);
     }
+    // Inform parent to remove node from state
+    onDeleteNode(nodeId);
   };
 
   // Mirror TesterV2 events into live canvas visuals

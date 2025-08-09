@@ -22,11 +22,15 @@ export default function ResultCard({
   providerModel,
   selected,
   onClick,
+  hasBreakpoint,
+  onToggleBreakpoint,
 }: {
   artifact: NodeExecutionArtifact;
   providerModel?: string;
   selected?: boolean;
   onClick?: () => void;
+  hasBreakpoint?: boolean;
+  onToggleBreakpoint?: () => void;
 }) {
   const [tab, setTab] = useState<TabId>("summary");
 
@@ -63,6 +67,24 @@ export default function ResultCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Breakpoint toggle */}
+          {onToggleBreakpoint && (
+            <button
+              type="button"
+              title={hasBreakpoint ? "Remove breakpoint" : "Add breakpoint"}
+              aria-pressed={!!hasBreakpoint}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleBreakpoint?.();
+              }}
+              className={cn(
+                "inline-flex items-center justify-center h-5 w-5 rounded-full border text-[10px]",
+                hasBreakpoint ? "border-red-500 bg-red-500/20 text-red-400" : "border-gray-600 text-gray-400 hover:bg-[#1a1c20]"
+              )}
+            >
+              B
+            </button>
+          )}
           {providerModel && (
             <span className="text-[11px] rounded border border-gray-700 px-2 py-0.5 text-gray-200 bg-[#121316] whitespace-nowrap">
               {providerModel}

@@ -158,10 +158,12 @@ export class FlowEngine {
     ) => void,
     hooks?: {
       emitTesterEvent?: (event: TesterEvent) => void;
+      beforeNodeExecute?: (node: CanvasNode) => Promise<void>;
     }
   ): Promise<Record<string, NodeOutput>> {
     const VISUAL_DELAY_MS = 500; // enforced per product rule
     const emitTester = hooks?.emitTesterEvent;
+    const beforeNodeExecute = hooks?.beforeNodeExecute;
     // Validate connections and use only the valid set for this run
     const { validConnections } = this.validateConnections(emitLog);
     const connections = validConnections;
@@ -370,6 +372,11 @@ export class FlowEngine {
           flowContextBefore: flowContext as any,
         };
         emitTester(startEvt);
+      }
+
+      // Optional pause/breakpoint gating: allow UI to pause before executing this node
+      if (beforeNodeExecute) {
+        await beforeNodeExecute(node);
       }
 
       // Add delay for visual feedback (must occur before execution)

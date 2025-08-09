@@ -31,6 +31,7 @@ export async function runWorkflow(
   ) => void,
   hooks?: {
     emitTesterEvent?: (event: TesterEvent) => void;
+    beforeNodeExecute?: (node: CanvasNode) => Promise<void>;
   },
   options?: RunExecutionOptions
 ) {

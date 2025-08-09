@@ -5,6 +5,20 @@ import { supabase } from '@/lib/supabaseClient';
 import { Card } from './ui/card';
 import type { ProjectFile } from '@/types';
 
+// Build Authorization header from Supabase session
+async function buildHeaders(json: boolean = true): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {};
+  if (json) headers['Content-Type'] = 'application/json';
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+  } catch {
+    // ignore: unauthenticated
+  }
+  return headers;
+}
+
 interface FileManagerProps {
   projectId: string;
 }
@@ -20,18 +34,20 @@ export default function FileManager({ projectId }: FileManagerProps) {
   }, [projectId]);
 
   const fetchFiles = async () => {
-    const { data, error } = await supabase
-      .from('project_files')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching files:', error);
-      return;
+    try {
+      const res = await fetch(`/api/projects/${projectId}/files?project_id=${projectId}`, {
+        headers: await buildHeaders(false)
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        console.error('Error fetching files:', t);
+        return;
+      }
+      const data = await res.json().catch(() => []);
+      setFiles(data || []);
+    } catch (err) {
+      console.error('Error fetching files:', err);
     }
-
-    setFiles(data || []);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,26 +59,19 @@ export default function FileManager({ projectId }: FileManagerProps) {
     setUploading(true);
 
     try {
-      // Upload to Supabase Storage
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from('project-files')
-        .upload(`${projectId}/${file.name}`, file);
-
-      if (storageError) throw storageError;
-
-      // Create file record in database
-      const { error: dbError } = await supabase.from('project_files').insert({
-        project_id: projectId,
-        name: file.name,
-        file_path: storageData.path,
-        file_type: file.type,
-        size_bytes: file.size,
+      const form = new FormData();
+      form.append('file', file);
+      const headers = await buildHeaders(false); // let browser set multipart boundary
+      const res = await fetch(`/api/projects/${projectId}/files`, {
+        method: 'POST',
+        headers,
+        body: form,
       });
-
-      if (dbError) throw dbError;
-
-      // Refresh file list
-      fetchFiles();
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(t || 'Upload failed');
+      }
+      await fetchFiles();
     } catch (error) {
       console.error('Error uploading file:', error);
     } finally {
@@ -70,52 +79,45 @@ export default function FileManager({ projectId }: FileManagerProps) {
     }
   };
 
-  const handleFileDelete = async (fileId: string, filePath: string) => {
+  const handleFileDelete = async (fileId: string, _filePath: string) => {
     try {
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('project-files')
-        .remove([filePath]);
-
-      if (storageError) throw storageError;
-
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from('project_files')
-        .delete()
-        .eq('id', fileId);
-
-      if (dbError) throw dbError;
-
-      // Refresh file list
-      fetchFiles();
+      const res = await fetch(`/api/projects/${projectId}/files`, {
+        method: 'DELETE',
+        headers: await buildHeaders(true),
+        body: JSON.stringify({ id: fileId }),
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(t || 'Delete failed');
+      }
+      await fetchFiles();
     } catch (error) {
       console.error('Error deleting file:', error);
     }
   };
 
-  const handleFileDownload = async (filePath: string, fileName: string) => {
+  const handleFileDownload = async (fileId: string, _fileName: string) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('project-files')
-        .download(filePath);
-
-      if (error) throw error;
-
-      // Create download link
-      const url = window.URL.createObjectURL(data);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const res = await fetch(`/api/projects/${projectId}/files?action=download&file_id=${encodeURIComponent(fileId)}`, {
+        headers: await buildHeaders(false)
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error(t || 'Download failed');
+      }
+      const payload = await res.json().catch(() => null);
+      const url = payload?.signedUrl;
+      if (url) {
+        // Open in new tab
+        window.open(url, '_blank');
+      }
     } catch (error) {
       console.error('Error downloading file:', error);
     }
   };
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes?: number | null) => {
+    if (bytes == null) return '—';
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -156,7 +158,7 @@ export default function FileManager({ projectId }: FileManagerProps) {
                 <div className="min-w-0">
                   <p className="font-medium truncate">{file.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatFileSize(file.size_bytes)} • {file.file_type}
+                    {formatFileSize(file.size_bytes)} • {file.file_type || 'unknown'}
                   </p>
                 </div>
               </div>
@@ -165,7 +167,7 @@ export default function FileManager({ projectId }: FileManagerProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleFileDownload(file.file_path, file.name)}
+                  onClick={() => handleFileDownload(file.id, file.name)}
                 >
                   <Download className="w-4 h-4" />
                 </Button>

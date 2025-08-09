@@ -125,7 +125,7 @@ function TimelinePanel({
 export default function TesterV2({ nodes, connections, onClose, onTesterEvent: onExternalTesterEvent }: TesterV2Props) {
   const [scenario, setScenario] = useState("");
   const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false); // UI-only placeholder
+  const [isPaused, setIsPaused] = useState(false);
   const [runTitle, setRunTitle] = useState<string>("Untitled Run");
   const [seed, setSeed] = useState<string>("");
   const [events, setEvents] = useState<TesterEvent[]>([]);
@@ -134,9 +134,42 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
   const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
   const [runEndedAt, setRunEndedAt] = useState<number | null>(null);
   const [nowTs, setNowTs] = useState<number>(() => Date.now());
+  const [breakpoints, setBreakpoints] = useState<Set<string>>(new Set());
 
   // Draft map for in-progress node artifacts
   const draftsRef = useRef<Map<string, Partial<NodeExecutionArtifact>>>(new Map());
+  // Pause/breakpoint gating refs and listeners
+  const isPausedRef = useRef<boolean>(false);
+  const breakpointsRef = useRef<Set<string>>(new Set());
+  const stepTokensRef = useRef<number>(0);
+  const gateListenersRef = useRef<Set<() => void>>(new Set());
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+  useEffect(() => {
+    breakpointsRef.current = breakpoints;
+  }, [breakpoints]);
+
+  const notifyGate = useCallback(() => {
+    // Snapshot listeners to avoid mutation during iteration
+    const listeners = Array.from(gateListenersRef.current);
+    for (const fn of listeners) {
+      try {
+        fn();
+      } catch {}
+    }
+  }, []);
+
+  const toggleBreakpoint = useCallback((nodeId: string) => {
+    setBreakpoints((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) next.delete(nodeId); else next.add(nodeId);
+      return next;
+    });
+    // Wake waiters so they can re-check (esp. if removing a breakpoint)
+    notifyGate();
+  }, [notifyGate]);
 
   const onTesterEvent = useCallback((evt: TesterEvent) => {
     setEvents((prev) => [...prev, evt]);
@@ -160,6 +193,10 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
           flowContextBefore: e.flowContextBefore,
         };
         draftsRef.current.set(e.nodeId, draft);
+        // If paused or breakpoint, auto-focus the waiting node for preview
+        if (isPausedRef.current || breakpointsRef.current.has(e.nodeId)) {
+          setSelectedId((cur) => cur ?? e.nodeId);
+        }
         break;
       }
       case "node-finished": {
@@ -217,6 +254,8 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
     setSelectedId(null);
     setRunStartedAt(null);
     setRunEndedAt(null);
+    setIsPaused(false);
+    stepTokensRef.current = 0;
 
     try {
       await runWorkflow(
@@ -226,6 +265,32 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
         /* emitLog */ undefined,
         {
           emitTesterEvent: onTesterEvent,
+          beforeNodeExecute: async (node) => {
+            const nodeId = node.id;
+            const shouldBlock = () => isPausedRef.current || breakpointsRef.current.has(nodeId);
+            if (!shouldBlock()) return;
+            // Wait until unpaused or a step token is available
+            await new Promise<void>((resolve) => {
+              const listener = () => {
+                // If unpaused and breakpoint not set -> proceed
+                if (!shouldBlock()) {
+                  gateListenersRef.current.delete(listener);
+                  resolve();
+                  return;
+                }
+                // If a step token is available, consume and proceed
+                if (stepTokensRef.current > 0) {
+                  stepTokensRef.current -= 1;
+                  gateListenersRef.current.delete(listener);
+                  resolve();
+                  return;
+                }
+              };
+              // Register and run initial check to handle race conditions
+              gateListenersRef.current.add(listener);
+              try { listener(); } catch {}
+            });
+          },
         },
         {
           scenario: { description: scenario || undefined },
@@ -322,20 +387,25 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
     setSelectedId(null);
     setRunStartedAt(null);
     setRunEndedAt(null);
+    setBreakpoints(new Set());
+    stepTokensRef.current = 0;
+    // Ensure any waiting gates get released to avoid dangling promises
+    notifyGate();
   }, []);
 
   const handlePause = useCallback(() => {
-    // UI-only toggle until engine supports pause
     if (!runStartedAt || !isRunning) return;
     setIsPaused((p) => !p);
-  }, [isRunning, runStartedAt]);
+    // If resuming, wake waiters; if pausing, no-op (new nodes will wait)
+    setTimeout(() => notifyGate(), 0);
+  }, [isRunning, notifyGate, runStartedAt]);
 
   const handleStep = useCallback(() => {
-    // Placeholder for future step-through debugging
-    // No-op for now
-    // eslint-disable-next-line no-console
-    console.info("Step pressed (not yet implemented)");
-  }, []);
+    if (!runStartedAt || !isRunning) return;
+    // Grant a single step token and wake waiters
+    stepTokensRef.current += 1;
+    notifyGate();
+  }, [isRunning, notifyGate, runStartedAt]);
 
   const handleShare = useCallback(async () => {
     const payload = {
@@ -382,6 +452,27 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
     a.remove();
     URL.revokeObjectURL(url);
   }, [artifacts, connections, elapsedMs, events, nodes, providerModels, runEndedAt, runStartedAt, runTitle, scenario, seed, statusLabel]);
+
+  // Accessibility & shortcuts: Space=Run/Pause, N=Step, B=Toggle Breakpoint (selected)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Ignore when focus is in inputs/textareas or with modifiers
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (e.key === " ") {
+        e.preventDefault();
+        if (isRunning) handlePause(); else handleRun();
+      } else if (e.key.toLowerCase() === "n") {
+        handleStep();
+      } else if (e.key.toLowerCase() === "b") {
+        if (selectedId) toggleBreakpoint(selectedId);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handlePause, handleRun, handleStep, isRunning, selectedId, toggleBreakpoint]);
 
   // --- Timeline data (Gantt-like) ---
   type TimelineItem = {
@@ -586,6 +677,8 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
                     providerModel={providerModelByNodeId.get(a.nodeId)}
                     selected={selectedId === a.nodeId}
                     onClick={() => setSelectedId(a.nodeId)}
+                    hasBreakpoint={breakpoints.has(a.nodeId)}
+                    onToggleBreakpoint={() => toggleBreakpoint(a.nodeId)}
                   />
                 </li>
               ))}
@@ -602,6 +695,8 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
             <InspectorPanel
               artifact={selected}
               providerModel={providerModelByNodeId.get(selected.nodeId)}
+              hasBreakpoint={breakpoints.has(selected.nodeId)}
+              onToggleBreakpoint={() => toggleBreakpoint(selected.nodeId)}
             />
           )}
         </section>
@@ -613,9 +708,13 @@ export default function TesterV2({ nodes, connections, onClose, onTesterEvent: o
 function InspectorPanel({
   artifact,
   providerModel,
+  hasBreakpoint,
+  onToggleBreakpoint,
 }: {
   artifact: NodeExecutionArtifact;
   providerModel?: string;
+  hasBreakpoint?: boolean;
+  onToggleBreakpoint?: () => void;
 }) {
   type TabId = "summary" | "output" | "inputs" | "llm" | "trace" | "errors";
   type TabDef = { id: TabId; label: string; disabled?: boolean };
@@ -637,6 +736,19 @@ function InspectorPanel({
           <div className="text-[11px] text-gray-500 truncate">{artifact.nodeType}{artifact.nodeSubtype ? `:${artifact.nodeSubtype}` : ""}</div>
         </div>
         <div className="flex items-center gap-2">
+          {onToggleBreakpoint && (
+            <button
+              type="button"
+              title={hasBreakpoint ? "Remove breakpoint" : "Add breakpoint"}
+              aria-pressed={!!hasBreakpoint}
+              onClick={() => onToggleBreakpoint?.()}
+              className={`inline-flex items-center justify-center h-5 w-5 rounded-full border text-[10px] ${
+                hasBreakpoint ? "border-red-500 bg-red-500/20 text-red-400" : "border-gray-600 text-gray-400 hover:bg-[#1a1c20]"
+              }`}
+            >
+              B
+            </button>
+          )}
           {providerModel && (
             <span className="text-[11px] rounded border border-gray-700 px-2 py-0.5 text-gray-200 bg-[#121316] whitespace-nowrap">
               {providerModel}

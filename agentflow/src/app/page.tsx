@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Project, CanvasNode, Connection, NodeType } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
 import ProjectDashboard from "@/components/ProjectDashboard";
@@ -14,6 +14,20 @@ import { runWorkflow } from "@/lib/workflowRunner";
 import { TESTER_V2_ENABLED } from "@/lib/flags";
 
 const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
+
+// Helper: attach auth token from Supabase session
+async function buildHeaders(json: boolean = true): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {};
+  if (json) headers["Content-Type"] = "application/json";
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data?.session?.access_token;
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+  } catch {
+    // no session available; fall back to no auth header
+  }
+  return headers;
+}
 
 export default function AgentFlowPage() {
   const [currentView, setCurrentView] = useState<"projects" | "designer">(
@@ -105,29 +119,25 @@ export default function AgentFlowPage() {
 
   const fetchProjects = async () => {
     try {
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching projects:", error);
+      const res = await fetch("/api/projects", { headers: await buildHeaders(false) });
+      const ct = res.headers.get("content-type") || "";
+      const isJson = ct.includes("application/json");
+      const payload = isJson ? await res.json().catch(() => []) : [];
+      if (!res.ok) {
+        console.error("Error fetching projects:", payload);
         return;
       }
-
-      // Transform the data to match our Project interface
-      const transformedProjects: Project[] = (data || []).map((project) => ({
+      const transformedProjects: Project[] = (payload || []).map((project: any) => ({
         id: project.id,
         name: project.name || "Untitled Project",
         description: project.description || "",
-        lastModified: new Date(project.created_at),
-        nodeCount: 0, // We'll calculate this separately if needed
+        lastModified: project.created_at ? new Date(project.created_at) : new Date(),
+        nodeCount: 0,
         status: project.status || "draft",
         startNodeId: project.start_node_id || null,
-        created_at: project.created_at,
-        user_id: project.user_id || DEFAULT_USER_ID
+        created_at: project.created_at || new Date().toISOString(),
+        user_id: project.user_id || DEFAULT_USER_ID,
       }));
-
       setProjects(transformedProjects);
     } catch (err) {
       console.error("Unexpected error fetching projects:", err);
@@ -136,18 +146,17 @@ export default function AgentFlowPage() {
 
   const fetchNodes = async (projectId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("nodes")
-        .select("*")
-        .eq("project_id", projectId);
-
-      if (error) {
-        console.error("Error fetching nodes:", error);
+      const res = await fetch(`/api/projects/${projectId}/nodes?project_id=${projectId}`, {
+        headers: await buildHeaders(false),
+      });
+      const ct = res.headers.get("content-type") || "";
+      const isJson = ct.includes("application/json");
+      const payload = isJson ? await res.json().catch(() => []) : [];
+      if (!res.ok) {
+        console.error("Error fetching nodes:", payload);
         return;
       }
-
-      // Transform the data to match our CanvasNode interface
-      const transformedNodes: CanvasNode[] = (data || []).map((node) => ({
+      const transformedNodes: CanvasNode[] = (payload || []).map((node: any) => ({
         id: node.id,
         type: node.type,
         subtype: node.subtype || "",
@@ -171,18 +180,17 @@ export default function AgentFlowPage() {
 
   const fetchConnections = async (projectId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("connections")
-        .select("*")
-        .eq("project_id", projectId);
-
-      if (error) {
-        console.error("Error fetching connections:", error);
+      const res = await fetch(`/api/projects/${projectId}/connections?project_id=${projectId}`, {
+        headers: await buildHeaders(false),
+      });
+      const ct = res.headers.get("content-type") || "";
+      const isJson = ct.includes("application/json");
+      const payload = isJson ? await res.json().catch(() => []) : [];
+      if (!res.ok) {
+        console.error("Error fetching connections:", payload);
         return;
       }
-
-      // Transform the data to match our Connection interface
-      const transformedConnections: Connection[] = (data || []).map((conn) => ({
+      const transformedConnections: Connection[] = (payload || []).map((conn: any) => ({
         id: conn.id,
         sourceNode: conn.source_node,
         sourceOutput: conn.source_output,
@@ -200,20 +208,20 @@ export default function AgentFlowPage() {
     setStartNodeId(nodeId);
     if (!currentProject) return;
     try {
-      const { error } = await supabase
-        .from("projects")
-        .update({ start_node_id: nodeId })
-        .eq("id", currentProject.id);
-      if (error) {
-        console.error("Error updating start node:", error);
-      } else {
-        setCurrentProject({ ...currentProject, startNodeId: nodeId });
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.id === currentProject.id ? { ...p, startNodeId: nodeId } : p
-          )
-        );
+      const res = await fetch(`/api/projects/${currentProject.id}`, {
+        method: "PATCH",
+        headers: await buildHeaders(true),
+        body: JSON.stringify({ start_node_id: nodeId }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Error updating start node:", errText);
+        return;
       }
+      setCurrentProject({ ...currentProject, startNodeId: nodeId });
+      setProjects((prev) =>
+        prev.map((p) => (p.id === currentProject.id ? { ...p, startNodeId: nodeId } : p))
+      );
     } catch (err) {
       console.error("Unexpected error updating start node:", err);
     }
@@ -245,67 +253,30 @@ export default function AgentFlowPage() {
 
       console.log("Attempting to insert project with data:", newProjectData);
 
-      // Try a simple insert first
-      let result;
-      try {
-        result = await supabase
-          .from("projects")
-          .insert(newProjectData)
-          .select()
-          .single();
-        
-        console.log("Insert response:", result);
-      } catch (insertErr) {
-        console.error("Caught error during insert:", insertErr);
-        setStatusMessage("Failed to create project: Network or permission error");
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: await buildHeaders(true),
+        body: JSON.stringify(newProjectData)
+      });
+      const ct = res.headers.get('content-type') || '';
+      const isJson = ct.includes('application/json');
+      const payload = isJson ? await res.json().catch(() => null) : null;
+      if (!res.ok || !payload) {
+        console.error('Project create failed:', payload);
+        setStatusMessage(`Failed to create project: ${!res.ok ? res.status : 'No data returned'}`);
         return;
       }
 
-      const { data: insertedProject, error: insertError } = result;
-
-      if (insertError) {
-        console.error("Database error during insert:", {
-          message: insertError.message,
-          code: insertError.code,
-          details: insertError.details,
-          hint: insertError.hint
-        });
-        setStatusMessage(`Failed to create project: ${insertError.message}`);
-        return;
-      }
-
-      // If insert successful, fetch the created project
-      const { data, error: selectError } = await supabase
-        .from("projects")
-        .select('*')
-        .eq('name', projectData.name)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (selectError) {
-        console.error("Error fetching created project:", selectError);
-        setStatusMessage(`Project created but failed to fetch details`);
-        return;
-      }
-
-      if (!data) {
-        console.error("No data returned from project creation");
-        setStatusMessage("Failed to create project: No data returned");
-        return;
-      }
-
-      // Transform the data to match our Project interface
       const newProject: Project = {
-        id: data.id,
-        name: data.name,
-        description: data.description || "",
-        lastModified: new Date(data.created_at),
-        nodeCount: (data.nodes || []).length,
-        status: data.status || "draft",
-        startNodeId: data.start_node_id || null,
-        created_at: data.created_at,
-        user_id: data.user_id
+        id: payload.id,
+        name: payload.name,
+        description: payload.description || "",
+        lastModified: payload.created_at ? new Date(payload.created_at) : new Date(),
+        nodeCount: 0,
+        status: payload.status || "draft",
+        startNodeId: payload.start_node_id || null,
+        created_at: payload.created_at || new Date().toISOString(),
+        user_id: payload.user_id || DEFAULT_USER_ID,
       };
 
       // Update state
@@ -406,7 +377,9 @@ export default function AgentFlowPage() {
       }
 
       const newNode: CanvasNode = {
-        id: `${subtype}-${Date.now()}`,
+        id: typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${subtype}-${Date.now()}`,
         type: nodeDef?.type || nodeData.type || "conversation",
         subtype: subtype,
         position: { x: baseX, y: baseY },
@@ -416,17 +389,69 @@ export default function AgentFlowPage() {
         outputs: defaultOutputs,
       };
 
+      // Persist via API
+      try {
+        const res = await fetch(`/api/projects/${currentProject.id}/nodes`, {
+          method: 'POST',
+          headers: await buildHeaders(true),
+          body: JSON.stringify({
+            id: newNode.id,
+            project_id: currentProject.id,
+            type: newNode.type,
+            subtype: newNode.subtype,
+            position: newNode.position,
+            size: newNode.size,
+            data: newNode.data,
+            inputs: newNode.inputs,
+            outputs: newNode.outputs,
+          })
+        });
+        if (!res.ok) {
+          const t = await res.text();
+          console.error('Error saving new node:', t);
+        }
+      } catch (dbErr) {
+        console.error("Error saving new node:", dbErr);
+      }
+
       setNodes([...nodes, newNode]);
     } catch (err) {
       console.error("Error adding node:", err);
     }
   };
 
-  const handleNodeUpdate = (updatedNode: CanvasNode) => {
+  const handleNodeUpdate = async (updatedNode: CanvasNode) => {
     setHistory((h) => [...h, nodes]);
     setNodes(nodes.map((n) => (n.id === updatedNode.id ? updatedNode : n)));
     setFuture([]);
     showStatus("Saved");
+
+    // Persist updates to Supabase
+    if (currentProject) {
+      try {
+        const res = await fetch(`/api/projects/${currentProject.id}/nodes`, {
+          method: 'PATCH',
+          headers: await buildHeaders(true),
+          body: JSON.stringify({
+            id: updatedNode.id,
+            project_id: currentProject.id,
+            type: updatedNode.type,
+            subtype: updatedNode.subtype,
+            position: updatedNode.position,
+            size: updatedNode.size,
+            data: updatedNode.data,
+            inputs: updatedNode.inputs,
+            outputs: updatedNode.outputs,
+          })
+        });
+        if (!res.ok) {
+          const t = await res.text();
+          console.error('Error updating node:', t);
+        }
+      } catch (dbErr) {
+        console.error("Error updating node:", dbErr);
+      }
+    }
   };
 
   const handleTestFlow = async () => {
@@ -456,6 +481,85 @@ export default function AgentFlowPage() {
   useEffect(() => {
     console.log("Connections state updated:", connections);
   }, [connections]);
+
+  // Persist connection deletions to Supabase
+  const prevConnectionsRef = useRef<Connection[]>([]);
+  useEffect(() => {
+    if (!currentProject) {
+      prevConnectionsRef.current = connections;
+      return;
+    }
+    const prev = prevConnectionsRef.current;
+    const removed = prev.filter(
+      (p) => !connections.some((c) => c.id === p.id)
+    );
+    if (removed.length) {
+      (async () => {
+        for (const r of removed) {
+          try {
+            const res = await fetch(`/api/projects/${currentProject.id}/connections`, {
+              method: 'DELETE',
+              headers: await buildHeaders(true),
+              body: JSON.stringify({ id: r.id, project_id: currentProject.id })
+            });
+            if (!res.ok) {
+              const t = await res.text();
+              console.error('Error deleting connection:', r.id, t);
+            }
+          } catch (err) {
+            console.error("Error deleting connection:", r.id, err);
+          }
+        }
+      })();
+    }
+    prevConnectionsRef.current = connections;
+  }, [connections, currentProject]);
+
+  // Persist node deletions to Supabase (also delete related connections)
+  const prevNodesRef = useRef<CanvasNode[]>([]);
+  useEffect(() => {
+    if (!currentProject) {
+      prevNodesRef.current = nodes;
+      return;
+    }
+    const prev = prevNodesRef.current;
+    const removed = prev.filter((p) => !nodes.some((n) => n.id === p.id));
+    if (removed.length) {
+      (async () => {
+        for (const r of removed) {
+          try {
+            const resNode = await fetch(`/api/projects/${currentProject.id}/nodes`, {
+              method: 'DELETE',
+              headers: await buildHeaders(true),
+              body: JSON.stringify({ id: r.id, project_id: currentProject.id })
+            });
+            if (!resNode.ok) {
+              const t = await resNode.text();
+              console.error('Error deleting node:', r.id, t);
+            }
+            // Related connections are deleted by DB cascade if defined; otherwise ensure cleanup
+            const resConn = await fetch(`/api/projects/${currentProject.id}/connections?project_id=${currentProject.id}`, {
+              headers: await buildHeaders(false)
+            });
+            if (resConn.ok) {
+              const conns = await resConn.json().catch(() => []);
+              const related = (conns || []).filter((c: any) => c.source_node === r.id || c.target_node === r.id);
+              for (const c of related) {
+                await fetch(`/api/projects/${currentProject.id}/connections`, {
+                  method: 'DELETE',
+                  headers: await buildHeaders(true),
+                  body: JSON.stringify({ id: c.id, project_id: currentProject.id })
+                });
+              }
+            }
+          } catch (err) {
+            console.error("Error deleting node or its connections:", r.id, err);
+          }
+        }
+      })();
+    }
+    prevNodesRef.current = nodes;
+  }, [nodes, currentProject]);
 
   // Render
   if (currentView === "projects") {
@@ -494,8 +598,28 @@ export default function AgentFlowPage() {
             onNodeSelect={setSelectedNode}
             onNodeUpdate={handleNodeUpdate}
             onConnectionsChange={setConnections}
-            onCreateConnection={async () => {
-              // TODO: Implement connection creation logic if needed
+            onCreateConnection={async (connectionData) => {
+              if (!currentProject) return;
+              try {
+                const res = await fetch(`/api/projects/${currentProject.id}/connections`, {
+                  method: 'POST',
+                  headers: await buildHeaders(true),
+                  body: JSON.stringify({
+                    id: connectionData.id,
+                    project_id: currentProject.id,
+                    source_node: connectionData.sourceNode,
+                    source_output: connectionData.sourceOutput,
+                    target_node: connectionData.targetNode,
+                    target_input: connectionData.targetInput,
+                  })
+                });
+                if (!res.ok) {
+                  const t = await res.text();
+                  console.error('Error creating connection:', t);
+                }
+              } catch (err) {
+                console.error("Error creating connection:", err);
+              }
             }}
             showTester={showTester}
             testFlowResult={testFlowResult}
@@ -505,6 +629,12 @@ export default function AgentFlowPage() {
             testButtonDisabled={isTesting}
             startNodeId={startNodeId}
             onStartNodeChange={handleStartNodeChange}
+            onDeleteNode={(id: string) => {
+              setHistory((h) => [...h, nodes]);
+              setNodes((prev) => prev.filter((n) => n.id !== id));
+              if (selectedNode?.id === id) setSelectedNode(null);
+              showStatus("Deleted");
+            }}
           />
         }
         right={

@@ -304,7 +304,10 @@ export default function CanvasEngine(props: Props) {
         }
         try {
           const connectionData: Connection = {
-            id: `conn-${Date.now()}`,
+            id:
+              typeof crypto !== "undefined" && "randomUUID" in crypto
+                ? crypto.randomUUID()
+                : `conn-${Date.now()}`,
             sourceNode: dragConnection.from.nodeId,
             sourceOutput: dragConnection.from.outputId,
             targetNode: nodeId,

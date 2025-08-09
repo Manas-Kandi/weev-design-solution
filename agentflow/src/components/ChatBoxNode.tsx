@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasNode, Colors, Connection } from '@/types';
-import { supabase } from '@/lib/supabaseClient';
 import {
   figmaNodeStyle,
   selectedNodeStyle,
@@ -67,13 +66,6 @@ export default function ChatBoxNode(props: ChatBoxNodeProps) {
     console.log('Calling onNodeUpdate...'); // Debug log
     onNodeUpdate(updatedNode);
     console.log('onNodeUpdate called'); // Debug log
-    
-    // Save to database
-    supabase
-      .from('nodes')
-      .update({ data: updatedNode.data })
-      .eq('id', node.id)
-      .then(result => console.log('Database update result:', result)); // Add this
   };
 
   const nodeStyle: React.CSSProperties = {
