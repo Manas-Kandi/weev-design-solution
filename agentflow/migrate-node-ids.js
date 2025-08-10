@@ -7,7 +7,7 @@
  * and updates the schema to be more flexible with ID formats
  */
 
-import { supabaseAdmin } from './src/lib/supabaseAdmin.js';
+import { supabaseAdmin } from './src/lib/supabaseAdmin.ts';
 
 async function migrateNodeIds() {
   console.log('Starting node ID migration...');
