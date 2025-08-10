@@ -4,6 +4,8 @@ import { CanvasNode, Connection } from "@/types";
 import { theme } from "@/data/theme";
 import { nodeCategories } from "@/data/nodeDefinitions";
 import ChatBoxNode from "@/components/nodes/ChatBoxNode";
+import Ports from "./Ports";
+import Connections, { ConnectionsHandle } from "./Connections";
 
 const canvasStyle: React.CSSProperties = {
   backgroundColor: "#0D0D0D", // pure dark
@@ -63,11 +65,6 @@ export default function CanvasEngine(props: Props) {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
-  // Connection state
-  const [dragConnection, setDragConnection] = useState<{
-    from: { nodeId: string; outputId: string; pos: { x: number; y: number } };
-    currentPos: { x: number; y: number };
-  } | null>(null);
 
   // Advanced features state
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
@@ -86,7 +83,7 @@ export default function CanvasEngine(props: Props) {
   const [pulsingNodeId, setPulsingNodeId] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLDivElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
+  const connectionsRef = useRef<ConnectionsHandle>(null);
 
   const handleNodeUpdateWithPulse = useCallback(
     (node: CanvasNode) => {
@@ -172,7 +169,7 @@ export default function CanvasEngine(props: Props) {
   // Event handlers
   const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (isDragging || dragConnection) return;
+      if (isDragging) return;
       if (e.button === 1 || (e.button === 0 && e.metaKey)) {
         setIsPanning(true);
         setPanStart({
@@ -182,7 +179,7 @@ export default function CanvasEngine(props: Props) {
         e.preventDefault();
       }
     },
-    [viewportTransform, isDragging, dragConnection]
+    [viewportTransform, isDragging]
   );
 
   const handleCanvasMouseMove = useCallback(
@@ -193,21 +190,18 @@ export default function CanvasEngine(props: Props) {
           x: e.clientX - panStart.x,
           y: e.clientY - panStart.y,
         }));
-      } else if (dragConnection) {
-        const canvasPos = screenToCanvas(e.clientX, e.clientY);
-        setDragConnection((prev) =>
-          prev ? { ...prev, currentPos: canvasPos } : null
-        );
+      } else {
+        connectionsRef.current?.handleCanvasMouseMove(e);
       }
     },
-    [isPanning, panStart, dragConnection, screenToCanvas]
+    [isPanning, panStart]
   );
 
   const handleCanvasMouseUp = useCallback(() => {
     setIsPanning(false);
     setIsDragging(false);
     setDraggedNode(null);
-    setDragConnection(null);
+    connectionsRef.current?.handleCanvasMouseUp();
   }, []);
 
   // Node interaction handlers
@@ -258,108 +252,7 @@ export default function CanvasEngine(props: Props) {
     []
   );
 
-  // Port interaction handlers - FIXED
-  const handlePortMouseDown = useCallback(
-    (
-      e: React.MouseEvent,
-      nodeId: string,
-      outputId: string,
-      portIndex: number
-    ) => {
-      e.stopPropagation();
-      console.log("handlePortMouseDown called:", {
-        nodeId,
-        outputId,
-        portIndex,
-      });
-      if (isPanning) {
-        console.log("Ignoring port click during panning");
-        return;
-      }
-      const portPos = getPortPosition(nodeId, "output", portIndex);
-      const canvasPos = screenToCanvas(e.clientX, e.clientY);
-      console.log("Port position:", portPos, "Canvas position:", canvasPos);
-      setDragConnection({
-        from: { nodeId, outputId, pos: portPos },
-        currentPos: canvasPos,
-      });
-      console.log("Drag connection set successfully");
-    },
-    [getPortPosition, screenToCanvas, isPanning]
-  );
-
-  const handlePortMouseUp = useCallback(
-    async (e: React.MouseEvent, nodeId: string, inputId: string) => {
-      e.stopPropagation();
-      console.log("handlePortMouseUp called:", {
-        nodeId,
-        inputId,
-        dragConnection,
-      });
-      if (dragConnection) {
-        if (dragConnection.from.nodeId === nodeId) {
-          console.log("Cannot connect to the same node");
-          setDragConnection(null);
-          return;
-        }
-        try {
-          const connectionData: Connection = {
-            id:
-              typeof crypto !== "undefined" && "randomUUID" in crypto
-                ? crypto.randomUUID()
-                : `conn-${Date.now()}`,
-            sourceNode: dragConnection.from.nodeId,
-            sourceOutput: dragConnection.from.outputId,
-            targetNode: nodeId,
-            targetInput: inputId,
-          };
-          console.log("Creating connection:", connectionData);
-          // Validate connection locally before applying
-          const src = nodes.find((n) => n.id === connectionData.sourceNode);
-          const tgt = nodes.find((n) => n.id === connectionData.targetNode);
-          const srcPort = src?.outputs?.find((p) => p.id === connectionData.sourceOutput);
-          const tgtPort = tgt?.inputs?.find((p) => p.id === connectionData.targetInput);
-          if (!src || !tgt || !srcPort || !tgtPort) {
-            console.warn(
-              `Invalid connection: missing node/port. src=${src?.id ?? 'N/A'} srcPort=${srcPort?.id ?? 'N/A'} tgt=${tgt?.id ?? 'N/A'} tgtPort=${tgtPort?.id ?? 'N/A'}`
-            );
-            setDragConnection(null);
-            return;
-          }
-          if (srcPort.type && tgtPort.type && srcPort.type !== tgtPort.type) {
-            console.warn(
-              `Type mismatch: ${src.id}.${srcPort.id}:${srcPort.type} -> ${tgt.id}.${tgtPort.id}:${tgtPort.type}`
-            );
-            setDragConnection(null);
-            return;
-          }
-          // IMMEDIATE UPDATE: Add to local connections first for instant visual feedback
-          console.log(
-            "Adding connection immediately to props.onConnectionsChange"
-          );
-          onConnectionsChange([...connections, connectionData]);
-          // Then try to save to database
-          try {
-            await onCreateConnection(connectionData);
-            console.log("Connection saved to database successfully!");
-          } catch (dbError) {
-            console.error(
-              "Failed to save to database, but connection shown locally:",
-              dbError
-            );
-            // Connection is already visible, so this is ok for now
-          }
-        } catch (error) {
-          console.error("Failed to create connection:", error);
-        } finally {
-          setDragConnection(null);
-        }
-      } else {
-        console.log("No drag connection active");
-      }
-    },
-    [dragConnection, onCreateConnection, onConnectionsChange, connections]
-  );
+  // Port interaction handlers are managed by Connections component via ref
 
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent) => {
@@ -431,47 +324,7 @@ export default function CanvasEngine(props: Props) {
     };
   }, [isPanning, panStart]);
 
-  // Render connection lines - FIXED
-  const renderConnection = useCallback(
-    (connection: Connection) => {
-      const sourcePos = getPortPosition(connection.sourceNode, "output", 0);
-      const targetPos = getPortPosition(connection.targetNode, "input", 0);
-
-      // Transform to screen coordinates
-      const sourceScreen = canvasToScreen(sourcePos.x, sourcePos.y);
-      const targetScreen = canvasToScreen(targetPos.x, targetPos.y);
-
-      const controlOffset = Math.abs(targetScreen.x - sourceScreen.x) * 0.3;
-
-      const path = `M ${sourceScreen.x} ${sourceScreen.y} C ${
-        sourceScreen.x + controlOffset
-      } ${sourceScreen.y}, ${targetScreen.x - controlOffset} ${
-        targetScreen.y
-      }, ${targetScreen.x} ${targetScreen.y}`;
-
-      const isPulsing = pulsingConnectionIds.includes(connection.id);
-      return (
-        <path
-          key={connection.id}
-          d={path}
-          stroke={isPulsing ? "#60a5fa" : theme.accent}
-          strokeWidth="2"
-          fill="none"
-          strokeDasharray={isPulsing ? "6 6" : undefined}
-          style={
-            isPulsing
-              ? ({
-                  animation: "edgePulse 0.6s linear infinite",
-                  filter: "drop-shadow(0 0 6px rgba(96,165,250,0.8))",
-                } as React.CSSProperties)
-              : undefined
-          }
-          className="drop-shadow-sm"
-        />
-      );
-    },
-    [getPortPosition, canvasToScreen, pulsingConnectionIds]
-  );
+  // Connection rendering handled by Connections component
 
   // Context menu actions
   const handleContextMenuAction = (action: string) => {
@@ -523,10 +376,9 @@ export default function CanvasEngine(props: Props) {
     console.log("Canvas state:", {
       nodes: nodes.length,
       connections: connections.length,
-      dragConnection,
       viewportTransform,
     });
-  }, [nodes.length, connections.length, dragConnection, viewportTransform]);
+  }, [nodes.length, connections.length, viewportTransform]);
 
   useEffect(() => {
     console.log("Canvas received connections:", connections);
@@ -563,47 +415,18 @@ export default function CanvasEngine(props: Props) {
 
 
       {/* Background Grid and Connections */}
-      <svg
-        ref={svgRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-      >
-        {/* Connections Layer - FIXED */}
-        <g>
-          {connections.map(renderConnection)}
-
-          {/* Drag connection preview - FIXED */}
-          {dragConnection && (
-            <path
-              d={`M ${
-                canvasToScreen(
-                  dragConnection.from.pos.x,
-                  dragConnection.from.pos.y
-                ).x
-              } ${
-                canvasToScreen(
-                  dragConnection.from.pos.x,
-                  dragConnection.from.pos.y
-                ).y
-              } L ${
-                canvasToScreen(
-                  dragConnection.currentPos.x,
-                  dragConnection.currentPos.y
-                ).x
-              } ${
-                canvasToScreen(
-                  dragConnection.currentPos.x,
-                  dragConnection.currentPos.y
-                ).y
-              }`}
-              stroke={theme.accent}
-              strokeWidth="2"
-              strokeDasharray="5,5"
-              fill="none"
-              opacity={0.7}
-            />
-          )}
-        </g>
-      </svg>
+      <Connections
+        ref={connectionsRef}
+        nodes={nodes}
+        connections={connections}
+        getPortPosition={getPortPosition}
+        canvasToScreen={canvasToScreen}
+        screenToCanvas={screenToCanvas}
+        onConnectionsChange={onConnectionsChange}
+        onCreateConnection={onCreateConnection}
+        pulsingConnectionIds={pulsingConnectionIds}
+        theme={theme}
+      />
 
       {/* Context Menu */}
       {contextMenu && (
@@ -677,7 +500,14 @@ export default function CanvasEngine(props: Props) {
                 nodes={nodes}
                 connections={connections}
                 theme={theme}
-                onOutputPortMouseDown={handlePortMouseDown}
+                onOutputPortMouseDown={(e, nodeId, outputId, index) =>
+                  connectionsRef.current?.handlePortMouseDown(
+                    e,
+                    nodeId,
+                    outputId,
+                    index
+                  )
+                }
                 isPulsing={pulsingNodeId === node.id}
               />
             );
@@ -774,100 +604,21 @@ export default function CanvasEngine(props: Props) {
                 </div>
               </div>
 
-              {/* Input Ports - LARGER AND MORE RESPONSIVE */}
-              {node.inputs.map((input, index) => (
-                <div
-                  key={input.id}
-                  className="absolute cursor-pointer hover:scale-125 transition-transform"
-                  style={{
-                    left: -10,
-                    top:
-                      (node.size.height / (node.inputs.length + 1)) *
-                        (index + 1) -
-                      10,
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    backgroundColor: theme.portBg,
-                    border: `3px solid ${theme.border}`,
-                    zIndex: 20,
-                  }}
-                  onMouseUp={(e) => {
-                    console.log(
-                      "Input port mouse up triggered!",
-                      node.id,
-                      input.id
-                    );
-                    handlePortMouseUp(e, node.id, input.id);
-                  }}
-                  onMouseEnter={() =>
-                    console.log("Hovering input port:", input.id)
-                  }
-                  title={input.label}
-                >
-                  {/* Inner dot for better visibility */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      backgroundColor: theme.accent,
-                    }}
-                  />
-                </div>
-              ))}
-
-              {/* Output Ports - LARGER AND MORE RESPONSIVE */}
-              {node.outputs.map((output, index) => (
-                <div
-                  key={output.id}
-                  className="absolute cursor-pointer hover:scale-125 transition-transform"
-                  style={{
-                    right: -10,
-                    top:
-                      (node.size.height / (node.outputs.length + 1)) *
-                        (index + 1) -
-                      10,
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    backgroundColor: theme.portBg,
-                    border: `3px solid ${theme.border}`,
-                    zIndex: 20,
-                  }}
-                  onMouseDown={(e) => {
-                    console.log(
-                      "Output port mouse down triggered!",
-                      node.id,
-                      output.id,
-                      index
-                    );
-                    handlePortMouseDown(e, node.id, output.id, index);
-                  }}
-                  onMouseEnter={() =>
-                    console.log("Hovering output port:", output.id)
-                  }
-                  title={output.label}
-                >
-                  {/* Inner dot for better visibility */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      backgroundColor: theme.accent,
-                    }}
-                  />
-                </div>
-              ))}
+              <Ports
+                node={node}
+                theme={theme}
+                onInputPortMouseUp={(e, nodeId, inputId) =>
+                  connectionsRef.current?.handlePortMouseUp(e, nodeId, inputId)
+                }
+                onOutputPortMouseDown={(e, nodeId, outputId, index) =>
+                  connectionsRef.current?.handlePortMouseDown(
+                    e,
+                    nodeId,
+                    outputId,
+                    index
+                  )
+                }
+              />
             </div>
           );
         })}
