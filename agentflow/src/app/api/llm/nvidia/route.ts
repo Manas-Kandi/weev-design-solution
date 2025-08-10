@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "@/lib/utils";
 
 // Prefer server-only env vars if present; fallback to NEXT_PUBLIC_* for now
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || process.env.NEXT_PUBLIC_NVIDIA_API_KEY;
@@ -11,7 +12,13 @@ function normalizeBase(url: string): string {
   return `${trimmed}/v1`;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!checkRateLimit(ip)) {
+    console.warn(`Rate limit exceeded for ${ip} on GET /api/llm/nvidia`);
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   if (!NVIDIA_API_KEY) {
     return NextResponse.json({ error: "NVIDIA API key not configured" }, { status: 400 });
   }
@@ -35,6 +42,12 @@ export async function GET() {
 const NVIDIA_BASE_URL = normalizeBase(RAW_BASE);
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  if (!checkRateLimit(ip)) {
+    console.warn(`Rate limit exceeded for ${ip} on POST /api/llm/nvidia`);
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   if (!NVIDIA_API_KEY) {
     return NextResponse.json({ error: "NVIDIA API key not configured" }, { status: 400 });
   }
