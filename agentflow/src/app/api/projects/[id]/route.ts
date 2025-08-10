@@ -1,16 +1,34 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { z } from 'zod';
 
 const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 
-export async function PATCH(req, { params }) {
+const ProjectPatchSchema = z.object({
+  name: z.string().optional(),
+  description: z.string().optional(),
+  status: z.string().optional(),
+  start_node_id: z.string().uuid().nullable().optional(),
+});
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const body = await req.json();
+    const parseResult = ProjectPatchSchema.safeParse(await req.json());
+    if (!parseResult.success) {
+      return new Response(
+        JSON.stringify({ error: parseResult.error.flatten().fieldErrors }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    const body = parseResult.data;
     const id = params?.id || new URL(req.url).pathname.split('/').pop();
     if (!id) {
       return new Response(JSON.stringify({ error: 'Missing project id in URL' }), { status: 400 });
     }
 
-    let userId = DEFAULT_USER_ID;
+    let userId: string = DEFAULT_USER_ID;
     const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
@@ -26,10 +44,10 @@ export async function PATCH(req, { params }) {
     } catch {}
 
     const update = {
-      name: body?.name,
-      description: body?.description,
-      status: body?.status,
-      start_node_id: body?.start_node_id ?? null,
+      name: body.name,
+      description: body.description,
+      status: body.status,
+      start_node_id: body.start_node_id ?? null,
     };
 
     // Remove undefined keys
