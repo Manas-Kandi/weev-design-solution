@@ -5,28 +5,19 @@ import { CanvasNode, Connection, ProjectFile } from '@/types';
 import getPort, { portNumbers } from 'get-port';
 import http from 'http';
 import { CURRENT_EXPORT_VERSION, getMcpExportSchema } from './schema';
-
-const app = express();
-
-// In-memory store for running servers (persist across HMR in dev)
-const globalAny = globalThis as unknown as {
-  __agentflowMcpServers?: Map<string, http.Server>;
-};
-const runningServers: Map<string, http.Server> =
-  globalAny.__agentflowMcpServers || (globalAny.__agentflowMcpServers = new Map());
+const runningServers = new Map<string, http.Server>();
 
 export const startMcpServer = async (projectId: string): Promise<number> => {
-  if (runningServers.has(projectId)) {
+  const existingServer = runningServers.get(projectId);
+  if (existingServer) {
     console.log(`Server for project ${projectId} is already running.`);
-    const server = runningServers.get(projectId);
-    const address = server?.address();
+    const address = existingServer.address();
     if (typeof address === 'object' && address !== null) {
       return address.port;
     }
   }
 
-  const port = await getPort({ port: portNumbers(3001, 3100) });
-  const server = http.createServer(app);
+  const app = express();
 
   app.get('/get_agent_flow', async (req, res) => {
     try {
@@ -115,9 +106,14 @@ export const startMcpServer = async (projectId: string): Promise<number> => {
     }
   });
 
+  const port = await getPort({ port: portNumbers(3001, 3100) });
+  const server = http.createServer(app);
+
   return new Promise((resolve) => {
     server.listen(port, '127.0.0.1', () => {
-      console.log(`MCP Server started for project ${projectId} on http://localhost:${port}`);
+      console.log(
+        `MCP Server started for project ${projectId} on http://localhost:${port}`
+      );
       runningServers.set(projectId, server);
       resolve(port);
     });
