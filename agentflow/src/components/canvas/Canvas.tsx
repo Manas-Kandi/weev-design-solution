@@ -3,7 +3,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { CanvasNode, Connection } from "@/types";
 import { theme } from "@/data/theme";
 import { nodeCategories } from "@/data/nodeDefinitions";
-import ChatBoxNode from "./ChatBoxNode";
+import ChatBoxNode from "@/components/nodes/ChatBoxNode";
 
 const canvasStyle: React.CSSProperties = {
   backgroundColor: "#0D0D0D", // pure dark

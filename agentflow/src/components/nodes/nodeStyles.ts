@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { figmaHoverStyle, figmaSelectedStyle } from '../utils/figmaInteractions';
+import { figmaHoverStyle, figmaSelectedStyle } from '@/utils/figmaInteractions';
 
 export const figmaNodeStyle: CSSProperties = {
   backgroundColor: 'var(--figma-surface)',

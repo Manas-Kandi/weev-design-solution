@@ -24,8 +24,8 @@ import MCPModal from './components/MCPModal';
 import { Plus, Search, CreditCard, UserCog, MoreHorizontal, File, Clock, Folder, Zap, Star, Circle, Diamond, Triangle, Hexagon, Square, Heart, Bookmark } from "lucide-react";
 import FolderTree from "./FolderTree";
 import Image from "next/image";
-import AccountSettings from "@/components/AccountSettings";
-import UserAvatar from "@/components/UserAvatar";
+import AccountSettings from "@/components/panels/AccountSettings";
+import UserAvatar from "@/components/panels/UserAvatar";
 import ProjectDetails from "./ProjectDetails";
 import styles from './css/ProjectDashboard.module.css';
 

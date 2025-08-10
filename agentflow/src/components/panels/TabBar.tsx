@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
-import UserAvatar from "@/components/UserAvatar";
+import UserAvatar from "@/components/panels/UserAvatar";
 
 interface Tab {
   id: string;

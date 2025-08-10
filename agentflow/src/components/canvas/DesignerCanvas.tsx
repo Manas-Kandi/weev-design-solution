@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import CanvasEngine from "@/components/Canvas";
+import CanvasEngine from "@/components/canvas/Canvas";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
-import ConversationTester from "@/components/ConversationTester";
+import ConversationTester from "@/components/tester/ConversationTester";
 import TesterV2 from "@/components/tester/TesterV2";
 import { TESTER_V2_ENABLED } from "@/lib/flags";
-import PropertiesPanel from "./PropertiesPanel";
+import PropertiesPanel from "@/components/panels/PropertiesPanel";
 import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
 import type {
   TesterEvent,
