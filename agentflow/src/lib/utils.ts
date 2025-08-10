@@ -33,3 +33,27 @@ export function formatRelativeTime(date: string | number | Date): string {
     return ''
   }
 }
+
+// Simple in-memory request limiter
+type RateRecord = {
+  count: number
+  reset: number
+}
+
+const rateStore = new Map<string, RateRecord>()
+
+export function checkRateLimit(key: string, limit = 60, windowMs = 60_000): boolean {
+  const now = Date.now()
+  const record = rateStore.get(key)
+  if (!record || record.reset <= now) {
+    rateStore.set(key, { count: 1, reset: now + windowMs })
+    return true
+  }
+  if (record.count >= limit) return false
+  record.count++
+  return true
+}
+
+export function getClientIp(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+}
