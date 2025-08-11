@@ -33,7 +33,7 @@ export default function ProjectDashboard({
   const [selectedFolder, setSelectedFolder] = useState<{id: string, name: string} | null>(null);
   const [folderProjects, setFolderProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'kanban'>('grid');
+  const [viewMode, setViewMode] = useState<'list' | 'grid' | 'kanban' | 'table'>('grid');
 
   const filteredProjects = projects.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -375,62 +375,84 @@ export default function ProjectDashboard({
 
       <SidebarInset>
         {/* ---- Ultra-minimal Header bar ---- */}
-        <div className="flex items-center justify-between px-6 py-3">
+        <div className="flex items-center gap-6 px-6 py-3 min-w-0">
           {activeSection === "projects" ? (
             <>
-              {/* Left side - Search Bar */}
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-500" />
-                  <input
-                    type="text"
-                    placeholder="Search projects..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-transparent border-none text-sm text-neutral-300 placeholder-neutral-500 focus:outline-none focus:bg-white/[0.02] rounded-lg transition-all duration-200 w-64"
-                  />
-                </div>
+              {/* Search Bar */}
+              <div className="relative flex-shrink-0">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                <input
+                  type="text"
+                  placeholder="Search projects..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2.5 bg-white/[0.02] border-none text-sm text-neutral-300 placeholder-neutral-500 focus:outline-none focus:bg-white/[0.04] focus:ring-1 focus:ring-white/[0.1] rounded-lg transition-all duration-200 w-64"
+                />
               </div>
               
-              {/* Right side - Controls */}
-              <div className="flex items-center gap-4">
-                {/* Elegant View Toggle */}
-                <div className="flex items-center bg-white/[0.03] rounded-full p-0.5 transition-all duration-300 hover:bg-white/[0.05]">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={cn(
-                      "p-2 rounded-full transition-all duration-300",
-                      viewMode === 'grid' 
-                        ? "bg-white/[0.08] text-white shadow-sm" 
-                        : "text-neutral-400 hover:text-neutral-300 hover:bg-white/[0.04]"
-                    )}
-                    title="Grid View"
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('kanban')}
-                    className={cn(
-                      "p-2 rounded-full transition-all duration-300",
-                      viewMode === 'kanban' 
-                        ? "bg-white/[0.08] text-white shadow-sm" 
-                        : "text-neutral-400 hover:text-neutral-300 hover:bg-white/[0.04]"
-                    )}
-                    title="Kanban View"
-                  >
-                    <Kanban className="w-4 h-4" />
-                  </button>
-                </div>
-                
-                {/* Refined New Project Button */}
+              {/* View Toggle - All Options */}
+              <div className="flex items-center bg-white/[0.03] rounded-lg p-1 transition-all duration-300 hover:bg-white/[0.05] flex-shrink-0">
                 <button
-                  onClick={onCreateProject}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/[0.06] hover:bg-white/[0.1] text-white rounded-full text-sm font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                  onClick={() => setViewMode('list')}
+                  className={cn(
+                    "p-2 rounded-md transition-all duration-200 text-xs font-medium",
+                    viewMode === 'list' 
+                      ? "bg-white/[0.1] text-white shadow-sm" 
+                      : "text-neutral-400 hover:text-neutral-300 hover:bg-white/[0.04]"
+                  )}
+                  title="List View"
                 >
-                  <Plus className="w-4 h-4" />
-                  New Project
+                  List
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={cn(
+                    "p-2 rounded-md transition-all duration-200",
+                    viewMode === 'grid' 
+                      ? "bg-white/[0.1] text-white shadow-sm" 
+                      : "text-neutral-400 hover:text-neutral-300 hover:bg-white/[0.04]"
+                  )}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('kanban')}
+                  className={cn(
+                    "p-2 rounded-md transition-all duration-200",
+                    viewMode === 'kanban' 
+                      ? "bg-white/[0.1] text-white shadow-sm" 
+                      : "text-neutral-400 hover:text-neutral-300 hover:bg-white/[0.04]"
+                  )}
+                  title="Kanban View"
+                >
+                  <Kanban className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={cn(
+                    "p-2 rounded-md transition-all duration-200 text-xs font-medium",
+                    viewMode === 'table' 
+                      ? "bg-white/[0.1] text-white shadow-sm" 
+                      : "text-neutral-400 hover:text-neutral-300 hover:bg-white/[0.04]"
+                  )}
+                  title="Table View"
+                >
+                  Table
                 </button>
               </div>
+              
+              {/* Spacer to push New Project button to the right */}
+              <div className="flex-1"></div>
+              
+              {/* Bold New Project Button */}
+              <button
+                onClick={onCreateProject}
+                className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.08] hover:bg-white/[0.12] text-white rounded-lg text-sm font-bold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex-shrink-0 border border-white/[0.05] hover:border-white/[0.1]"
+              >
+                <Plus className="w-4 h-4" />
+                New Project
+              </button>
             </>
           ) : (
             <h1 className="text-lg font-medium text-neutral-200">Billing & Account</h1>
@@ -517,6 +539,57 @@ export default function ProjectDashboard({
                 onUpdateProjectStatus={handleUpdateProjectStatus}
                 onProjectClick={(project) => setSelectedProject(project)}
               />
+            </div>
+          ) : viewMode === 'list' ? (
+            <div className="p-4 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)] custom-scrollbar">
+              {/* List View - Similar to grid but more compact */}
+              <div className="space-y-3">
+                <h2 className="text-lg font-medium text-neutral-200 mb-4">All Projects ({filteredProjects.length})</h2>
+                {filteredProjects.map((project) => (
+                  <button
+                    key={project.id}
+                    onClick={() => setSelectedProject(project)}
+                    className={`group w-full flex items-center justify-between gap-4 px-4 py-3 text-left rounded-lg ${styles.projectCard} ${styles.projectCardHover}`}
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div 
+                        className={`p-1.5 rounded-lg backdrop-blur-sm border border-white/10 mt-0.5 transition-all duration-200 group-hover:backdrop-blur-md group-hover:border-white/20 ${styles.projectGradient}`}
+                        style={{ 
+                          background: getProjectGradient(project.id),
+                          '--hover-gradient': getProjectGradient(project.id).replace(/0\.(\d+)/g, (match, p1) => {
+                            const opacity = parseFloat('0.' + p1);
+                            return (opacity * 1.5).toFixed(2);
+                          })
+                        } as React.CSSProperties & { '--hover-gradient': string }}
+                      >
+                        {React.createElement(getProjectIcon(project.id), {
+                          className: "w-4 h-4 flex-shrink-0 text-white/80"
+                        })}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-base leading-[1.4] truncate">{project.name}</p>
+                        <p className="text-[13px] text-white/55 truncate">{project.description}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="hidden md:flex items-center gap-3 flex-shrink-0 text-sm text-white/60">
+                      <Badge variant="outline" className={`border-0 text-xs px-1.5 py-0.5 opacity-60 ${statusColor(project.status)}`}>
+                        {project.status}
+                      </Badge>
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap">{project.nodeCount} nodes</span>
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap">{project.lastModified.toLocaleDateString()}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : viewMode === 'table' ? (
+            <div className="p-4 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)] custom-scrollbar">
+              {/* Table View - Coming Soon */}
+              <div className="text-center py-12">
+                <div className="text-neutral-400 text-lg mb-2">Table View</div>
+                <div className="text-neutral-500 text-sm">Coming soon...</div>
+              </div>
             </div>
           ) : (
             <div className="p-4 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)] custom-scrollbar">
