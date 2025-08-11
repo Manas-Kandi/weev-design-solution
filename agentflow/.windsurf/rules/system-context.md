@@ -1,5 +1,5 @@
 ---
-trigger: always_on
+trigger: manual
 ---
 
 # Rule: AgentFlow Product & Market Context

@@ -23,6 +23,7 @@ interface FloatingTestingPanelProps {
   onClose: () => void;
   isPropertiesPanelVisible: boolean;
   compactMode?: boolean;
+  startNodeId?: string | null;
   onTesterEvent?: (event: TesterEvent) => void;
 }
 
@@ -90,6 +91,7 @@ export default function FloatingTestingPanel({
   onClose,
   isPropertiesPanelVisible,
   compactMode = false,
+  startNodeId = null,
   onTesterEvent,
 }: FloatingTestingPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -227,7 +229,7 @@ export default function FloatingTestingPanel({
       await runWorkflow(
         nodes,
         connections,
-        null,
+        startNodeId ?? null,
         undefined,
         {
           emitTesterEvent: handleTesterEvent,
@@ -262,7 +264,7 @@ export default function FloatingTestingPanel({
     } catch (err) {
       console.error("Test run failed:", err);
     }
-  }, [connections, nodes, onTesterEvent, scenario, seed, isRunning]);
+  }, [connections, nodes, onTesterEvent, scenario, seed, isRunning, startNodeId]);
 
   const handlePause = useCallback(() => {
     if (!runStartedAt || !isRunning) return;
@@ -287,6 +289,33 @@ export default function FloatingTestingPanel({
     stepTokensRef.current += 1;
     notifyGate();
   }, [isRunning, notifyGate, runStartedAt]);
+
+  // Accessibility & shortcuts: Space=Run/Pause, N=Step, B=Toggle Breakpoint (selected)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Ignore when focus is in inputs/textareas/contenteditables or with modifiers
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || "").toLowerCase();
+      const isEditable =
+        tag === "input" ||
+        tag === "textarea" ||
+        target?.getAttribute("contenteditable") === "true";
+
+      if (isEditable || e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (e.key === " ") {
+        e.preventDefault();
+        if (isRunning) handlePause();
+        else handleRun();
+      } else if (e.key.toLowerCase() === "n") {
+        handleStep();
+      } else if (e.key.toLowerCase() === "b") {
+        if (selectedId) toggleBreakpoint(selectedId);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handlePause, handleRun, handleStep, isRunning, selectedId, toggleBreakpoint]);
 
   // Timeline data
   const timelineItems = React.useMemo(() => {

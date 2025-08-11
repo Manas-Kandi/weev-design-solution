@@ -1,5 +1,5 @@
 ---
-trigger: always_on
+trigger: manual
 ---
 
 # Rule: Flow Execution Logic
