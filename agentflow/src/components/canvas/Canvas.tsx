@@ -9,6 +9,8 @@ import Connections, { ConnectionsHandle } from "./Connections";
 
 const canvasStyle: React.CSSProperties = {
   backgroundColor: "#0D0D0D", // pure dark
+  backgroundImage: `radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`,
+  backgroundSize: "20px 20px",
 };
 
 const rulerStyle: React.CSSProperties = {
