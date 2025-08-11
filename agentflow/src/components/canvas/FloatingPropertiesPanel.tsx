@@ -38,7 +38,7 @@ const getFloatingPanelStyle = (compactMode: boolean): React.CSSProperties => ({
   top: 20,
   bottom: compactMode ? undefined : 20,
   height: compactMode ? "calc(50vh - 30px)" : undefined,
-  width: 320,
+  width: 360,
   background: "rgba(30, 30, 30, 0.65)",
   backdropFilter: "blur(8px)",
   WebkitBackdropFilter: "blur(8px)",
