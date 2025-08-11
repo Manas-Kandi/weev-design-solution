@@ -132,6 +132,7 @@ export function ComponentLibrary({ onAddNode, onBackToProjects, onTest, testButt
     width: '100%',
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'flex-start', // Ensure left alignment
     gap: 8,
     padding: '6px 12px',
     background: 'none',
