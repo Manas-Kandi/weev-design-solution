@@ -1,5 +1,7 @@
 "use client";
 
+import React from 'react';
+
 type DesignerLayoutProps = {
   left: React.ReactNode;
   center: React.ReactNode;
@@ -19,12 +21,12 @@ export default function DesignerLayout(props: DesignerLayoutProps) {
       className="flex-1 w-full flex overflow-hidden bg-[var(--figma-bg)]"
       style={layoutStyle}
     >
-      {/* Left Sidebar */}
+      {/* Left Sidebar - Now renders as fixed position overlay */}
       {left}
 
-      {/* Main Content - toolbar removed, only canvas remains */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1 flex bg-[var(--figma-bg)]">{center}</div>
+      {/* Main Content - Full width since left panel is now fixed positioned */}
+      <div className="flex-1 flex flex-col w-full">
+        <div className="flex-1 flex bg-[var(--figma-bg)] w-full">{center}</div>
       </div>
 
       {/* Right Sidebar */}

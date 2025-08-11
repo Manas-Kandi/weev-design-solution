@@ -5,7 +5,7 @@ import { Project, CanvasNode, Connection, NodeType } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
 import ProjectDashboard from "@/components/dashboard/ProjectDashboard";
 import DesignerLayout from "@/components/layout/DesignerLayout";
-import TabBar from "@/components/layout/TabBar";
+
 import { ComponentLibrary } from "@/components/canvas/ComponentLibrary";
 import DesignerCanvas from "@/components/canvas/DesignerCanvas";
 import { nodeCategories } from "@/data/nodeDefinitions";
@@ -588,12 +588,30 @@ export default function AgentFlowPage() {
 
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden">
-      <TabBar onTest={handleTestFlow} testButtonDisabled={isTesting} />
       <DesignerLayout
         left={
           <ComponentLibrary
             onAddNode={handleAddNode}
             onBackToProjects={() => setCurrentView("projects")}
+            onTest={handleTestFlow}
+            testButtonDisabled={isTesting}
+            projectName={currentProject?.name || 'Untitled Project'}
+            onProjectNameChange={async (newName) => {
+              if (currentProject) {
+                try {
+                  const res = await fetch(`/api/projects/${currentProject.id}`, {
+                    method: 'PATCH',
+                    headers: await buildHeaders(true),
+                    body: JSON.stringify({ name: newName })
+                  });
+                  if (res.ok) {
+                    setCurrentProject({ ...currentProject, name: newName });
+                  }
+                } catch (error) {
+                  console.error('Failed to update project name:', error);
+                }
+              }
+            }}
           />
         }
         center={
