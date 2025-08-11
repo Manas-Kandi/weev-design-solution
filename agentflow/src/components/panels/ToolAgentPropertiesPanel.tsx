@@ -1,15 +1,8 @@
-// All UI rules for properties panels must come from propertiesPanelTheme.ts
-import React from "react";
-import { Wrench, Play, AlertTriangle } from "lucide-react";
+// Simplified Tool Agent Properties Panel with floating, minimal design
+import React, { useEffect, useState } from "react";
+import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode, ToolAgentNodeData } from "@/types";
-import {
-  figmaPropertiesTheme as theme,
-  getPanelContainerStyle,
-} from "./propertiesPanelTheme";
-import { PanelSection } from "../primitives/PanelSection";
-import { VSCodeInput, VSCodeSelect, VSCodeButton, VSCodeTextArea } from "../primitives/vsCodeFormComponents";
-import { providers, getProvider } from "@/lib/simulation/providers";
-import { SimulationMode } from "@/types/simulation";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface ToolAgentPropertiesPanelProps {
   node: CanvasNode & { data: ToolAgentNodeData };
@@ -21,444 +14,328 @@ export default function ToolAgentPropertiesPanel({
   onChange,
 }: ToolAgentPropertiesPanelProps) {
   const data = node.data;
-  // LLM provider/model configuration for Live mode
-  const llmProviderOptions = [
-    { value: "nvidia", label: "NVIDIA (default)" },
-    { value: "gemini", label: "Google Gemini" },
-  ];
-  const nvidiaModels = [
-    { value: "meta/llama-3.1-70b-instruct", label: "Llama 3.1 70B Instruct" },
-    { value: "meta/llama-3.1-8b-instruct", label: "Llama 3.1 8B Instruct" },
-    { value: "gpt-oss-120b", label: "GPT‑OSS 120B" },
-    { value: "gpt-oss-20b", label: "GPT‑OSS 20B" },
-  ];
-  const geminiModels = [
-    { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
-    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-  ];
-  const activeLLMProvider = (data?.provider as "nvidia" | "gemini") || "nvidia";
-  const llmModelOptions = activeLLMProvider === "gemini" ? geminiModels : nvidiaModels;
-  const defaultToolConfig: NonNullable<ToolAgentNodeData["toolConfig"]> = {
-    toolType: "web-search",
-    endpoint: "",
-    apiKey: "",
-    parameters: {},
-  };
-  const toolConfig: NonNullable<ToolAgentNodeData["toolConfig"]> =
-    data.toolConfig ?? defaultToolConfig;
-
-  const rules = data.rules ?? { nl: "", compiled: undefined };
-  const [ruleText, setRuleText] = React.useState<string>(rules.nl || "");
-  // Sync local editor when selected node or external rules change
-  React.useEffect(() => {
-    setRuleText(rules.nl || "");
-  }, [node.id, rules.nl]);
-  const simulation = data.simulation ?? {
-    providerId: providers[0]?.id || "calendar",
-    operation: undefined,
-    scenarioId: getProvider(providers[0]?.id || "calendar")?.scenarios[0]?.id || "busy-week",
-    latencyMs: 120,
-    injectError: null,
-    params: {},
-    mode: "simulate" as SimulationMode,
-  };
-
-  const handleConfigChange = (
-    field: keyof NonNullable<ToolAgentNodeData["toolConfig"]>,
-    value: unknown
-  ) => {
+  
+  // Initialize state from existing data
+  const [behaviorRule, setBehaviorRule] = useState<string>(
+    data.rules?.nl || ""
+  );
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+  
+  // Advanced settings state
+  const [simulationMode, setSimulationMode] = useState<string>(
+    data.simulation?.mode || "simulate"
+  );
+  const [provider, setProvider] = useState<string>(
+    data.simulation?.providerId || "calendar"
+  );
+  const [operation, setOperation] = useState<string>(
+    data.simulation?.operation || "findEvents"
+  );
+  const [scenario, setScenario] = useState<string>(
+    data.simulation?.scenarioId || "busy-week"
+  );
+  const [parameters, setParameters] = useState<string>(
+    data.simulation?.params ? JSON.stringify(data.simulation.params) : "{}"
+  );
+  
+  // Update node data when fields change
+  useEffect(() => {
+    let parsedParams = {};
+    try {
+      parsedParams = JSON.parse(parameters);
+    } catch {
+      parsedParams = {};
+    }
+    
     const updatedData: ToolAgentNodeData = {
       ...data,
-      toolConfig: { ...toolConfig, [field]: value } as NonNullable<
-        ToolAgentNodeData["toolConfig"]
-      >,
+      rules: {
+        nl: behaviorRule,
+        compiled: data.rules?.compiled,
+      },
+      simulation: {
+        mode: simulationMode as any,
+        providerId: provider,
+        operation,
+        scenarioId: scenario,
+        params: parsedParams,
+        latencyMs: data.simulation?.latencyMs || 120,
+        injectError: data.simulation?.injectError || null,
+      },
     };
+    
     onChange({ ...node, data: updatedData });
-  };
+  }, [behaviorRule, simulationMode, provider, operation, scenario, parameters]);
+  
+  // Update local state if node changes externally
+  useEffect(() => {
+    if (data.rules?.nl !== behaviorRule) setBehaviorRule(data.rules?.nl || "");
+    if (data.simulation?.mode !== simulationMode) setSimulationMode(data.simulation?.mode || "simulate");
+    if (data.simulation?.providerId !== provider) setProvider(data.simulation?.providerId || "calendar");
+    if (data.simulation?.operation !== operation) setOperation(data.simulation?.operation || "findEvents");
+    if (data.simulation?.scenarioId !== scenario) setScenario(data.simulation?.scenarioId || "busy-week");
+    const currentParams = data.simulation?.params ? JSON.stringify(data.simulation.params) : "{}";
+    if (currentParams !== parameters) setParameters(currentParams);
+  }, [node.id]);
 
-  const setRules = (next: Partial<NonNullable<ToolAgentNodeData["rules"]>>) => {
-    const updated: ToolAgentNodeData = {
-      ...data,
-      rules: { ...rules, ...next },
-    };
-    onChange({ ...node, data: updated });
-  };
-
-  const setSimulation = (
-    next: Partial<NonNullable<ToolAgentNodeData["simulation"]>>
-  ) => {
-    const updated: ToolAgentNodeData = {
-      ...data,
-      simulation: { ...simulation, ...next },
-    };
-    onChange({ ...node, data: updated });
-  };
-
-  const toolTypeOptions = [
-    { value: "web-search", label: "Web Search" },
-    { value: "calculator", label: "Calculator" },
-    { value: "code-executor", label: "Code Executor" },
-    { value: "file-operations", label: "File Operations" },
-    { value: "database-query", label: "Database Query" },
-    { value: "custom-api", label: "Custom API" },
-  ];
-
-  // Provider options
-  const providerOptions = providers.map((p) => ({ value: p.id, label: p.label }));
-  const activeProvider = getProvider(simulation.providerId) || providers[0];
-  const operationOptions = (activeProvider?.operations || []).map((o) => ({ value: o.name, label: o.name }));
-  const scenarioOptions = (activeProvider?.scenarios || []).map((s) => ({ value: s.id, label: s.label }));
-
-  const headerStyle: React.CSSProperties = {
-    padding: theme.spacing.lg,
-    borderBottom: `1px solid ${theme.colors.border}`,
-    backgroundColor: theme.colors.backgroundSecondary,
-    display: "flex",
-    alignItems: "center",
-    gap: theme.spacing.md,
-  };
-
-  const headerTitleStyle: React.CSSProperties = {
-    fontSize: theme.typography.fontSize.md,
-    fontWeight: theme.typography.fontWeight.semibold,
-    color: theme.colors.textPrimary,
-    margin: 0,
-    lineHeight: theme.typography.lineHeight.tight,
-    fontFamily: theme.typography.fontFamily,
-  };
-
-  const headerSubtitleStyle: React.CSSProperties = {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textSecondary,
-    margin: `${theme.spacing.xs} 0 0 0`,
-    lineHeight: theme.typography.lineHeight.normal,
-    fontFamily: theme.typography.fontFamily,
-  };
-
-  const contentStyle: React.CSSProperties = {
+  // Styles
+  const containerStyle: React.CSSProperties = {
     padding: theme.spacing.lg,
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.lg,
-    flex: 1,
+    gap: theme.spacing.md,
+    height: "100%",
   };
-
-  const labelStyle: React.CSSProperties = {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.fontSize.sm,
-    marginBottom: theme.spacing.xs,
+  
+  const titleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+    margin: 0,
     fontFamily: theme.typography.fontFamily,
   };
-
-  // NL → operation guesser with simple heuristics
-  const guessOperation = (text: string): string | undefined => {
-    const lower = (text || "").toLowerCase();
-    // Direct mention of operation names
-    const allOps = providers.flatMap((p) => p.operations.map((o) => o.name));
-    const direct = allOps.find((op) => lower.includes(op.toLowerCase()));
-    if (direct) return direct;
-
-    // Calendar heuristics → findEvents or createEvent
-    const isCalendarLike = /(calendar|calander|schedule|meeting|meetings|event|events|availability|free|busy|slots|times)/.test(lower);
-    if (isCalendarLike) {
-      if (/(create|add|schedule|book)/.test(lower)) return "createEvent";
-      return "findEvents";
-    }
-
-    // Email heuristics → sendEmail or listEmails
-    const isEmailLike = /(email|inbox|message|mailer|gmail|outlook)/.test(lower);
-    if (isEmailLike) {
-      if (/(send|reply|respond)/.test(lower)) return "sendEmail";
-      return "listEmails";
-    }
-
-    return undefined;
+  
+  const subtitleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textMuted,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
   };
-
-  const compiledSummary = React.useMemo(() => {
-    const op = rules.compiled?.operation ?? guessOperation(rules.nl || "");
-    return op ? `Operation: ${op}` : "No operation inferred yet";
-  }, [rules]);
-
-  const [previewResult, setPreviewResult] = React.useState<{ data?: unknown; error?: string } | null>(null);
-  const [isRunning, setIsRunning] = React.useState(false);
-
-  const runPreview = async () => {
-    setIsRunning(true);
-    setPreviewResult(null);
-    try {
-      if (simulation.mode === "live") {
-        setPreviewResult({ error: "Live mode not implemented—switch to Simulate" });
-        return;
-      }
-      const provider = activeProvider;
-      if (!provider) {
-        setPreviewResult({ error: "No provider selected" });
-        return;
-      }
-      const operation = simulation.operation || guessOperation(rules.nl || "") || provider.operations[0]?.name;
-      if (!operation) {
-        setPreviewResult({ error: "No operation selected or inferred" });
-        return;
-      }
-      const res = await provider.run({
-        operation,
-        params: simulation.params || {},
-        scenarioId: simulation.scenarioId,
-        latencyMs: simulation.latencyMs,
-        injectError: simulation.injectError || null,
-      });
-      setPreviewResult(res);
-    } finally {
-      setIsRunning(false);
-    }
+  
+  const textAreaStyle: React.CSSProperties = {
+    width: "100%",
+    minHeight: "120px",
+    maxHeight: "250px",
+    padding: theme.spacing.md,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    lineHeight: theme.typography.lineHeight.relaxed,
+    resize: "vertical",
+    outline: "none",
+    transition: "border-color 0.2s, background-color 0.2s",
+  };
+  
+  const selectStyle: React.CSSProperties = {
+    width: "100%",
+    padding: theme.spacing.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    outline: "none",
+    transition: "border-color 0.2s, background-color 0.2s",
+    marginBottom: theme.spacing.sm,
+  };
+  
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: theme.spacing.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    outline: "none",
+    transition: "border-color 0.2s, background-color 0.2s",
+    marginBottom: theme.spacing.sm,
+  };
+  
+  const labelStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.textPrimary,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+    marginBottom: theme.spacing.xs,
+  };
+  
+  const advancedToggleStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing.xs,
+    cursor: "pointer",
+    padding: theme.spacing.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textMuted,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    transition: "background-color 0.2s, border-color 0.2s",
+  };
+  
+  const advancedSectionStyle: React.CSSProperties = {
+    marginTop: theme.spacing.sm,
+    padding: theme.spacing.md,
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    display: showAdvanced ? "block" : "none",
   };
 
   return (
-    <div style={getPanelContainerStyle()}>
-      <div style={headerStyle}>
-        <div
-          style={{
-            backgroundColor: theme.colors.buttonPrimary,
-            borderRadius: theme.borderRadius.md,
-            padding: theme.spacing.md,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+    <div style={containerStyle}>
+      {/* Title */}
+      <h3 style={titleStyle}>Tool Agent</h3>
+      
+      {/* Subtitle */}
+      <p style={subtitleStyle}>
+        Configure tool behavior and simulation settings
+      </p>
+      
+      {/* Behavior Rule - Prominently Displayed */}
+      <div>
+        <label style={labelStyle}>Behavior Rule</label>
+        <textarea
+          value={behaviorRule}
+          onChange={(e) => setBehaviorRule(e.target.value)}
+          placeholder="e.g., When asked about upcoming meetings, call findEvents and return today's events with start/end and location"
+          style={textAreaStyle}
+          onFocus={(e) => {
+            e.target.style.borderColor = theme.colors.buttonPrimary;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
           }}
-        >
-          <Wrench size={20} color="white" />
-        </div>
-        <div>
-          <h2 style={headerTitleStyle}>Tool Agent Configuration</h2>
-          <p style={headerSubtitleStyle}>
-            Simulate realistic tool behavior with rules and presets
-          </p>
-        </div>
+          onBlur={(e) => {
+            e.target.style.borderColor = theme.colors.border;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+          }}
+        />
       </div>
-
-      <div style={contentStyle}>
-        <PanelSection
-          title="Behavior Rule"
-          description="Describe how this tool should behave in plain language"
-          icon={<Wrench size={16} />}
-        >
-          <label style={labelStyle}>Rule</label>
-          <VSCodeTextArea
-            placeholder="e.g., When asked about upcoming meetings, call findEvents and return today's events with start/end and location"
-            value={ruleText}
-            onChange={(e) => {
-              const v = (e.target as HTMLTextAreaElement).value;
-              setRuleText(v);
-              setRules({ nl: v });
-            }}
-            rows={6}
-          />
-          <div style={{ display: "flex", alignItems: "center", gap: theme.spacing.md }}>
-            <VSCodeButton
-              variant="secondary"
-              size="small"
-              onClick={() => {
-                const op = guessOperation(ruleText || rules.nl || "");
-                setRules({ compiled: { operation: op, notes: op ? `Inferred ${op}` : "No operation inferred" } });
-                if (op) setSimulation({ operation: op });
-              }}
-            >
-              Infer Operation
-            </VSCodeButton>
-            <span style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.textMuted }}>{compiledSummary}</span>
-          </div>
-        </PanelSection>
-
-        <PanelSection
-          title="Preset & Provider"
-          description="Pick a provider, operation, and scenario to simulate"
-          icon={<Wrench size={16} />}
-        >
+      
+      {/* Advanced Settings Toggle */}
+      <div
+        style={advancedToggleStyle}
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+          e.currentTarget.style.borderColor = theme.colors.buttonPrimary;
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.02)";
+          e.currentTarget.style.borderColor = theme.colors.border;
+        }}
+      >
+        {showAdvanced ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        Advanced Settings
+      </div>
+      
+      {/* Advanced Settings Section */}
+      <div style={advancedSectionStyle}>
+        {/* Simulation Mode */}
+        <div>
           <label style={labelStyle}>Simulation Mode</label>
-          <VSCodeSelect
-            value={simulation.mode || "simulate"}
-            options={[{ value: "simulate", label: "Simulate" }, { value: "live", label: "Live (future)" }]}
-            onValueChange={(v) => setSimulation({ mode: v as SimulationMode })}
-          />
-
-          <label style={labelStyle}>Provider</label>
-          <VSCodeSelect
-            value={activeProvider?.id || ""}
-            options={providerOptions}
-            onValueChange={(v) => {
-              const p = getProvider(v);
-              setSimulation({
-                providerId: v,
-                operation: p?.operations[0]?.name,
-                scenarioId: p?.scenarios[0]?.id,
-                params: {},
-              });
+          <select
+            value={simulationMode}
+            onChange={(e) => setSimulationMode(e.target.value)}
+            style={selectStyle}
+            onFocus={(e) => {
+              e.target.style.borderColor = theme.colors.buttonPrimary;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
             }}
-          />
-
+            onBlur={(e) => {
+              e.target.style.borderColor = theme.colors.border;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+            }}
+          >
+            <option value="simulate">Simulate</option>
+            <option value="live">Live (future)</option>
+          </select>
+        </div>
+        
+        {/* Provider */}
+        <div>
+          <label style={labelStyle}>Provider</label>
+          <select
+            value={provider}
+            onChange={(e) => setProvider(e.target.value)}
+            style={selectStyle}
+            onFocus={(e) => {
+              e.target.style.borderColor = theme.colors.buttonPrimary;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = theme.colors.border;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+            }}
+          >
+            <option value="calendar">Calendar</option>
+            <option value="email">Email</option>
+            <option value="web-search">Web Search</option>
+          </select>
+        </div>
+        
+        {/* Operation */}
+        <div>
           <label style={labelStyle}>Operation</label>
-          <VSCodeSelect
-            value={simulation.operation || ""}
-            options={operationOptions}
-            onValueChange={(v) => setSimulation({ operation: v })}
-          />
-
+          <select
+            value={operation}
+            onChange={(e) => setOperation(e.target.value)}
+            style={selectStyle}
+            onFocus={(e) => {
+              e.target.style.borderColor = theme.colors.buttonPrimary;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = theme.colors.border;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+            }}
+          >
+            <option value="findEvents">Find Events</option>
+            <option value="createEvent">Create Event</option>
+            <option value="sendEmail">Send Email</option>
+            <option value="listEmails">List Emails</option>
+          </select>
+        </div>
+        
+        {/* Scenario */}
+        <div>
           <label style={labelStyle}>Scenario</label>
-          <VSCodeSelect
-            value={simulation.scenarioId || ""}
-            options={scenarioOptions}
-            onValueChange={(v) => setSimulation({ scenarioId: v })}
-          />
-
+          <select
+            value={scenario}
+            onChange={(e) => setScenario(e.target.value)}
+            style={selectStyle}
+            onFocus={(e) => {
+              e.target.style.borderColor = theme.colors.buttonPrimary;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = theme.colors.border;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+            }}
+          >
+            <option value="busy-week">Busy week with double-bookings</option>
+            <option value="light-schedule">Light schedule</option>
+            <option value="no-events">No events</option>
+          </select>
+        </div>
+        
+        {/* Parameters */}
+        <div>
           <label style={labelStyle}>Parameters (JSON)</label>
-          <VSCodeInput
-            value={simulation.params ? JSON.stringify(simulation.params) : ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              try {
-                const parsed = e.target.value ? JSON.parse(e.target.value) : {};
-                setSimulation({ params: parsed });
-              } catch {
-                // ignore, keep last good
-              }
+          <input
+            type="text"
+            value={parameters}
+            onChange={(e) => setParameters(e.target.value)}
+            placeholder='{"date": "2025-08-10"}'
+            style={inputStyle}
+            onFocus={(e) => {
+              e.target.style.borderColor = theme.colors.buttonPrimary;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
             }}
-            placeholder='{"date":"2025-08-10"}'
-          />
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.spacing.md }}>
-            <div>
-              <label style={labelStyle}>Latency (ms)</label>
-              <VSCodeInput
-                type="number"
-                value={String(simulation.latencyMs ?? 120)}
-                onChange={(e) => setSimulation({ latencyMs: Number((e.target as HTMLInputElement).value || 0) })}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Inject Error</label>
-              <VSCodeSelect
-                value={simulation.injectError?.type || ""}
-                options={[{ value: "", label: "None" }, { value: "timeout", label: "Timeout" }, { value: "rate_limit", label: "Rate limit" }]}
-                onValueChange={(v) => setSimulation({ injectError: v ? { type: v } : null })}
-              />
-            </div>
-          </div>
-        </PanelSection>
-
-        <PanelSection
-          title="LLM Settings (Live Mode)"
-          description="Choose which LLM to use when running without simulation"
-          icon={<Wrench size={16} />}
-          defaultCollapsed={true}
-        >
-          <label style={labelStyle}>Provider</label>
-          <VSCodeSelect
-            value={data?.provider ?? "nvidia"}
-            options={llmProviderOptions}
-            onValueChange={(v) => {
-              const nextProvider = v as "nvidia" | "gemini";
-              const defaultModel = nextProvider === "gemini" ? "gemini-2.5-flash-lite" : "meta/llama-3.1-70b-instruct";
-              const updated: ToolAgentNodeData = { ...data, provider: nextProvider, model: data?.model && llmModelOptions.some(m => m.value === data.model) ? data.model : defaultModel };
-              onChange({ ...node, data: updated });
+            onBlur={(e) => {
+              e.target.style.borderColor = theme.colors.border;
+              e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
             }}
           />
-
-          <label style={{ ...labelStyle, marginTop: theme.spacing.md }}>Model</label>
-          <VSCodeSelect
-            value={data?.model ?? (activeLLMProvider === "gemini" ? "gemini-2.5-flash-lite" : "meta/llama-3.1-70b-instruct")}
-            options={llmModelOptions}
-            onValueChange={(v) => {
-              const updated: ToolAgentNodeData = { ...data, model: v };
-              onChange({ ...node, data: updated });
-            }}
-          />
-        </PanelSection>
-
-        <PanelSection
-          title="Preview"
-          description="Run the provider with the selected scenario"
-          icon={<Play size={16} />}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: theme.spacing.md }}>
-            <VSCodeButton onClick={runPreview} loading={isRunning}>
-              Run Preview
-            </VSCodeButton>
-            {simulation.mode === "live" && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: theme.colors.warning, fontSize: theme.typography.fontSize.xs }}>
-                <AlertTriangle size={14} /> Live mode is not implemented
-              </span>
-            )}
-          </div>
-          <div style={{
-            marginTop: theme.spacing.md,
-            background: theme.colors.backgroundSecondary,
-            border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.borderRadius.sm,
-            padding: theme.spacing.md,
-            fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-            fontSize: theme.typography.fontSize.xs,
-            color: theme.colors.textSecondary,
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-          }}>
-            {previewResult ? JSON.stringify(previewResult, null, 2) : "No preview yet"}
-          </div>
-        </PanelSection>
-
-        <PanelSection
-          title="Tool Settings"
-          description="Configure tool integration"
-          icon={<Wrench size={16} />}
-        >
-          <label style={labelStyle}>Tool Type</label>
-          <VSCodeSelect
-            value={toolConfig.toolType || "web-search"}
-            options={toolTypeOptions}
-            onValueChange={(value: string) =>
-              handleConfigChange("toolType", value)
-            }
-          />
-
-          <label style={labelStyle}>Endpoint</label>
-          <VSCodeInput
-            value={toolConfig.endpoint || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleConfigChange("endpoint", e.target.value)
-            }
-            placeholder="https://api.example.com"
-          />
-
-          <label style={labelStyle}>API Key</label>
-          <VSCodeInput
-            value={toolConfig.apiKey || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleConfigChange("apiKey", e.target.value)
-            }
-            placeholder="sk-..."
-          />
-
-          <label style={labelStyle}>Parameters (JSON)</label>
-          <VSCodeInput
-            value={
-              toolConfig.parameters
-                ? JSON.stringify(toolConfig.parameters)
-                : ""
-            }
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              try {
-                const parsed = e.target.value
-                  ? JSON.parse(e.target.value)
-                  : {};
-                handleConfigChange("parameters", parsed);
-              } catch {
-                handleConfigChange("parameters", {});
-              }
-            }}
-            placeholder='{"key":"value"}'
-          />
-        </PanelSection>
+        </div>
       </div>
     </div>
   );
 }
-

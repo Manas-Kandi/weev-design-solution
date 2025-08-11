@@ -1,9 +1,7 @@
-// All UI rules for properties panels must come from propertiesPanelTheme.ts
-import React, { useState } from "react";
+// Simplified Message Properties Panel with floating, minimal design
+import React, { useEffect, useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { PanelSection } from "../primitives/PanelSection";
-import { VSCodeInput, VSCodeSelect } from "../primitives/vsCodeFormComponents";
 
 interface MessagePropertiesPanelProps {
   node: CanvasNode;
@@ -11,277 +9,224 @@ interface MessagePropertiesPanelProps {
 }
 
 interface MessageNodeData {
+  message?: string;  // Main message content
+  role?: "System" | "User" | "Assistant";  // Message role
+  passThrough?: boolean;  // Pass through mode
+  // Legacy fields for backward compatibility
   title?: string;
   content?: string;
   messageType?: "System" | "User" | "Assistant";
-  passThrough?: boolean;
+  [key: string]: unknown;
 }
 
-import { isMessageNodeData } from "@/utils/typeGuards";
-
-const TITLE_MAX = 50;
+// Helper function to migrate legacy config to new format
+function migrateLegacyMessageConfig(data: MessageNodeData): { message: string; role: "System" | "User" | "Assistant" } {
+  // Get message content
+  let message = "";
+  if (data.message) {
+    message = data.message;
+  } else if (data.content) {
+    message = data.content;
+  }
+  
+  // Get role
+  let role: "System" | "User" | "Assistant" = "User";
+  if (data.role) {
+    role = data.role;
+  } else if (data.messageType) {
+    role = data.messageType;
+  }
+  
+  return { message, role };
+}
 
 export default function MessagePropertiesPanel({
   node,
   onChange,
 }: MessagePropertiesPanelProps) {
-  // Extract and normalize data
-  const initialData: MessageNodeData = isMessageNodeData(node.data)
-    ? {
-        title:
-          "title" in node.data && typeof node.data.title === "string"
-            ? node.data.title
-            : "Message",
-        content:
-          "content" in node.data && typeof node.data.content === "string"
-            ? node.data.content
-            : "message" in node.data &&
-              typeof (node.data as { message?: string }).message === "string"
-            ? (node.data as { message: string }).message
-            : "",
-        messageType:
-          "messageType" in node.data &&
-          typeof node.data.messageType === "string"
-            ? (node.data.messageType as MessageNodeData["messageType"])
-            : "User",
-        passThrough:
-          "passThrough" in node.data
-            ? Boolean(
-                typeof (node.data as { passThrough?: unknown }).passThrough ===
-                  "boolean"
-                  ? (node.data as { passThrough: boolean }).passThrough
-                  : false
-              )
-            : false,
-      }
-    : {
-        title: "Message",
-        content: "",
-        messageType: "User",
-        passThrough: false,
-      };
+  const data = node.data as MessageNodeData;
+  
+  // Initialize state from existing data or migrate legacy config
+  const { message: initialMessage, role: initialRole } = migrateLegacyMessageConfig(data);
+  const [message, setMessage] = useState<string>(initialMessage);
+  const [role, setRole] = useState<"System" | "User" | "Assistant">(initialRole);
+  const [passThrough, setPassThrough] = useState<boolean>(data.passThrough || false);
+  
+  // Update node data when fields change
+  useEffect(() => {
+    const updatedData = { 
+      ...data, 
+      message, 
+      role, 
+      passThrough 
+    };
+    onChange({ ...node, data: updatedData });
+  }, [message, role, passThrough]);
+  
+  // Update local state if node changes externally
+  useEffect(() => {
+    const { message: newMessage, role: newRole } = migrateLegacyMessageConfig(data);
+    if (newMessage !== message) setMessage(newMessage);
+    if (newRole !== role) setRole(newRole);
+    if ((data.passThrough || false) !== passThrough) setPassThrough(data.passThrough || false);
+  }, [node.id]);
 
-  const [data, setData] = useState<MessageNodeData>(initialData);
-
-  // Validation state
-  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
-
-  const handleFieldChange = (field: keyof MessageNodeData, value: unknown) => {
-    setData((prev) => {
-      const updated = { ...prev, [field]: value };
-      onChange({ ...node, data: { ...node.data, ...updated } });
-      return updated;
-    });
-  };
-
-  // Validation logic
-  const errors: { [key: string]: string } = {};
-  if (!data.title || data.title.trim().length === 0) {
-    errors.title = "Title is required.";
-  } else if (data.title.length > TITLE_MAX) {
-    errors.title = `Title must be under ${TITLE_MAX} characters.`;
-  }
-  if (!data.content || data.content.trim().length === 0) {
-    errors.content = "Message content is required.";
-  }
-
-  // Compose panel style from theme
-  const panelStyle: React.CSSProperties = {
-    background: theme.colors.background,
-    borderLeft: `1px solid ${theme.colors.border}`,
-    padding: theme.spacing.xl,
-    borderRadius: theme.borderRadius.lg,
-    minHeight: 0,
-    height: "100%",
-    width: 360,
-    minWidth: 360,
-    maxWidth: 360,
+  // Styles
+  const containerStyle: React.CSSProperties = {
+    padding: theme.spacing.lg,
     display: "flex",
     flexDirection: "column",
-    gap: theme.spacing.lg,
-    boxSizing: "border-box",
-    overflowY: "auto",
+    gap: theme.spacing.md,
+    height: "100%",
+  };
+  
+  const titleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+  };
+  
+  const subtitleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textMuted,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+  };
+  
+  const textAreaStyle: React.CSSProperties = {
+    width: "100%",
+    minHeight: "120px",
+    maxHeight: "300px",
+    padding: theme.spacing.md,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    lineHeight: theme.typography.lineHeight.relaxed,
+    resize: "vertical",
+    outline: "none",
+    transition: "border-color 0.2s, background-color 0.2s",
+  };
+  
+  const selectStyle: React.CSSProperties = {
+    width: "100%",
+    padding: theme.spacing.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    outline: "none",
+    transition: "border-color 0.2s, background-color 0.2s",
+  };
+  
+  const labelStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.textPrimary,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+  };
+  
+  const switchContainerStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  };
+  
+  const switchStyle: React.CSSProperties = {
+    width: "16px",
+    height: "16px",
+    accentColor: theme.colors.buttonPrimary,
+  };
+  
+  const switchLabelStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textPrimary,
+    fontFamily: theme.typography.fontFamily,
+    cursor: "pointer",
+  };
+  
+  const switchSubtextStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.xs,
+    color: theme.colors.textMuted,
+    fontFamily: theme.typography.fontFamily,
+    marginTop: theme.spacing.xs,
   };
 
-  // UI
   return (
-    <div style={panelStyle}>
-      {/* Required Fields */}
-      <PanelSection title="Required" description="">
-        <label
-          style={{
-            display: "block",
-            marginBottom: theme.spacing.xs,
-            color: theme.colors.textPrimary,
-            fontWeight: theme.typography.fontWeight.medium,
-            fontSize: theme.typography.fontSize.base,
-            fontFamily: theme.typography.fontFamily,
-          }}
-        >
-          Title <span style={{ color: theme.colors.error }}>*</span>
-        </label>
-        <VSCodeInput
-          value={data.title}
-          maxLength={TITLE_MAX}
-          placeholder="Message"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            handleFieldChange("title", e.target.value)
-          }
-          onBlur={() => setTouched((t) => ({ ...t, title: true }))}
-        />
-        <span
-          style={{
-            color: theme.colors.textMuted,
-            fontSize: theme.typography.fontSize.xs,
-          }}
-        >
-          Max {TITLE_MAX} characters
-        </span>
-        {touched.title && errors.title && (
-          <div
-            style={{
-              color: theme.colors.error,
-              fontSize: theme.typography.fontSize.xs,
-              marginTop: theme.spacing.xs,
-            }}
-          >
-            {errors.title}
-          </div>
-        )}
-
-        <label
-          style={{
-            display: "block",
-            marginBottom: theme.spacing.xs,
-            color: theme.colors.textPrimary,
-            fontWeight: theme.typography.fontWeight.medium,
-            fontSize: theme.typography.fontSize.base,
-            fontFamily: theme.typography.fontFamily,
-          }}
-        >
-          Message Content <span style={{ color: theme.colors.error }}>*</span>
-        </label>
+    <div style={containerStyle}>
+      {/* Title */}
+      <h3 style={titleStyle}>Message</h3>
+      
+      {/* Subtitle */}
+      <p style={subtitleStyle}>
+        Enter the message this node will send
+      </p>
+      
+      {/* Message Content Textarea */}
+      <div>
         <textarea
-          style={{
-            width: "100%",
-            minHeight: 64,
-            borderRadius: theme.borderRadius.md,
-            background: theme.colors.backgroundSecondary,
-            color: theme.colors.textPrimary,
-            border: `1px solid ${theme.colors.border}`,
-            padding: theme.spacing.inputPadding,
-            marginBottom: theme.spacing.lg,
-            transition: theme.animation.medium,
-            fontFamily: theme.typography.fontMono,
-            fontSize: theme.typography.fontSize.base,
-            resize: "vertical",
-            boxSizing: "border-box",
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Enter your message here..."
+          style={textAreaStyle}
+          onFocus={(e) => {
+            e.target.style.borderColor = theme.colors.buttonPrimary;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
           }}
-          value={data.content}
-          maxLength={500}
-          placeholder="Message to send..."
-          onChange={(e) => handleFieldChange("content", e.target.value)}
-          onBlur={() => setTouched((t) => ({ ...t, content: true }))}
+          onBlur={(e) => {
+            e.target.style.borderColor = theme.colors.border;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+          }}
         />
-        <span
-          style={{
-            color: theme.colors.textMuted,
-            fontSize: theme.typography.fontSize.xs,
+      </div>
+      
+      {/* Role Dropdown */}
+      <div>
+        <label style={labelStyle}>Role</label>
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value as "System" | "User" | "Assistant")}
+          style={selectStyle}
+          onFocus={(e) => {
+            e.target.style.borderColor = theme.colors.buttonPrimary;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = theme.colors.border;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
           }}
         >
-          Required. This will be sent as the message.
-        </span>
-        {touched.content && errors.content && (
-          <div
-            style={{
-              color: theme.colors.error,
-              fontSize: theme.typography.fontSize.xs,
-              marginTop: theme.spacing.xs,
-            }}
-          >
-            {errors.content}
-          </div>
-        )}
-
-        <label
-          style={{
-            display: "block",
-            marginBottom: theme.spacing.xs,
-            color: theme.colors.textPrimary,
-            fontWeight: theme.typography.fontWeight.medium,
-            fontSize: theme.typography.fontSize.base,
-            fontFamily: theme.typography.fontFamily,
-          }}
-        >
-          Message Type
-        </label>
-        <VSCodeSelect
-          value={data.messageType || "User"}
-          onValueChange={(v: string) =>
-            handleFieldChange("messageType", v as MessageNodeData["messageType"])
-          }
-          options={[
-            { value: "System", label: "System" },
-            { value: "User", label: "User" },
-            { value: "Assistant", label: "Assistant" },
-          ]}
-          placeholder="Message Type"
+          <option value="System">System</option>
+          <option value="User">User</option>
+          <option value="Assistant">Assistant</option>
+        </select>
+      </div>
+      
+      {/* Pass Through Toggle */}
+      <div style={switchContainerStyle}>
+        <input
+          type="checkbox"
+          id="passThrough"
+          checked={passThrough}
+          onChange={(e) => setPassThrough(e.target.checked)}
+          style={switchStyle}
         />
-        <span
-          style={{
-            color: theme.colors.textMuted,
-            fontSize: theme.typography.fontSize.xs,
-          }}
-        >
-          Choose the role for this message.
-        </span>
-      </PanelSection>
-      <PanelSection title="Advanced" description="Optional: pass input through">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: theme.spacing.xs,
-            marginTop: theme.spacing.xs,
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={!!data.passThrough}
-            onChange={(e) => handleFieldChange("passThrough", e.target.checked)}
-            id="passThrough"
-            style={{
-              accentColor: theme.colors.info,
-              width: 16,
-              height: 16,
-              borderRadius: theme.borderRadius.md,
-              border: `1px solid ${theme.colors.border}`,
-            }}
-          />
-          <label
-            htmlFor="passThrough"
-            style={{
-              color: theme.colors.textPrimary,
-              fontWeight: theme.typography.fontWeight.medium,
-              fontSize: theme.typography.fontSize.base,
-              fontFamily: theme.typography.fontFamily,
-            }}
-          >
+        <div>
+          <label htmlFor="passThrough" style={switchLabelStyle}>
             Pass Through Mode
-            <span
-              style={{
-                display: "block",
-                color: theme.colors.textMuted,
-                fontSize: theme.typography.fontSize.xs,
-              }}
-            >
-              If enabled, this node will pass its input through instead of using
-              the message content.
-            </span>
           </label>
+          <div style={switchSubtextStyle}>
+            Pass input through instead of using the message content
+          </div>
         </div>
-      </PanelSection>
+      </div>
     </div>
   );
 }
-// TODO: Add unit tests for this panel to ensure type safety and prevent regressions.

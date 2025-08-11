@@ -1,17 +1,19 @@
-// All UI rules for properties panels must come from propertiesPanelTheme.ts
-import React, { useState, useRef, useEffect } from "react";
-import { VSCodeSelect, VSCodeInput } from "../primitives/vsCodeFormComponents";
+// Simplified Knowledge Base Properties Panel with floating, minimal design
+import React, { useEffect, useState, useRef } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { Database, FileText, Info } from "lucide-react";
 import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
 
-import { PanelSection } from "../primitives/PanelSection";
+interface KnowledgeBasePropertiesPanelProps {
+  node: CanvasNode;
+  onChange: (node: CanvasNode) => void;
+}
 
 interface KnowledgeBaseNodeData {
   operation?: "store" | "retrieve" | "search";
-  documents?: unknown[];
+  documents?: UploadedDocument[];
   metadata?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 interface UploadedDocument {
@@ -19,257 +21,262 @@ interface UploadedDocument {
   content: string;
 }
 
-interface KnowledgeBasePropertiesPanelProps {
-  node: CanvasNode;
-  onChange: (node: CanvasNode) => void;
-}
-
-const operationOptions = [
-  { value: "store", label: "Store" },
-  { value: "retrieve", label: "Retrieve" },
-  { value: "search", label: "Search" },
-];
-
-function isKnowledgeBaseNodeData(data: unknown): data is KnowledgeBaseNodeData {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    ["store", "retrieve", "search"].includes(
-      (data as KnowledgeBaseNodeData).operation || "retrieve"
-    )
-  );
-}
-
-// Define NodeData locally as per the project spec
-
 export default function KnowledgeBasePropertiesPanel({
   node,
   onChange,
 }: KnowledgeBasePropertiesPanelProps) {
-  const knowledgeData = isKnowledgeBaseNodeData(node.data)
-    ? (node.data as KnowledgeBaseNodeData)
-    : { operation: "retrieve", documents: [], metadata: {} };
-
+  const data = node.data as KnowledgeBaseNodeData;
+  
+  // Initialize state from existing data
+  const [operation, setOperation] = useState<"store" | "retrieve" | "search">(
+    data.operation || "retrieve"
+  );
   const [documents, setDocuments] = useState<UploadedDocument[]>(
-    (knowledgeData.documents as UploadedDocument[]) || []
+    (data.documents as UploadedDocument[]) || []
   );
   const [metadata, setMetadata] = useState<string>(
-    knowledgeData.metadata
-      ? JSON.stringify(knowledgeData.metadata, null, 2)
-      : "{}"
+    data.metadata ? JSON.stringify(data.metadata, null, 2) : "{}"
   );
-  const [operation, setOperation] = useState<"store" | "retrieve" | "search">(
-    ["store", "retrieve", "search"].includes(knowledgeData.operation as string)
-      ? (knowledgeData.operation as "store" | "retrieve" | "search")
-      : "retrieve"
-  );
-
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  
+  // Update KnowledgeBaseNode documents when they change
   useEffect(() => {
     KnowledgeBaseNode.setDocuments(node.id, documents);
   }, [node.id, documents]);
-
-  const parseOrDefault = <T,>(input: string, defaultVal: T): T => {
+  
+  // Update node data when fields change
+  useEffect(() => {
+    let parsedMetadata = {};
     try {
-      return JSON.parse(input) as T;
+      parsedMetadata = JSON.parse(metadata);
     } catch {
-      return defaultVal;
+      parsedMetadata = {};
     }
-  };
-
-  const handleFieldChange = (
-    field: keyof KnowledgeBaseNodeData,
-    value: unknown
-  ) => {
-    if (field === "operation") {
-      setOperation(value as "store" | "retrieve" | "search");
-    } else if (field === "documents") {
-      const docs = value as UploadedDocument[];
-      setDocuments(docs);
-    } else if (field === "metadata") {
-      setMetadata(value as string);
-    }
-
-    const docs =
-      field === "documents" ? (value as UploadedDocument[]) : documents;
-    const metaRaw =
-      field === "metadata"
-        ? parseOrDefault(value as string, {})
-        : parseOrDefault(metadata, {});
-    const safeMetadata = Object.fromEntries(
-      Object.entries(metaRaw).map(([k, v]) => [
-        k,
-        typeof v === "string" ? v : JSON.stringify(v),
-      ])
-    );
-
-    const updated: KnowledgeBaseNodeData = {
-      ...node.data,
-      operation:
-        field === "operation"
-          ? (value as "store" | "retrieve" | "search")
-          : operation,
-      documents: docs,
-      metadata: safeMetadata,
+    
+    const updatedData = {
+      ...data,
+      operation,
+      documents,
+      metadata: parsedMetadata,
     };
+    
+    onChange({ ...node, data: updatedData });
+  }, [operation, documents, metadata]);
+  
+  // Update local state if node changes externally
+  useEffect(() => {
+    if (data.operation !== operation) setOperation(data.operation || "retrieve");
+    if (data.documents !== documents) setDocuments((data.documents as UploadedDocument[]) || []);
+    const currentMetadata = data.metadata ? JSON.stringify(data.metadata, null, 2) : "{}";
+    if (currentMetadata !== metadata) setMetadata(currentMetadata);
+  }, [node.id]);
 
-    if (isKnowledgeBaseNodeData(updated)) {
-      onChange({
-        ...node,
-        type: "logic",
-        data: {
-          message: "",
-          context: {
-            flowId: node.id,
-            nodeId: node.id,
-            timestamp: Date.now(),
-            metadata: safeMetadata,
-          },
-          history: [],
-          state: undefined,
-          ...updated,
-        },
-      });
-    }
-  };
-
+  // Handle file uploads
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
+    
     const newDocs = await Promise.all(
       Array.from(files).map(async (file) => ({
         name: file.name,
         content: await file.text(),
       }))
     );
-    handleFieldChange("documents", [...documents, ...newDocs]);
+    
+    setDocuments(prev => [...prev, ...newDocs]);
+    
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  // Only render the panel if the node is a knowledge base node
-  if (!isKnowledgeBaseNodeData(node.data)) {
-    return null;
-  }
+  // Styles
+  const containerStyle: React.CSSProperties = {
+    padding: theme.spacing.lg,
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.md,
+    height: "100%",
+  };
+  
+  const titleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+  };
+  
+  const subtitleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textMuted,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+  };
+  
+  const selectStyle: React.CSSProperties = {
+    width: "100%",
+    padding: theme.spacing.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    outline: "none",
+    transition: "border-color 0.2s, background-color 0.2s",
+  };
+  
+  const uploadAreaStyle: React.CSSProperties = {
+    border: `2px dashed ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.lg,
+    textAlign: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
+    color: theme.colors.textMuted,
+    cursor: "pointer",
+    transition: "border-color 0.2s, background-color 0.2s",
+    minHeight: "80px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+  
+  const textAreaStyle: React.CSSProperties = {
+    width: "100%",
+    minHeight: "80px",
+    maxHeight: "200px",
+    padding: theme.spacing.md,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontMono,
+    lineHeight: theme.typography.lineHeight.relaxed,
+    resize: "vertical",
+    outline: "none",
+    transition: "border-color 0.2s, background-color 0.2s",
+  };
+  
+  const labelStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.textPrimary,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+    marginBottom: theme.spacing.xs,
+  };
+  
+  const documentListStyle: React.CSSProperties = {
+    listStyle: "none",
+    margin: 0,
+    padding: 0,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+  };
+  
+  const documentItemStyle: React.CSSProperties = {
+    padding: theme.spacing.xs,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderRadius: theme.borderRadius.sm,
+    marginBottom: theme.spacing.xs,
+  };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: theme.spacing.lg,
-        background: theme.colors.background,
-        padding: theme.spacing.lg,
-        width: "100%",
-        minWidth: 0,
-        maxWidth: "100%",
-        height: "100%",
-        boxSizing: "border-box",
-        overflowY: "auto",
-        overflowX: "hidden",
-      }}
-    >
-      <PanelSection
-        title="Operation"
-        description="Choose what this node does"
-        icon={<Database size={16} />}
-      >
-        <VSCodeSelect
+    <div style={containerStyle}>
+      {/* Title */}
+      <h3 style={titleStyle}>Memory</h3>
+      
+      {/* Subtitle */}
+      <p style={subtitleStyle}>
+        Configure knowledge base operations and documents
+      </p>
+      
+      {/* Operation Dropdown */}
+      <div>
+        <label style={labelStyle}>Operation</label>
+        <select
           value={operation}
-          onValueChange={(val: string) =>
-            handleFieldChange("operation", val as string)
-          }
-          options={operationOptions}
-          placeholder="Select operation"
-        />
-      </PanelSection>
-      <PanelSection
-        title="Documents"
-        description="Upload documents"
-        icon={<FileText size={16} />}
-      >
-        <div
-          style={{
-            gridColumn: "1 / -1",
-            display: "flex",
-            flexDirection: "column",
-            gap: theme.spacing.sm,
+          onChange={(e) => setOperation(e.target.value as "store" | "retrieve" | "search")}
+          style={selectStyle}
+          onFocus={(e) => {
+            e.target.style.borderColor = theme.colors.buttonPrimary;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = theme.colors.border;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
           }}
         >
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              handleFiles(e.dataTransfer.files);
-            }}
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: `2px dashed ${theme.colors.border}`,
-              borderRadius: theme.borderRadius.sm,
-              padding: theme.spacing.md,
-              textAlign: "center",
-              background: theme.colors.backgroundTertiary,
-              color: theme.colors.textSecondary,
-              cursor: "pointer",
-            }}
-          >
-            <p style={{ margin: 0 }}>
-              Drag & drop files here or click to upload
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              style={{ display: "none" }}
-              onChange={(e) => handleFiles(e.target.files)}
-            />
-          </div>
-          {documents.length > 0 && (
-            <ul
-              style={{
-                listStyle: "none",
-                margin: 0,
-                padding: 0,
-                color: theme.colors.textPrimary,
-                textAlign: "left",
-              }}
-            >
-              {documents.map((doc, idx) => (
-                <li key={idx}>{doc.name}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </PanelSection>
-      <PanelSection
-        title="Metadata"
-        description="Additional metadata as JSON"
-        icon={<Info size={16} />}
-      >
-        <VSCodeInput
-          style={{
-            minHeight: 48,
-            fontFamily: theme.typography.fontMono,
-            fontSize: theme.typography.fontSize.base,
-            background: theme.colors.backgroundTertiary,
-            color: theme.colors.textPrimary,
-            border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.borderRadius.sm,
-            padding: theme.spacing.inputPadding,
-            resize: "vertical",
-            width: "100%",
-            boxSizing: "border-box",
+          <option value="retrieve">Retrieve</option>
+          <option value="store">Store</option>
+          <option value="search">Search</option>
+        </select>
+      </div>
+      
+      {/* Documents Upload */}
+      <div>
+        <label style={labelStyle}>Documents</label>
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleFiles(e.dataTransfer.files);
           }}
+          onClick={() => fileInputRef.current?.click()}
+          style={uploadAreaStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = theme.colors.buttonPrimary;
+            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = theme.colors.border;
+            e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.02)";
+          }}
+        >
+          <p style={{ margin: 0 }}>
+            Drag & drop files here or click to upload
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            style={{ display: "none" }}
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+        </div>
+        
+        {/* Document List */}
+        {documents.length > 0 && (
+          <ul style={documentListStyle}>
+            {documents.map((doc, idx) => (
+              <li key={idx} style={documentItemStyle}>
+                {doc.name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      
+      {/* Metadata JSON */}
+      <div>
+        <label style={labelStyle}>Metadata</label>
+        <textarea
           value={metadata}
-          onChange={(
-            e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-          ) => handleFieldChange("metadata", e.target.value)}
-          placeholder={`{
-  "source": "user"
-}`}
+          onChange={(e) => setMetadata(e.target.value)}
+          placeholder='{\n  "source": "user"\n}'
+          style={textAreaStyle}
+          onFocus={(e) => {
+            e.target.style.borderColor = theme.colors.buttonPrimary;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = theme.colors.border;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+          }}
         />
-      </PanelSection>
+      </div>
     </div>
   );
 }

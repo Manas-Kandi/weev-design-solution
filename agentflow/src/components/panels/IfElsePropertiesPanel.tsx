@@ -1,331 +1,299 @@
-// --- CLEAN REBUILD ---
-import React, { useState } from "react";
-import { GitBranch } from "lucide-react";
-import { CanvasNode } from "@/types";
-import { PanelSection } from "../primitives/PanelSection";
+// Simplified Router Properties Panel with floating, minimal design
+import React, { useEffect, useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
+import { CanvasNode } from "@/types";
 
-interface Message {
-  content: string;
-  sender: string;
-  timestamp: number;
+interface RouterPropertiesPanelProps {
+  node: CanvasNode;
+  onChange: (node: CanvasNode) => void;
 }
 
-export interface IfElseNodeData {
+interface RouterNodeData {
+  routingLogic?: string;  // Natural language routing instructions
+  branches?: BranchMapping[];  // Branch name and condition mappings
+  // Legacy fields for backward compatibility
   condition?: string;
   message?: string;
   context?: {
     flowId: string;
     nodeId: string;
     timestamp: number;
-    metadata: Record<string, string>; // FIX: enforce string values
+    metadata: Record<string, string>;
   };
-  history?: Message[];
+  history?: unknown[];
   state?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
-interface IfElsePropertiesPanelProps {
-  node: CanvasNode;
-  onChange: (node: CanvasNode) => void;
+interface BranchMapping {
+  name: string;
+  description: string;
 }
 
-export default function IfElsePropertiesPanel({
+// Helper function to migrate legacy config to new format
+function migrateLegacyRouterConfig(data: RouterNodeData): { routingLogic: string; branches: BranchMapping[] } {
+  // Get routing logic
+  let routingLogic = "";
+  if (data.routingLogic) {
+    routingLogic = data.routingLogic;
+  } else if (data.condition) {
+    // Convert old condition expression to natural language
+    routingLogic = `If condition is true: ${data.condition}`;
+    if (data.message) {
+      routingLogic += `\nMessage: ${data.message}`;
+    }
+  }
+  
+  // Get branches (default if none exist)
+  let branches: BranchMapping[] = [];
+  if (data.branches && Array.isArray(data.branches)) {
+    branches = data.branches;
+  } else {
+    // Default branches for router
+    branches = [
+      { name: "true", description: "Condition is met" },
+      { name: "false", description: "Condition is not met" }
+    ];
+  }
+  
+  return { routingLogic, branches };
+}
+
+export default function RouterPropertiesPanel({
   node,
   onChange,
-}: IfElsePropertiesPanelProps) {
+}: RouterPropertiesPanelProps) {
+  const data = node.data as RouterNodeData;
+  
+  // Initialize state from existing data or migrate legacy config
+  const { routingLogic: initialRoutingLogic, branches: initialBranches } = migrateLegacyRouterConfig(data);
+  const [routingLogic, setRoutingLogic] = useState<string>(initialRoutingLogic);
+  const [branches, setBranches] = useState<BranchMapping[]>(initialBranches);
+  
+  // Update node data when fields change
+  useEffect(() => {
+    const updatedData = {
+      ...data,
+      routingLogic,
+      branches,
+    };
+    onChange({ ...node, data: updatedData });
+  }, [routingLogic, branches]);
+  
+  // Update local state if node changes externally
+  useEffect(() => {
+    const { routingLogic: newRoutingLogic, branches: newBranches } = migrateLegacyRouterConfig(data);
+    if (newRoutingLogic !== routingLogic) setRoutingLogic(newRoutingLogic);
+    if (JSON.stringify(newBranches) !== JSON.stringify(branches)) setBranches(newBranches);
+  }, [node.id]);
 
-  const panelContainerStyle: React.CSSProperties = {
-    background: '#0D0D0D',
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.xl,
-    width: 360,
-    minWidth: 360,
-    maxWidth: 360,
-    height: '100%',
-    color: theme.colors.textPrimary,
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing.lg,
-    boxSizing: 'border-box',
+  // Branch management functions
+  const handleBranchChange = (index: number, field: keyof BranchMapping, value: string) => {
+    setBranches(prev => prev.map((branch, i) => 
+      i === index ? { ...branch, [field]: value } : branch
+    ));
   };
-  function isIfElseNodeData(data: unknown): data is IfElseNodeData {
-    return typeof data === "object" && data !== null && "condition" in data;
-  }
 
-  const initialData: IfElseNodeData = isIfElseNodeData(node.data)
-    ? node.data
-    : {
-        condition: "",
-        message: "",
-        context: {
-          flowId: "",
-          nodeId: "",
-          timestamp: Date.now(),
-          metadata: {},
-        },
-        history: [],
-        state: {},
-      };
+  const handleAddBranch = () => {
+    setBranches(prev => [...prev, { name: "", description: "" }]);
+  };
 
-  const [data, setData] = useState<IfElseNodeData>(() => initialData);
+  const handleRemoveBranch = (index: number) => {
+    setBranches(prev => prev.filter((_, i) => i !== index));
+  };
 
-  const handleFieldChange = (field: keyof IfElseNodeData, value: unknown) => {
-    setData((prev) => {
-      let updatedValue = value;
-      // If updating context, ensure metadata is Record<string, string>
-      if (
-        field === "context" &&
-        value &&
-        typeof value === "object" &&
-        "metadata" in value
-      ) {
-        const ctx = value as IfElseNodeData["context"];
-        if (ctx && ctx.metadata && typeof ctx.metadata === "object") {
-          // Coerce all metadata values to strings
-          ctx.metadata = Object.fromEntries(
-            Object.entries(ctx.metadata).map(([k, v]) => [k, String(v)])
-          );
-        }
-        updatedValue = ctx;
-      }
-      const updatedData = { ...prev, [field]: updatedValue };
-      onChange({ ...node, data: { ...node.data, ...updatedData } });
-      return updatedData;
-    });
+  // Styles
+  const containerStyle: React.CSSProperties = {
+    padding: theme.spacing.lg,
+    display: "flex",
+    flexDirection: "column",
+    gap: theme.spacing.md,
+    height: "100%",
+  };
+  
+  const titleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+  };
+  
+  const subtitleStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textMuted,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+  };
+  
+  const textAreaStyle: React.CSSProperties = {
+    width: "100%",
+    minHeight: "120px",
+    maxHeight: "250px",
+    padding: theme.spacing.md,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    lineHeight: theme.typography.lineHeight.relaxed,
+    resize: "vertical",
+    outline: "none",
+    transition: "border-color 0.2s, background-color 0.2s",
+  };
+  
+  const inputStyle: React.CSSProperties = {
+    padding: theme.spacing.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.borderRadius.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    outline: "none",
+    transition: "border-color 0.2s, background-color 0.2s",
+    flex: 1,
+  };
+  
+  const buttonStyle: React.CSSProperties = {
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    backgroundColor: theme.colors.buttonPrimary,
+    border: "none",
+    borderRadius: theme.borderRadius.md,
+    color: "white",
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+  };
+  
+  const removeButtonStyle: React.CSSProperties = {
+    padding: theme.spacing.sm,
+    backgroundColor: theme.colors.error,
+    border: "none",
+    borderRadius: theme.borderRadius.md,
+    color: "white",
+    fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily,
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+    minWidth: "32px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+  
+  const branchRowStyle: React.CSSProperties = {
+    display: "flex",
+    gap: theme.spacing.sm,
+    alignItems: "center",
+    marginBottom: theme.spacing.sm,
+  };
+  
+  const labelStyle: React.CSSProperties = {
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: theme.typography.fontWeight.medium,
+    color: theme.colors.textPrimary,
+    margin: 0,
+    fontFamily: theme.typography.fontFamily,
+    marginBottom: theme.spacing.xs,
   };
 
   return (
-    <div style={panelContainerStyle}>
-      {/* Condition */}
-      <PanelSection
-        title="Condition"
-        description="Boolean expression to evaluate"
-        icon={<GitBranch size={16} />}
-      >
-        <label
-          style={{
-            fontSize: "11px",
-            fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-            fontWeight: 500,
-            color: "#e7e7e7ff",
-            marginBottom: "4px",
-            display: "block",
-          }}
-        >
-          Condition Expression
-        </label>
-        <input
-          value={data.condition || ""}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            handleFieldChange("condition", e.target.value)
-          }
-          placeholder="e.g. input == 'yes'"
-          style={{
-            width: "100%",
-            height: "32px",
-            padding: "0 12px",
-            fontSize: "12px",
-            fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-            borderRadius: "4px",
-            border: "1px solid #2a2a2a",
-            backgroundColor: "#2a2a2a",
-            color: "#ffffff",
-            outline: "none",
-            transition: "0.15s ease",
-            boxSizing: "border-box",
-          }}
-          onFocus={(e) => {
-            e.target.style.border = "1px solid #0969da";
-          }}
-          onBlur={(e) => {
-            e.target.style.border = "1px solid #303030ff";
-          }}
-        />
-        <div
-          style={{
-            fontSize: "10px",
-            color: "#6b7280",
-            marginTop: "4px",
-            lineHeight: 1.4,
-          }}
-        >
-          Boolean/JS-like expression. Example:{" "}
-          <code style={{ color: "#38bdf8" }}>input == &quot;yes&quot;</code>
-        </div>
-      </PanelSection>
-
-      {/* Message */}
-      <PanelSection
-        title="Message"
-        description="Optional message to emit if condition is met"
-        icon={<GitBranch size={16} />}
-      >
-        <label
-          style={{
-            fontSize: "11px",
-            fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-            fontWeight: 500,
-            color: "#ffffffff",
-            marginBottom: "4px",
-            display: "block",
-          }}
-        >
-          Condition Message
-        </label>
-        <input
-          value={data.message || ""}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            handleFieldChange("message", e.target.value)
-          }
-          placeholder="e.g. Branch taken!"
-          style={{
-            width: "100%",
-            height: "32px",
-            padding: "0 12px",
-            fontSize: "12px",
-            fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-            borderRadius: "4px",
-            border: "1px solid #5c5c5cff",
-            backgroundColor: "#2a2a2a",
-            color: "#ffffff",
-            outline: "none",
-            transition: "0.15s ease",
-            boxSizing: "border-box",
-          }}
-          onFocus={(e) => {
-            e.target.style.border = "1px solid #0969da";
-          }}
-          onBlur={(e) => {
-            e.target.style.border = "1px solid #2a2a2a";
-          }}
-        />
-      </PanelSection>
-
-      {/* Context */}
-      <PanelSection
-        title="Context"
-        description="Context and metadata (edit as JSON)"
-        icon={<GitBranch size={16} />}
-      >
-        <label
-          style={{
-            fontSize: "11px",
-            fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-            fontWeight: 500,
-            color: "#d1d5db",
-            marginBottom: "4px",
-            display: "block",
-          }}
-        >
-          Context Data
-        </label>
+    <div style={containerStyle}>
+      {/* Title */}
+      <h3 style={titleStyle}>Router Logic</h3>
+      
+      {/* Subtitle */}
+      <p style={subtitleStyle}>
+        Describe how this node should decide which branch to follow
+      </p>
+      
+      {/* Routing Instructions Textarea */}
+      <div>
+        <label style={labelStyle}>Routing Instructions</label>
         <textarea
-          value={JSON.stringify(data.context ?? {}, null, 2)}
-          onChange={(e) => {
-            try {
-              handleFieldChange("context", JSON.parse(e.target.value));
-            } catch {}
-          }}
-          placeholder='{"flowId": "...", "metadata": {}}'
-          rows={4}
-          style={{
-            width: "100%",
-            padding: "8px 12px",
-            fontSize: "11px",
-            fontFamily: "SF Mono, Monaco, Consolas, monospace",
-            borderRadius: "4px",
-            border: "1px solid #2a2a2a",
-            backgroundColor: "#2a2a2a",
-            color: "#ffffff",
-            outline: "none",
-            transition: "0.15s ease",
-            resize: "vertical",
-            minHeight: "80px",
-            boxSizing: "border-box",
-            lineHeight: 1.4,
-            overflowX: "hidden",
-            wordBreak: "break-word",
-            whiteSpace: "pre-wrap",
-          }}
+          value={routingLogic}
+          onChange={(e) => setRoutingLogic(e.target.value)}
+          placeholder={`e.g., If the message contains a price or cost, go to 'pricing' branch.
+If it's a greeting, go to 'greeting' branch.
+Otherwise, go to 'default'.`}
+          style={textAreaStyle}
           onFocus={(e) => {
-            e.target.style.border = "1px solid #0969da";
+            e.target.style.borderColor = theme.colors.buttonPrimary;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
           }}
           onBlur={(e) => {
-            e.target.style.border = "1px solid #2a2a2a";
+            e.target.style.borderColor = theme.colors.border;
+            e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
           }}
         />
-        <div
-          style={{
-            fontSize: "10px",
-            color: "#6b7280",
-            marginTop: "4px",
-            lineHeight: 1.4,
+      </div>
+      
+      {/* Branch Mapping Section */}
+      <div>
+        <label style={labelStyle}>Branch Mapping</label>
+        {branches.map((branch, index) => (
+          <div key={index} style={branchRowStyle}>
+            <input
+              type="text"
+              value={branch.name}
+              onChange={(e) => handleBranchChange(index, 'name', e.target.value)}
+              placeholder="pricing"
+              style={inputStyle}
+              onFocus={(e) => {
+                e.target.style.borderColor = theme.colors.buttonPrimary;
+                e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = theme.colors.border;
+                e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+              }}
+            />
+            <input
+              type="text"
+              value={branch.description}
+              onChange={(e) => handleBranchChange(index, 'description', e.target.value)}
+              placeholder="For price-related queries"
+              style={inputStyle}
+              onFocus={(e) => {
+                e.target.style.borderColor = theme.colors.buttonPrimary;
+                e.target.style.backgroundColor = "rgba(255, 255, 255, 0.05)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = theme.colors.border;
+                e.target.style.backgroundColor = "rgba(255, 255, 255, 0.03)";
+              }}
+            />
+            <button
+              onClick={() => handleRemoveBranch(index)}
+              style={removeButtonStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#dc3545";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = theme.colors.error;
+              }}
+            >
+              −
+            </button>
+          </div>
+        ))}
+        
+        <button
+          onClick={handleAddBranch}
+          style={buttonStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "#0066cc";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = theme.colors.buttonPrimary;
           }}
         >
-          Edit the node context as JSON.
-        </div>
-      </PanelSection>
-
-      {/* History */}
-      <PanelSection
-        title="History"
-        description="Execution history (read-only)"
-        icon={<GitBranch size={16} />}
-      >
-        <label
-          style={{
-            fontSize: "11px",
-            fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-            fontWeight: 500,
-            color: "#d1d5db",
-            marginBottom: "4px",
-            display: "block",
-          }}
-        >
-          Execution History
-        </label>
-        <textarea
-          value={JSON.stringify(data.history ?? [], null, 2)}
-          readOnly
-          rows={3}
-          style={{
-            width: "100%",
-            padding: "8px 12px",
-            fontSize: "11px",
-            fontFamily: "SF Mono, Monaco, Consolas, monospace",
-            borderRadius: "4px",
-            border: "1px solid #2a2a2a",
-            backgroundColor: "#111010ff",
-            color: "#6b7280",
-            outline: "none",
-            resize: "vertical",
-            minHeight: "60px",
-            boxSizing: "border-box",
-            lineHeight: 1.4,
-            overflowX: "hidden",
-            wordBreak: "break-word",
-            whiteSpace: "pre-wrap",
-          }}
-          onFocus={(e) => {
-            e.target.style.border = "1px solid #0969da";
-          }}
-          onBlur={(e) => {
-            e.target.style.border = "1px solid #2a2a2a";
-          }}
-        />
-        <div
-          style={{
-            fontSize: "10px",
-            color: "#6b7280",
-            marginTop: "4px",
-            lineHeight: 1.4,
-          }}
-        >
-          Read-only view of execution history.
-        </div>
-      </PanelSection>
+          Add Branch
+        </button>
+      </div>
     </div>
   );
 }
