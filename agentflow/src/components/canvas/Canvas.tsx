@@ -166,6 +166,62 @@ export default function CanvasEngine(props: Props) {
       : "";
   };
 
+  // Get node accent color based on node type - muted professional palette
+  const getNodeAccentColor = useCallback((node: CanvasNode) => {
+    // Type guard for icon property
+    const icon =
+      typeof node.data === "object" && node.data !== null && "icon" in node.data
+        ? (node.data as { icon?: string }).icon
+        : undefined;
+    
+    // Check for specific node subtypes first
+    if (icon === "agent-node" || node.subtype === "agent") return "#4AA3FF";
+    if (icon === "tool-node" || node.subtype === "tool") return "#FFB84A";
+    if (icon === "router-node" || node.subtype === "router" || node.subtype === "if-else" || node.subtype === "decision-tree") return "#FF6E6E";
+    if (icon === "memory-node" || node.subtype === "memory" || node.subtype === "knowledge-base") return "#E06AFF";
+    if (icon === "message-node" || node.subtype === "message") return "#4ECDC4";
+    if (icon === "template-node" || node.subtype === "template" || node.subtype === "prompt-template") return "#95E1D3";
+    
+    // Fallback to category colors from nodeCategories
+    for (const category of nodeCategories) {
+      const found = category.nodes.find(
+        (n) => n.id === icon || n.id === node.subtype
+      );
+      if (found) {
+        // Desaturate the category color by 40%
+        const color = found.color;
+        if (color.startsWith('#')) {
+          const r = parseInt(color.slice(1, 3), 16);
+          const g = parseInt(color.slice(3, 5), 16);
+          const b = parseInt(color.slice(5, 7), 16);
+          // Desaturate by moving towards gray
+          const gray = (r + g + b) / 3;
+          const newR = Math.round(r + (gray - r) * 0.4);
+          const newG = Math.round(g + (gray - g) * 0.4);
+          const newB = Math.round(b + (gray - b) * 0.4);
+          return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+        }
+        return color;
+      }
+    }
+    
+    // Default muted colors based on node type
+    switch (node.type) {
+      case "agent":
+        return "#4AA3FF";
+      case "logic":
+        return "#FF6E6E";
+      case "conversation":
+        return "#4ECDC4";
+      case "testing":
+        return "#FFB84A";
+      case "ui":
+        return "#E06AFF";
+      default:
+        return "#8B8B8B";
+    }
+  }, []);
+
   // Event handlers
   const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -214,11 +270,18 @@ export default function CanvasEngine(props: Props) {
       onNodeSelect(node);
       setIsDragging(true);
       setDraggedNode(nodeId);
+      
+      // Calculate precise drag offset for cursor lock
+      const rect = e.currentTarget.getBoundingClientRect();
       const canvasPos = screenToCanvas(e.clientX, e.clientY);
       setDragOffset({
         x: canvasPos.x - node.position.x,
         y: canvasPos.y - node.position.y,
       });
+      
+      // Set cursor to grabbing for visual feedback
+      document.body.style.cursor = 'grabbing';
+      document.body.style.userSelect = 'none';
     },
     [nodes, onNodeSelect, screenToCanvas, isPanning]
   );
@@ -283,25 +346,54 @@ export default function CanvasEngine(props: Props) {
     [viewportTransform, screenToCanvas]
   );
 
-  // Node dragging effect
+  // Optimized node dragging with requestAnimationFrame for minimal lag
   useEffect(() => {
     if (!isDragging || !draggedNode) return;
-    const handleMove = (e: MouseEvent) => {
-      const canvasPos = screenToCanvas(e.clientX, e.clientY);
-      onNodeDrag(draggedNode, {
-        x: canvasPos.x - dragOffset.x,
-        y: canvasPos.y - dragOffset.y,
-      });
+    
+    let animationId: number;
+    let lastMouseEvent: MouseEvent | null = null;
+    let isUpdateScheduled = false;
+
+    const updateNodePosition = () => {
+      if (lastMouseEvent && draggedNode) {
+        const canvasPos = screenToCanvas(lastMouseEvent.clientX, lastMouseEvent.clientY);
+        onNodeDrag(draggedNode, {
+          x: canvasPos.x - dragOffset.x,
+          y: canvasPos.y - dragOffset.y,
+        });
+      }
+      isUpdateScheduled = false;
     };
+
+    const handleMove = (e: MouseEvent) => {
+      lastMouseEvent = e;
+      // Use requestAnimationFrame for smooth 60fps updates
+      if (!isUpdateScheduled) {
+        isUpdateScheduled = true;
+        animationId = requestAnimationFrame(updateNodePosition);
+      }
+    };
+
     const handleUp = () => {
       setIsDragging(false);
       setDraggedNode(null);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      // Restore cursor and user selection
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
-    window.addEventListener("mousemove", handleMove);
+
+    window.addEventListener("mousemove", handleMove, { passive: true });
     window.addEventListener("mouseup", handleUp);
+    
     return () => {
       window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("mouseup", handleUp);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
     };
   }, [isDragging, draggedNode, dragOffset, screenToCanvas, onNodeDrag]);
 
@@ -517,32 +609,46 @@ export default function CanvasEngine(props: Props) {
             <div
               key={node.id}
               className={`absolute cursor-pointer pointer-events-auto ${
-                isSelected ? "ring-2 ring-blue-400" : ""
-              } ${isStart ? "border-2 border-green-500 shadow-lg" : ""} ${
                 pulsingNodeId === node.id ? "node-pulse" : ""
               }`}
               style={{
-                left: node.position.x,
-                top: node.position.y,
+                transform: `translate3d(${node.position.x}px, ${node.position.y}px, 0)`,
                 width: node.size.width,
                 height: node.size.height,
-                backgroundColor: theme.bgElevate,
-                border: `2px solid ${
-                  isStart ? "#30d158" : isSelected ? theme.accent : theme.border
-                }`,
-                borderRadius: "8px",
-                boxShadow:
-                  glowShadow ||
+                backgroundColor: "rgba(20, 20, 20, 0.85)",
+                backdropFilter: "blur(8px)",
+                border: "1.5px solid rgba(255, 255, 255, 0.05)",
+                borderRadius: "12px",
+                boxShadow: glowShadow || 
                   (isSelected
-                    ? "0 0 0 2px rgba(59, 130, 246, 0.3)"
+                    ? `0 0 0 1px ${getNodeAccentColor(node)}80, 0 0 8px ${getNodeAccentColor(node)}40, inset 0 1px 0 rgba(255, 255, 255, 0.05)`
                     : isStart
-                    ? "0 0 0 3px #30d15855"
-                    : "0 1px 3px rgba(0, 0, 0, 0.1)"),
+                    ? `0 0 0 1px #30d15880, 0 0 8px #30d15840, inset 0 1px 0 rgba(255, 255, 255, 0.05)`
+                    : "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.2)"),
                 zIndex: isSelected ? 10 : isStart ? 9 : 1,
+                // Only apply transitions when not dragging for immediate response
+                transition: draggedNode === node.id ? "none" : "box-shadow 80ms ease-out, border-color 80ms ease-out, background-color 80ms ease-out",
+                willChange: draggedNode === node.id ? "transform" : "auto",
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
               onClick={(e) => handleNodeClick(e, node.id)}
               onContextMenu={(e) => handleNodeContextMenu(e, node.id)}
+              onMouseEnter={(e) => {
+                // Skip hover effects during drag for better performance
+                if (!isSelected && !isStart && draggedNode !== node.id) {
+                  e.currentTarget.style.backgroundColor = "rgba(22, 22, 22, 0.9)";
+                  e.currentTarget.style.boxShadow = `0 0 4px ${getNodeAccentColor(node)}80, inset 0 1px 0 rgba(255, 255, 255, 0.08)`;
+                  e.currentTarget.style.borderColor = `${getNodeAccentColor(node)}40`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                // Skip hover effects during drag for better performance
+                if (!isSelected && !isStart && draggedNode !== node.id) {
+                  e.currentTarget.style.backgroundColor = "rgba(20, 20, 20, 0.85)";
+                  e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.2)";
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)";
+                }
+              }}
             >
               {/* Start Node Indicator */}
               {isStart && (
@@ -573,40 +679,59 @@ export default function CanvasEngine(props: Props) {
                 </div>
               )}
               {/* Node Content */}
-              <div className="w-full h-full p-3 flex flex-col justify-between">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    {IconComponent && (
-                      <IconComponent
-                        size={16}
-                        style={{ color: theme.accent }}
-                      />
-                    )}
-                    <div
-                      style={{
-                        color: theme.text,
-                        fontSize: "14px",
-                        fontWeight: "500",
+              <div 
+                className="w-full h-full flex flex-col"
+                style={{ padding: "12px 12px 8px 12px" }}
+              >
+                {/* Compact Header Row */}
+                <div className="flex items-center gap-2 mb-2">
+                  {IconComponent && (
+                    <IconComponent
+                      size={14}
+                      style={{ 
+                        color: `${getNodeAccentColor(node)}CC`, // 80% opacity for toned down look
+                        flexShrink: 0
                       }}
-                    >
-                      {getNodeTitle(node)}
-                    </div>
+                    />
+                  )}
+                  <div
+                    style={{
+                      color: "rgba(255, 255, 255, 0.9)",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      lineHeight: "1.2",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {getNodeTitle(node)}
                   </div>
                 </div>
-                <div
-                  style={{
-                    color: theme.textMute,
-                    fontSize: "12px",
-                    marginTop: "8px",
-                  }}
-                >
-                  {getNodeDescription(node)}
-                </div>
+                
+                {/* Muted Description */}
+                {getNodeDescription(node) && (
+                  <div
+                    style={{
+                      color: "#AAA",
+                      fontSize: "11px",
+                      lineHeight: "1.3",
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      marginTop: "auto",
+                    }}
+                  >
+                    {getNodeDescription(node)}
+                  </div>
+                )}
               </div>
 
               <Ports
                 node={node}
                 theme={theme}
+                accentColor={getNodeAccentColor(node)}
                 onInputPortMouseUp={(e, nodeId, inputId) =>
                   connectionsRef.current?.handlePortMouseUp(e, nodeId, inputId)
                 }
