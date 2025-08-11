@@ -8,7 +8,6 @@ import DesignerLayout from "@/components/layout/DesignerLayout";
 import TabBar from "@/components/layout/TabBar";
 import { ComponentLibrary } from "@/components/canvas/ComponentLibrary";
 import DesignerCanvas from "@/components/canvas/DesignerCanvas";
-import PropertiesPanel from "@/components/canvas/PropertiesPanel";
 import { nodeCategories } from "@/data/nodeDefinitions";
 import { runWorkflow } from "@/lib/workflowRunner";
 import { TESTER_V2_ENABLED } from "@/lib/flags";
@@ -644,15 +643,7 @@ export default function AgentFlowPage() {
             }}
           />
         }
-        right={
-          <PropertiesPanel
-            selectedNode={selectedNode}
-            onChange={handleNodeUpdate}
-            nodes={nodes}
-            connections={connections}
-            onConnectionsChange={setConnections}
-          />
-        }
+        right={null}
       />
       {statusMessage && (
         <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-3 py-1 rounded shadow">

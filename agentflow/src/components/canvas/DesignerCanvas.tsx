@@ -5,7 +5,7 @@ import { runWorkflow } from "@/lib/workflowRunner";
 import ConversationTester from "@/components/canvas/tester/ConversationTester";
 import TesterV2 from "@/components/canvas/tester/TesterV2";
 import { TESTER_V2_ENABLED } from "@/lib/flags";
-import PropertiesPanel from "@/components/canvas/PropertiesPanel";
+import FloatingPropertiesPanel from "@/components/canvas/FloatingPropertiesPanel";
 import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
 import type {
   TesterEvent,
@@ -444,12 +444,13 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         nodeStatuses={nodeStatuses}
         pulsingConnectionIds={pulsingConnectionIds}
       />
-      <PropertiesPanel
+      <FloatingPropertiesPanel
         selectedNode={selectedNode}
         onChange={onNodeUpdate}
         nodes={nodes}
         connections={connections}
         onConnectionsChange={onConnectionsChange}
+        onClose={() => onNodeSelect(null)}
       />
       {/* Pass the selected node id here if available */}
     </div>
