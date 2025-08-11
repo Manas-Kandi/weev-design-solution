@@ -630,7 +630,7 @@ export function ComponentLibrary({ onAddNode, onBackToProjects, onTest, testButt
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                <User size={16} />
+                <Home size={16} />
               </button>
             </div>
           </>
@@ -746,7 +746,7 @@ export function ComponentLibrary({ onAddNode, onBackToProjects, onTest, testButt
                   e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
-                <User size={16} />
+                <Home size={16} />
               </button>
             </div>
           </>
