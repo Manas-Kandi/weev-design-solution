@@ -91,10 +91,9 @@ export function ComponentLibrary({ onAddNode, onBackToProjects, onTest, testButt
     }
   }, [searchTerm, allNodes]);
 
-  // Panel styles with safe zone
-  const safeZoneWidth = 80;
+  // Panel styles - content now uses full width since controls are panel children
   const panelWidth = isCollapsed ? 72 : 280;
-  const contentWidth = isCollapsed ? 72 : 280 - safeZoneWidth;
+  const contentWidth = panelWidth; // Use full panel width
   
   const panelStyle: React.CSSProperties = {
     position: 'fixed',
