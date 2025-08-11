@@ -588,7 +588,7 @@ export default function AgentFlowPage() {
   }
 
   return (
-    <>
+    <div className="h-screen w-full flex flex-col overflow-hidden">
       <TabBar onTest={handleTestFlow} testButtonDisabled={isTesting} />
       <DesignerLayout
         left={
@@ -659,6 +659,6 @@ export default function AgentFlowPage() {
           {statusMessage}
         </div>
       )}
-    </>
+    </div>
   );
 }

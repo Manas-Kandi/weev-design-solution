@@ -258,7 +258,7 @@ export interface Tool {
 export interface NodeCategory {
   id: string;
   name: string;
-  type: "agent" | "conversation" | "logic" | "testing" | "ui";
+  type: "agent" | "conversation" | "logic" | "testing" | "ui" | "core" | "data" | "message";
   nodes: NodeType[];
 }
 

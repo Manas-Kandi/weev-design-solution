@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
-import { nodeCategories } from '@/data/nodeDefinitions';
+import { simplifiedNodeCategories, nodeTypeMapping } from '@/data/simplifiedNodeDefinitions';
+import { nodeCategories as allNodeCategories } from '@/data/nodeDefinitions';
 import { NodeType, NodeCategory } from '@/types';
 
 interface ComponentLibraryProps {
@@ -11,9 +12,9 @@ interface ComponentLibraryProps {
 }
 
 export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibraryProps) {
-  // Dynamically create expandedSections based on nodeCategories
+  // Dynamically create expandedSections based on simplified categories
   const initialSections: Record<string, boolean> = Object.fromEntries(
-    nodeCategories.map((cat: NodeCategory) => [cat.id, true])
+    simplifiedNodeCategories.map((cat: NodeCategory) => [cat.id, true])
   );
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(initialSections);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,20 +26,62 @@ export function ComponentLibrary({ onAddNode, onBackToProjects }: ComponentLibra
     }));
   };
 
+  // Get all nodes for search functionality (including hidden ones)
+  const allNodes = useMemo(() => {
+    const nodes: NodeType[] = [];
+    allNodeCategories.forEach(category => {
+      category.nodes.forEach(node => {
+        nodes.push(node);
+      });
+    });
+    return nodes;
+  }, []);
+
   // Filter nodes based on search term
-  const filteredCategories: NodeCategory[] = nodeCategories.map((category: NodeCategory) => ({
-    ...category,
-    nodes: category.nodes.filter((node: NodeType) => 
-      node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      node.description.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  })).filter((category: NodeCategory) => category.nodes.length > 0);
+  const filteredCategories: NodeCategory[] = useMemo(() => {
+    if (searchTerm) {
+      // When searching, include all nodes (even hidden ones) that match
+      const matchingNodes = allNodes.filter((node: NodeType) => 
+        node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        node.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      
+      // Group matching nodes by their mapped category
+      const categorizedNodes: Record<string, NodeType[]> = {};
+      matchingNodes.forEach(node => {
+        const mappedType = nodeTypeMapping[node.id];
+        if (mappedType && mappedType !== 'hidden') {
+          // Find which simplified category this belongs to
+          for (const cat of simplifiedNodeCategories) {
+            if (cat.nodes.some(n => n.id === mappedType)) {
+              if (!categorizedNodes[cat.id]) {
+                categorizedNodes[cat.id] = [];
+              }
+              categorizedNodes[cat.id].push(node);
+              break;
+            }
+          }
+        }
+      });
+      
+      // Return categories with matching nodes
+      return simplifiedNodeCategories
+        .map(cat => ({
+          ...cat,
+          nodes: categorizedNodes[cat.id] || []
+        }))
+        .filter(cat => cat.nodes.length > 0);
+    } else {
+      // When not searching, show only simplified categories
+      return simplifiedNodeCategories;
+    }
+  }, [searchTerm, allNodes]);
 
   return (
     <aside
       style={{
         width: 240,
-        height: '100vh',
+        height: '100%',
         background: '#0a0a0a',
         borderRight: '1px solid #1a1a1a',
         display: 'flex',
