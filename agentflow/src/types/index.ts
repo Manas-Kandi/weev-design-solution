@@ -159,6 +159,7 @@ export interface AgentNodeData {
   provider?: "nvidia" | "gemini";
   condition?: string;
   systemPrompt?: string;
+  behavior?: string;  // User-defined behavior from UI text box
   personality?: string;
   escalationLogic?: string;
   confidenceThreshold?: number;

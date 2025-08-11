@@ -12,18 +12,38 @@ export class AgentNode extends BaseNode {
     // Build the prompt
     const prompts: string[] = [];
 
-    // System prompt
+    // Build system prompt: combine backend systemPrompt with user behavior
+    const systemParts: string[] = [];
+    
+    // 1. Backend system prompt (hidden from UI)
+    if ("systemPrompt" in data && data.systemPrompt) {
+      systemParts.push(String(data.systemPrompt));
+    } else {
+      // Default system prompt if none exists
+      systemParts.push("You are an autonomous agent operating in a workflow. You will receive further instructions and context.");
+    }
+    
+    // 2. User-defined behavior (from the UI text box)
+    if ("behavior" in data && data.behavior && String(data.behavior).trim()) {
+      systemParts.push(String(data.behavior));
+    }
+    
+    // 3. Rules if any
     const rulesText = getRuleText(data as unknown as Record<string, unknown>);
-    const combinedSystem = [
-      ("systemPrompt" in data && data.systemPrompt) ? String(data.systemPrompt) : undefined,
-      buildSystemFromRules({ rulesNl: rulesText, fallback: undefined }),
-    ]
+    const rulesSystem = buildSystemFromRules({ rulesNl: rulesText, fallback: undefined });
+    if (rulesSystem) {
+      systemParts.push(rulesSystem);
+    }
+    
+    // Combine all system prompt parts
+    const combinedSystem = systemParts
       .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
-      .join("\n");
+      .join("\n\n");
+    
     if (combinedSystem) prompts.push(`System: ${combinedSystem}`);
 
-    // Personality
-    if ("personality" in data && data.personality) {
+    // Legacy personality field (for backward compatibility)
+    if ("personality" in data && data.personality && !("behavior" in data)) {
       prompts.push(`Personality: ${data.personality}`);
     }
 
