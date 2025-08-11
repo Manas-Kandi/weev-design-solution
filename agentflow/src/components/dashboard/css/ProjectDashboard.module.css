@@ -48,6 +48,16 @@
   -ms-overflow-style: none;
 }
 
+/* All Projects Button */
+/* All Projects button styles now handled inline with Tailwind classes */
+
+.all-projects-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+}
+
 .sidebar-width {
   --sidebar-width: 14rem;
   height: 100vh;
