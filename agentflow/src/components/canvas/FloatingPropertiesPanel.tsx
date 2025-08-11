@@ -29,13 +29,15 @@ interface FloatingPropertiesPanelProps {
   connections: Connection[];
   onConnectionsChange: (next: Connection[]) => void;
   onClose: () => void;
+  compactMode?: boolean;
 }
 
-const floatingPanelStyle: React.CSSProperties = {
-  position: "absolute",
+const getFloatingPanelStyle = (compactMode: boolean): React.CSSProperties => ({
+  position: "fixed",
   right: 20,
   top: 20,
-  bottom: 20,
+  bottom: compactMode ? undefined : 20,
+  height: compactMode ? "calc(50vh - 30px)" : undefined,
   width: 320,
   background: "rgba(30, 30, 30, 0.65)",
   backdropFilter: "blur(8px)",
@@ -48,9 +50,9 @@ const floatingPanelStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   boxSizing: "border-box",
-  zIndex: 50,
+  zIndex: 1001,
   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
-};
+});
 
 export default function FloatingPropertiesPanel({
   selectedNode,
@@ -59,6 +61,7 @@ export default function FloatingPropertiesPanel({
   connections,
   onConnectionsChange,
   onClose,
+  compactMode = false,
 }: FloatingPropertiesPanelProps) {
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -219,7 +222,7 @@ export default function FloatingPropertiesPanel({
     <AnimatePresence>
       {selectedNode && (
         <motion.div
-          style={floatingPanelStyle}
+          style={getFloatingPanelStyle(compactMode)}
           initial={{ x: 40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 40, opacity: 0 }}

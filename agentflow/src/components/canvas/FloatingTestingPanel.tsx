@@ -1,0 +1,579 @@
+"use client";
+
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, ChevronRight, ChevronDown, Play, Pause, Square, RotateCcw } from "lucide-react";
+import { CanvasNode, Connection } from "@/types";
+import { runWorkflow } from "@/lib/workflowRunner";
+import ResultCard from "@/components/canvas/tester/ResultCard";
+import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/components/canvas/tester/Renderers";
+import type {
+  TesterEvent,
+  NodeExecutionArtifact,
+  NodeStartEvent,
+  NodeFinishEvent,
+  FlowStartedEvent,
+  FlowFinishedEvent,
+} from "@/types/tester";
+
+interface FloatingTestingPanelProps {
+  nodes: CanvasNode[];
+  connections: Connection[];
+  isVisible: boolean;
+  onClose: () => void;
+  isPropertiesPanelVisible: boolean;
+  compactMode?: boolean;
+  onTesterEvent?: (event: TesterEvent) => void;
+}
+
+// Timeline component for compact mode
+function CompactTimelinePanel({
+  items,
+  startTs,
+  endTs,
+  selectedId,
+  onSelect,
+}: {
+  items: Array<{
+    nodeId: string;
+    title: string;
+    startedAt: number;
+    endedAt: number;
+    status: "running" | "success" | "error";
+  }>;
+  startTs: number;
+  endTs: number;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
+  const total = Math.max(1, endTs - startTs);
+  const colorFor = (s: "running" | "success" | "error"): string =>
+    s === "running" ? "#60a5fa" : s === "success" ? "#10b981" : "#ef4444";
+
+  return (
+    <div className="mb-2">
+      <div className="text-[10px] text-slate-400 mb-1">Timeline</div>
+      <div className="relative border border-slate-700 rounded bg-slate-900/50 overflow-x-auto">
+        <div className="p-1 space-y-1 min-w-full">
+          {items.map((item, i) => {
+            const leftPct = ((item.startedAt - startTs) / total) * 100;
+            const widthPct = Math.max(2, ((item.endedAt - item.startedAt) / total) * 100);
+            const isSel = selectedId === item.nodeId;
+            return (
+              <button
+                key={item.nodeId + item.startedAt}
+                className={`relative h-3 rounded text-[9px] text-white font-medium transition-all ${
+                  isSel ? "ring-1 ring-blue-400" : ""
+                }`}
+                style={{
+                  left: `${leftPct}%`,
+                  width: `${widthPct}%`,
+                  backgroundColor: colorFor(item.status),
+                }}
+                onClick={() => onSelect(item.nodeId)}
+                title={`${item.title} • ${((item.endedAt - item.startedAt) / 1000).toFixed(2)}s`}
+              >
+                {item.title.length > 8 ? item.title.slice(0, 6) + "..." : item.title}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function FloatingTestingPanel({
+  nodes,
+  connections,
+  isVisible,
+  onClose,
+  isPropertiesPanelVisible,
+  compactMode = false,
+  onTesterEvent,
+}: FloatingTestingPanelProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [scenario, setScenario] = useState("");
+  const [isRunning, setIsRunning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [runTitle, setRunTitle] = useState<string>("Test Run");
+  const [seed, setSeed] = useState<string>("");
+  const [events, setEvents] = useState<TesterEvent[]>([]);
+  const [artifacts, setArtifacts] = useState<NodeExecutionArtifact[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
+  const [runEndedAt, setRunEndedAt] = useState<number | null>(null);
+  const [nowTs, setNowTs] = useState<number>(() => Date.now());
+  const [breakpoints, setBreakpoints] = useState<Set<string>>(new Set());
+
+  // Draft map for in-progress node artifacts
+  const draftsRef = useRef<Map<string, Partial<NodeExecutionArtifact>>>(new Map());
+  const isPausedRef = useRef<boolean>(false);
+  const breakpointsRef = useRef<Set<string>>(new Set());
+  const stepTokensRef = useRef<number>(0);
+  const gateListenersRef = useRef<Set<() => void>>(new Set());
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    breakpointsRef.current = breakpoints;
+  }, [breakpoints]);
+
+  const notifyGate = useCallback(() => {
+    const listeners = Array.from(gateListenersRef.current);
+    for (const fn of listeners) {
+      try {
+        fn();
+      } catch {}
+    }
+  }, []);
+
+  const toggleBreakpoint = useCallback((nodeId: string) => {
+    setBreakpoints((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) next.delete(nodeId);
+      else next.add(nodeId);
+      return next;
+    });
+    notifyGate();
+  }, [notifyGate]);
+
+  const handleTesterEvent = useCallback((evt: TesterEvent) => {
+    // Forward event to parent for canvas visualization
+    onTesterEvent?.(evt);
+    
+    // Handle local state updates for the testing panel
+    setEvents((prev) => [...prev, evt]);
+    switch (evt.type) {
+      case "flow-started": {
+        const e = evt as FlowStartedEvent;
+        setRunStartedAt(e.at);
+        setRunEndedAt(null);
+        setIsPaused(false);
+        break;
+      }
+      case "node-started": {
+        const e = evt as NodeStartEvent;
+        const draft: Partial<NodeExecutionArtifact> = {
+          nodeId: e.nodeId,
+          title: e.title,
+          nodeType: e.nodeType,
+          nodeSubtype: e.nodeSubtype,
+          cause: e.cause,
+          startedAt: e.at,
+          flowContextBefore: e.flowContextBefore,
+        };
+        draftsRef.current.set(e.nodeId, draft);
+        if (isPausedRef.current || breakpointsRef.current.has(e.nodeId)) {
+          setSelectedId((cur) => cur ?? e.nodeId);
+        }
+        break;
+      }
+      case "node-finished": {
+        const e = evt as NodeFinishEvent;
+        const existingDraft = draftsRef.current.get(e.nodeId) || {};
+        const startedAt = existingDraft.startedAt ?? Math.max(0, e.at - (e.durationMs || 0));
+        const artifact: NodeExecutionArtifact = {
+          nodeId: e.nodeId,
+          title: existingDraft.title ?? e.title,
+          nodeType: existingDraft.nodeType ?? e.nodeType,
+          nodeSubtype: existingDraft.nodeSubtype ?? e.nodeSubtype,
+          cause: existingDraft.cause ?? { kind: "all-inputs-ready", inputCount: 0 },
+          startedAt,
+          endedAt: e.at,
+          durationMs: e.durationMs,
+          status: e.status,
+          output: e.output,
+          summary: e.summary,
+          error: e.error,
+          flowContextBefore: existingDraft.flowContextBefore ?? e.flowContextBefore,
+          flowContextAfter: e.flowContextAfter,
+          flowContextDiff: e.flowContextDiff,
+        };
+        draftsRef.current.delete(e.nodeId);
+        setArtifacts((prev) => {
+          const others = prev.filter((a) => a.nodeId !== artifact.nodeId);
+          const next = [...others, artifact];
+          next.sort((a, b) => a.startedAt - b.startedAt || a.endedAt - b.endedAt);
+          return next;
+        });
+        break;
+      }
+      case "flow-finished": {
+        const e = evt as FlowFinishedEvent;
+        setRunEndedAt(e.at);
+        setIsRunning(false);
+        setIsPaused(false);
+        break;
+      }
+    }
+  }, [onTesterEvent]);
+
+  const handleRun = useCallback(async () => {
+    if (isRunning) return;
+    setIsRunning(true);
+    setEvents([]);
+    setArtifacts([]);
+    draftsRef.current.clear();
+    setSelectedId(null);
+    setRunStartedAt(null);
+    setRunEndedAt(null);
+    setIsPaused(false);
+    stepTokensRef.current = 0;
+
+    try {
+      await runWorkflow(
+        nodes,
+        connections,
+        null,
+        undefined,
+        {
+          emitTesterEvent: handleTesterEvent,
+          beforeNodeExecute: async (node) => {
+            const nodeId = node.id;
+            const shouldBlock = () => isPausedRef.current || breakpointsRef.current.has(nodeId);
+            if (!shouldBlock()) return;
+            await new Promise<void>((resolve) => {
+              const listener = () => {
+                if (!shouldBlock()) {
+                  gateListenersRef.current.delete(listener);
+                  resolve();
+                  return;
+                }
+                if (stepTokensRef.current > 0) {
+                  stepTokensRef.current -= 1;
+                  gateListenersRef.current.delete(listener);
+                  resolve();
+                  return;
+                }
+              };
+              gateListenersRef.current.add(listener);
+              try { listener(); } catch {}
+            });
+          },
+        },
+        {
+          scenario: { description: scenario || undefined },
+          overrides: { seed: (seed || "").trim() || undefined },
+        }
+      );
+    } catch (err) {
+      console.error("Test run failed:", err);
+    }
+  }, [connections, nodes, onTesterEvent, scenario, seed, isRunning]);
+
+  const handlePause = useCallback(() => {
+    if (!runStartedAt || !isRunning) return;
+    setIsPaused((prev) => !prev);
+    setTimeout(() => notifyGate(), 0);
+  }, [isRunning, notifyGate, runStartedAt]);
+
+  const handleReset = useCallback(() => {
+    setIsRunning(false);
+    setIsPaused(false);
+    setEvents([]);
+    setArtifacts([]);
+    setSelectedId(null);
+    setRunStartedAt(null);
+    setRunEndedAt(null);
+    draftsRef.current.clear();
+    stepTokensRef.current = 0;
+  }, []);
+
+  const handleStep = useCallback(() => {
+    if (!runStartedAt || !isRunning) return;
+    stepTokensRef.current += 1;
+    notifyGate();
+  }, [isRunning, notifyGate, runStartedAt]);
+
+  // Timeline data
+  const timelineItems = React.useMemo(() => {
+    const items: Array<{
+      nodeId: string;
+      title: string;
+      startedAt: number;
+      endedAt: number;
+      status: "running" | "success" | "error";
+    }> = [];
+
+    // Finished artifacts
+    for (const a of artifacts) {
+      if (a.startedAt && a.endedAt) {
+        items.push({
+          nodeId: a.nodeId,
+          title: a.title || a.nodeId,
+          startedAt: a.startedAt,
+          endedAt: a.endedAt,
+          status: a.status === "error" ? "error" : "success",
+        });
+      }
+    }
+
+    // Running drafts
+    for (const [nodeId, draft] of draftsRef.current) {
+      if (draft.startedAt) {
+        items.push({
+          nodeId,
+          title: draft.title || nodeId,
+          startedAt: draft.startedAt,
+          endedAt: nowTs,
+          status: "running",
+        });
+      }
+    }
+
+    return items.sort((a, b) => a.startedAt - b.startedAt);
+  }, [artifacts, nowTs]);
+
+  const selected = artifacts.find((a) => a.nodeId === selectedId);
+
+  // Update nowTs for running items
+  useEffect(() => {
+    if (!isRunning) return;
+    const interval = setInterval(() => setNowTs(Date.now()), 250);
+    return () => clearInterval(interval);
+  }, [isRunning]);
+
+  // Panel positioning logic
+  const getPanelStyle = () => {
+    const baseStyle = {
+      position: "fixed" as const,
+      right: "20px",
+      width: "360px",
+      zIndex: 1000,
+      background: "rgba(30, 41, 59, 0.65)",
+      backdropFilter: "blur(12px)",
+      border: "1px solid rgba(71, 85, 105, 0.3)",
+      borderRadius: "12px",
+      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+    };
+
+    if (compactMode || isPropertiesPanelVisible) {
+      // Compact mode - positioned in bottom half when properties panel is visible
+      return {
+        ...baseStyle,
+        top: "calc(50vh + 10px)",
+        bottom: "20px",
+        height: isCollapsed ? "60px" : undefined,
+      };
+    } else {
+      // Full mode - takes most of the right side
+      return {
+        ...baseStyle,
+        top: "20px",
+        bottom: "20px",
+        height: isCollapsed ? "60px" : undefined,
+      };
+    }
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 50 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        style={getPanelStyle()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-600/30">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+            >
+              {isCollapsed ? (
+                <ChevronRight size={16} className="text-slate-400" />
+              ) : (
+                <ChevronDown size={16} className="text-slate-400" />
+              )}
+            </button>
+            <h3 className="text-sm font-semibold text-slate-200">
+              Testing Panel
+            </h3>
+            {compactMode && (
+              <span className="text-xs text-slate-400 bg-slate-700/50 px-2 py-0.5 rounded">
+                Compact
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+          >
+            <X size={16} className="text-slate-400" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <AnimatePresence>
+          {!isCollapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <div className="p-4 space-y-4">
+                {/* Controls */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleRun}
+                    disabled={isRunning}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white text-sm rounded transition-colors"
+                  >
+                    <Play size={14} />
+                    Run
+                  </button>
+                  <button
+                    onClick={handlePause}
+                    disabled={!isRunning}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-700/50 text-white text-sm rounded transition-colors"
+                  >
+                    <Pause size={14} />
+                    {isPaused ? "Resume" : "Pause"}
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-sm rounded transition-colors"
+                  >
+                    <RotateCcw size={14} />
+                    Reset
+                  </button>
+                </div>
+
+                {/* Scenario Input */}
+                {!compactMode && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Test Scenario
+                    </label>
+                    <textarea
+                      value={scenario}
+                      onChange={(e) => setScenario(e.target.value)}
+                      placeholder="Describe the test scenario..."
+                      className="w-full h-16 px-3 py-2 bg-slate-800/50 border border-slate-600/30 rounded text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-none"
+                    />
+                  </div>
+                )}
+
+                {/* Timeline */}
+                {timelineItems.length > 0 && (
+                  <div>
+                    {compactMode ? (
+                      <CompactTimelinePanel
+                        items={timelineItems}
+                        startTs={runStartedAt ?? (timelineItems.length ? timelineItems[0].startedAt : nowTs)}
+                        endTs={runEndedAt ?? nowTs}
+                        selectedId={selectedId}
+                        onSelect={setSelectedId}
+                      />
+                    ) : (
+                      <div>
+                        <div className="text-xs font-medium text-slate-300 mb-2">Timeline</div>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {timelineItems.map((item) => (
+                            <button
+                              key={item.nodeId}
+                              onClick={() => setSelectedId(item.nodeId)}
+                              className={`w-full text-left p-2 rounded text-sm transition-colors ${
+                                selectedId === item.nodeId
+                                  ? "bg-blue-600/20 border border-blue-500/30"
+                                  : "bg-slate-800/30 hover:bg-slate-700/30"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-200 font-medium">{item.title}</span>
+                                <span
+                                  className={`w-2 h-2 rounded-full ${
+                                    item.status === "running"
+                                      ? "bg-blue-400"
+                                      : item.status === "success"
+                                      ? "bg-green-400"
+                                      : "bg-red-400"
+                                  }`}
+                                />
+                              </div>
+                              <div className="text-xs text-slate-400 mt-1">
+                                {((item.endedAt - item.startedAt) / 1000).toFixed(2)}s
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Results */}
+                {artifacts.length > 0 && (
+                  <div>
+                    <div className="text-xs font-medium text-slate-300 mb-2">Results</div>
+                    <div className={`space-y-2 ${compactMode ? "max-h-32" : "max-h-48"} overflow-y-auto`}>
+                      {artifacts.map((artifact) => (
+                        <ResultCard
+                          key={artifact.nodeId}
+                          artifact={artifact}
+                          selected={selectedId === artifact.nodeId}
+                          onClick={() => setSelectedId(artifact.nodeId)}
+                          hasBreakpoint={breakpoints.has(artifact.nodeId)}
+                          onToggleBreakpoint={() => toggleBreakpoint(artifact.nodeId)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Inspector */}
+                {selected && (
+                  <div>
+                    <div className="text-xs font-medium text-slate-300 mb-2">Inspector</div>
+                    <div className="bg-slate-800/30 rounded p-3 text-sm">
+                      <div className="text-slate-200 font-medium mb-2">{selected.title}</div>
+                      <div className="space-y-2 text-xs">
+                        <div>
+                          <span className="text-slate-400">Status:</span>{" "}
+                          <span className={selected.status === "error" ? "text-red-400" : "text-green-400"}>
+                            {selected.status}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Duration:</span>{" "}
+                          <span className="text-slate-200">
+                            {selected.durationMs ? `${selected.durationMs}ms` : "N/A"}
+                          </span>
+                        </div>
+                        {selected.output && (
+                          <div>
+                            <span className="text-slate-400">Output:</span>
+                            <div className="mt-1 p-2 bg-slate-900/50 rounded font-mono text-xs">
+                              <NodeOutputRenderer artifact={selected} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {artifacts.length === 0 && !isRunning && (
+                  <div className="text-center py-8 text-slate-400">
+                    <div className="text-sm">No test results yet</div>
+                    <div className="text-xs mt-1">Click Run to execute the flow</div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
