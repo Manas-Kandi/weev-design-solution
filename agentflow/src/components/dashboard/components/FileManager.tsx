@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { File, Upload, Trash2, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/primitives/button';
+import { Card } from '@/components/primitives/card';
 import { supabase } from '@/lib/supabaseClient';
 import type { ProjectFile } from '@/types';
 

@@ -1,4 +1,4 @@
-import FrontOfHouseLayout from "@/components/front/FrontOfHouseLayout";
+import FrontOfHouseLayout from "@/components/layout/FrontOfHouseLayout";
 
 export default function FrontPage() {
   return <FrontOfHouseLayout />;

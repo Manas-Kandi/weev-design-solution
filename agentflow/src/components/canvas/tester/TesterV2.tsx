@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { CanvasNode, Connection } from "@/types";
 import { TESTER_V2_ENABLED } from "@/lib/flags";
 import { runWorkflow } from "@/lib/workflowRunner";
-import ResultCard from "@/components/tester/ResultCard";
-import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/components/tester/Renderers";
+import ResultCard from "@/components/canvas/tester/ResultCard";
+import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/components/canvas/tester/Renderers";
 import type {
   TesterEvent,
   NodeExecutionArtifact,

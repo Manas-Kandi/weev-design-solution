@@ -3,7 +3,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { CanvasNode, Connection } from "@/types";
 import { theme } from "@/data/theme";
 import { nodeCategories } from "@/data/nodeDefinitions";
-import ChatBoxNode from "@/components/nodes/ChatBoxNode";
+import ChatBoxNode from "@/components/canvas/ChatBoxNode";
 import Ports from "./Ports";
 import Connections, { ConnectionsHandle } from "./Connections";
 

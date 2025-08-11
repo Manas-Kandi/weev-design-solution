@@ -15,12 +15,12 @@ import {
   figmaPropertiesTheme as theme,
   getPanelContainerStyle,
 } from "./propertiesPanelTheme";
-import { PanelSection } from "./PanelSection";
+import { PanelSection } from "../primitives/PanelSection";
 import {
   VSCodeInput,
   VSCodeSelect,
   VSCodeButton,
-} from "./vsCodeFormComponents";
+} from "../primitives/vsCodeFormComponents";
 
 interface AgentNodeData {
   name?: string;

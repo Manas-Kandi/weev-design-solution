@@ -3,12 +3,12 @@
 import React from "react";
 import { Sparkles } from "lucide-react";
 import { CanvasNode } from "@/types";
-import { PanelSection } from "./PanelSection";
+import { PanelSection } from "../primitives/PanelSection";
 import {
   figmaPropertiesTheme as theme,
   getPanelContainerStyle,
 } from "./propertiesPanelTheme";
-import { VSCodeButton, VSCodeTextArea } from "./vsCodeFormComponents";
+import { VSCodeButton, VSCodeTextArea } from "../primitives/vsCodeFormComponents";
 
 interface RuleBoxPropertiesPanelProps {
   node: CanvasNode;

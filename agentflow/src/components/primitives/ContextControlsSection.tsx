@@ -2,7 +2,7 @@ import React from "react";
 import { CanvasNode, Connection } from "@/types";
 import { ContextControls, TransformSpec } from "@/types/flow-io";
 import { PanelSection } from "./PanelSection";
-import { figmaPropertiesTheme as theme, themeHelpers } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme, themeHelpers } from "../panels/propertiesPanelTheme";
 import { VSCodeInput, VSCodeButton } from "./vsCodeFormComponents";
 
 interface ContextControlsSectionProps {

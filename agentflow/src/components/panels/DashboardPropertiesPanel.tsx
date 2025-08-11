@@ -5,12 +5,12 @@ import {
   getPanelContainerStyle,
 } from "./propertiesPanelTheme";
 import { CanvasNode, DashboardNodeData } from "@/types";
-import { PanelSection } from "./PanelSection";
+import { PanelSection } from "../primitives/PanelSection";
 import {
   VSCodeInput,
   VSCodeSelect,
   VSCodeButton,
-} from "./vsCodeFormComponents";
+} from "../primitives/vsCodeFormComponents";
 
 interface DashboardPropertiesPanelProps {
   node: CanvasNode;

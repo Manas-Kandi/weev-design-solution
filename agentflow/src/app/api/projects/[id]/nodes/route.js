@@ -190,6 +190,7 @@ export async function POST(req) {
     const insert = {
       id: body.id, // Accept whatever ID is provided (string or UUID)
       project_id: body.project_id,
+      user_id: userId, // Add the user_id field
       type: body.type,
       subtype: body.subtype ?? null,
       position: body.position ?? null,

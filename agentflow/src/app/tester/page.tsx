@@ -1,5 +1,5 @@
 import React from "react";
-import TesterV2 from "@/components/tester/TesterV2";
+import TesterV2 from "@/components/canvas/tester/TesterV2";
 
 export default function TesterPage() {
   // Standalone entry: until we wire project state here, show an empty harness

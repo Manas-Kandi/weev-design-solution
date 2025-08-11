@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Project, CanvasNode, Connection, NodeType } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
 import ProjectDashboard from "@/components/dashboard/ProjectDashboard";
-import DesignerLayout from "@/components/panels/DesignerLayout";
-import TabBar from "@/components/panels/TabBar";
-import { ComponentLibrary } from "@/components/panels/ComponentLibrary";
+import DesignerLayout from "@/components/layout/DesignerLayout";
+import TabBar from "@/components/layout/TabBar";
+import { ComponentLibrary } from "@/components/canvas/ComponentLibrary";
 import DesignerCanvas from "@/components/canvas/DesignerCanvas";
-import PropertiesPanel from "@/components/panels/PropertiesPanel";
+import PropertiesPanel from "@/components/canvas/PropertiesPanel";
 import { nodeCategories } from "@/data/nodeDefinitions";
 import { runWorkflow } from "@/lib/workflowRunner";
 import { TESTER_V2_ENABLED } from "@/lib/flags";
@@ -527,6 +527,13 @@ export default function AgentFlowPage() {
     if (removed.length) {
       (async () => {
         for (const r of removed) {
+          // Skip deletion for non-UUID IDs (local default nodes)
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(r.id)) {
+            console.log('Skipping deletion for non-UUID node:', r.id);
+            continue;
+          }
+          
           try {
             const resNode = await fetch(`/api/projects/${currentProject.id}/nodes`, {
               method: 'DELETE',

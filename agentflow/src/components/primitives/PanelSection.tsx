@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
+import { figmaPropertiesTheme as theme } from "../panels/propertiesPanelTheme";
 
 interface PanelSectionProps {
   title: string;

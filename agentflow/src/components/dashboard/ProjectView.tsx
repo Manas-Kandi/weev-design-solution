@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/primitives/tabs';
+import { Card } from '@/components/primitives/card';
+import { Button } from '@/components/primitives/button';
 import { Share2 } from 'lucide-react';
 import FileManager from './components/FileManager';
 import MCPModal from './components/MCPModal';

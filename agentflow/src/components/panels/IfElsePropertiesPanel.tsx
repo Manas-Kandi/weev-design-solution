@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { GitBranch } from "lucide-react";
 import { CanvasNode } from "@/types";
-import { PanelSection } from "./PanelSection";
+import { PanelSection } from "../primitives/PanelSection";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 
 interface Message {

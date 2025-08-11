@@ -6,8 +6,8 @@ import {
   figmaPropertiesTheme as theme,
   getPanelContainerStyle,
 } from "./propertiesPanelTheme";
-import { PanelSection } from "./PanelSection";
-import { VSCodeInput, VSCodeSelect, VSCodeButton, VSCodeTextArea } from "./vsCodeFormComponents";
+import { PanelSection } from "../primitives/PanelSection";
+import { VSCodeInput, VSCodeSelect, VSCodeButton, VSCodeTextArea } from "../primitives/vsCodeFormComponents";
 import { providers, getProvider } from "@/lib/simulation/providers";
 import { SimulationMode } from "@/types/simulation";
 

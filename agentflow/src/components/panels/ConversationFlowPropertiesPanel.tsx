@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { PanelSection } from "./PanelSection";
-import { VSCodeInput, VSCodeButton } from "./vsCodeFormComponents";
+import { PanelSection } from "../primitives/PanelSection";
+import { VSCodeInput, VSCodeButton } from "../primitives/vsCodeFormComponents";
 
 interface ConversationFlowNodeData {
   states: string[];

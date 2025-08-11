@@ -1,7 +1,7 @@
 "use client"
 
-import { Card } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { Card } from "@/components/primitives/card"
+import { Separator } from "@/components/primitives/separator"
 import { Search, FileText, Bot, Database, Mail, Calculator, Image, MessageSquare } from "lucide-react"
 
 const microAgents = [

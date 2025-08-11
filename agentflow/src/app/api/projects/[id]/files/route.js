@@ -6,7 +6,8 @@ const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 export async function GET(req, { params }) {
   try {
     const { searchParams } = new URL(req.url);
-    const projectId = params?.id || searchParams.get('project_id');
+    const awaitedParams = await params;
+    const projectId = awaitedParams?.id || searchParams.get('project_id');
     if (!projectId) {
       return new Response(
         JSON.stringify({ error: 'Missing project_id' }),
@@ -115,7 +116,8 @@ export async function GET(req, { params }) {
 // POST /api/projects/[id]/files  (multipart/form-data with 'file')
 export async function POST(req, { params }) {
   try {
-    const projectId = params?.id;
+    const awaitedParams = await params;
+    const projectId = awaitedParams?.id;
     if (!projectId) {
       return new Response(
         JSON.stringify({ error: 'Missing project id in URL' }),
@@ -207,7 +209,8 @@ export async function POST(req, { params }) {
 // DELETE /api/projects/[id]/files  (JSON body: { id })
 export async function DELETE(req, { params }) {
   try {
-    const projectId = params?.id;
+    const awaitedParams = await params;
+    const projectId = awaitedParams?.id;
     const body = await req.json().catch(() => ({}));
     const fileId = body?.id;
     if (!projectId || !fileId) {

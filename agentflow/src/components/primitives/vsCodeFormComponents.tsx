@@ -3,7 +3,7 @@ import React from "react";
 import {
   figmaPropertiesTheme as theme,
   themeHelpers,
-} from "./propertiesPanelTheme";
+} from "../panels/propertiesPanelTheme";
 
 // VSCodeInput
 interface VSCodeInputProps

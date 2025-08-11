@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { PanelSection } from "./PanelSection";
-import { VSCodeInput, VSCodeSelect } from "./vsCodeFormComponents";
+import { PanelSection } from "../primitives/PanelSection";
+import { VSCodeInput, VSCodeSelect } from "../primitives/vsCodeFormComponents";
 
 interface MessagePropertiesPanelProps {
   node: CanvasNode;

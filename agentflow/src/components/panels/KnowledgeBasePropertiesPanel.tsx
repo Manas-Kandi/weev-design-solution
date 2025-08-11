@@ -1,12 +1,12 @@
 // All UI rules for properties panels must come from propertiesPanelTheme.ts
 import React, { useState, useRef, useEffect } from "react";
-import { VSCodeSelect, VSCodeInput } from "./vsCodeFormComponents";
+import { VSCodeSelect, VSCodeInput } from "../primitives/vsCodeFormComponents";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
 import { Database, FileText, Info } from "lucide-react";
 import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
 
-import { PanelSection } from "./PanelSection";
+import { PanelSection } from "../primitives/PanelSection";
 
 interface KnowledgeBaseNodeData {
   operation?: "store" | "retrieve" | "search";

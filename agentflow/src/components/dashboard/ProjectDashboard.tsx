@@ -13,19 +13,19 @@ import {
   SidebarMenuBadge,
   SidebarSeparator,
   SidebarInset,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+} from "@/components/primitives/sidebar";
+import { Button } from "@/components/primitives/button";
+import { Card } from "@/components/primitives/card";
+import { Badge } from "@/components/primitives/badge";
+import { Input } from "@/components/primitives/input";
 import { colors } from "@/data/nodeDefinitions";
 import { Project } from "@/types";
 import MCPModal from './components/MCPModal';
 import { Plus, Search, CreditCard, UserCog, MoreHorizontal, File, Clock, Folder, Zap, Star, Circle, Diamond, Triangle, Hexagon, Square, Heart, Bookmark } from "lucide-react";
 import FolderTree from "./FolderTree";
 import Image from "next/image";
-import AccountSettings from "@/components/panels/AccountSettings";
-import UserAvatar from "@/components/panels/UserAvatar";
+import AccountSettings from "@/components/layout/AccountSettings";
+import UserAvatar from "@/components/layout/UserAvatar";
 import ProjectDetails from "./ProjectDetails";
 import styles from './css/ProjectDashboard.module.css';
 

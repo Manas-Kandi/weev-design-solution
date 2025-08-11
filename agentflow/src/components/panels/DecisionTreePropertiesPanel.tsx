@@ -2,12 +2,12 @@
 import React, { useState } from "react";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import { CanvasNode } from "@/types";
-import { PanelSection } from "./PanelSection";
+import { PanelSection } from "../primitives/PanelSection";
 import {
   VSCodeInput,
   VSCodeSelect,
   VSCodeButton,
-} from "./vsCodeFormComponents";
+} from "../primitives/vsCodeFormComponents";
 
 interface DecisionTreeNodeData {
   title: string;
