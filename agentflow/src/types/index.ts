@@ -319,3 +319,25 @@ export type NodeOutput =
       // Allow arbitrary structured outputs from tool/custom nodes
       [key: string]: unknown;
     };
+
+// --- MCP Schema Exports (v0.1) ---
+export {
+  MCP_SCHEMA_VERSION,
+  validateMcpExport,
+  adaptCanvasToMcpFlow,
+} from "./mcp.types";
+export type {
+  McpNodeKind,
+  McpNodeConfig,
+  McpNodeSpec,
+  McpEdgeSpec,
+  McpFlowMeta,
+  McpFlowSpec,
+  McpToolSchema,
+  McpToolDefinition,
+  McpErrorInjection,
+  McpEnvironmentConfig,
+  McpExport,
+  McpRunManifest,
+  McpValidationResult,
+} from "./mcp.types";

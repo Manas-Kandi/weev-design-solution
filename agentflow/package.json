@@ -9,7 +9,8 @@
     "lint": "next lint",
     "mcp": "node src/lib/mcp/server.ts",
     "format": "prettier --write .",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "test": "vitest"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
@@ -46,6 +47,7 @@
     "prettier": "^3.3.3",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

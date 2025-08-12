@@ -77,6 +77,105 @@ export default function AgentFlowPage() {
     setTimeout(() => setStatusMessage(null), 1000);
   };
 
+  // Replace current flow with data imported from MCP
+  const handleReplaceFlowFromMcp = async (payload: { nodes: CanvasNode[]; connections: Connection[]; startNodeId: string | null }) => {
+    if (!currentProject) return;
+    const projectId = currentProject.id;
+    const headersAuth = await buildHeaders(true);
+
+    try {
+      // 1) Fetch existing server-side nodes and connections
+      const [resNodes, resConns] = await Promise.all([
+        fetch(`/api/projects/${projectId}/nodes?project_id=${projectId}`, { headers: await buildHeaders(false) }),
+        fetch(`/api/projects/${projectId}/connections?project_id=${projectId}`, { headers: await buildHeaders(false) }),
+      ]);
+      const existingNodes: any[] = resNodes.ok ? await resNodes.json().catch(() => []) : [];
+      const existingConns: any[] = resConns.ok ? await resConns.json().catch(() => []) : [];
+
+      // 2) Delete existing connections, then nodes (server state)
+      for (const c of existingConns) {
+        await fetch(`/api/projects/${projectId}/connections`, {
+          method: 'DELETE',
+          headers: headersAuth,
+          body: JSON.stringify({ id: c.id, project_id: projectId }),
+        });
+      }
+      for (const n of existingNodes) {
+        await fetch(`/api/projects/${projectId}/nodes`, {
+          method: 'DELETE',
+          headers: headersAuth,
+          body: JSON.stringify({ id: n.id, project_id: projectId }),
+        });
+      }
+
+      // 3) Use MCP-provided IDs directly (assumes they are unique within the flow)
+      const nextNodes: CanvasNode[] = payload.nodes;
+
+      // 4) Persist nodes
+      for (const n of nextNodes) {
+        await fetch(`/api/projects/${projectId}/nodes`, {
+          method: 'POST',
+          headers: headersAuth,
+          body: JSON.stringify({
+            id: n.id,
+            project_id: projectId,
+            type: n.type,
+            subtype: n.subtype,
+            position: n.position,
+            size: n.size,
+            data: n.data,
+            inputs: n.inputs,
+            outputs: n.outputs,
+          }),
+        });
+      }
+
+      // 5) Persist connections (IDs from MCP or regen if absent)
+      const nextConnections: Connection[] = payload.connections.map((c) => ({
+        id: c.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        sourceNode: c.sourceNode,
+        sourceOutput: c.sourceOutput,
+        targetNode: c.targetNode,
+        targetInput: c.targetInput,
+      }));
+
+      for (const c of nextConnections) {
+        await fetch(`/api/projects/${projectId}/connections`, {
+          method: 'POST',
+          headers: headersAuth,
+          body: JSON.stringify({
+            id: c.id,
+            project_id: projectId,
+            source_node: c.sourceNode,
+            source_output: c.sourceOutput,
+            target_node: c.targetNode,
+            target_input: c.targetInput,
+          }),
+        });
+      }
+
+      // 6) Update project start node (as provided)
+      const newStartNodeId = payload.startNodeId ?? null;
+      await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: headersAuth,
+        body: JSON.stringify({ start_node_id: newStartNodeId }),
+      });
+
+      // 7) Update local state
+      setHistory((h) => [...h, nodes]);
+      setNodes(nextNodes);
+      setConnections(nextConnections);
+      setStartNodeId(newStartNodeId);
+      setSelectedNode(null);
+      setFuture([]);
+      showStatus("Imported from MCP");
+    } catch (err) {
+      console.error("Failed to replace flow from MCP:", err);
+      alert(err instanceof Error ? err.message : 'Failed to replace flow from MCP');
+    }
+  };
+
   const handleUndo = useCallback(() => {
     setHistory((h) => {
       if (h.length === 0) return h;
@@ -653,6 +752,9 @@ export default function AgentFlowPage() {
             testButtonDisabled={isTesting}
             startNodeId={startNodeId}
             onStartNodeChange={handleStartNodeChange}
+            projectId={currentProject ? currentProject.id : null}
+            projectName={currentProject ? currentProject.name : null}
+            onReplaceFlowFromMcp={handleReplaceFlowFromMcp}
             onDeleteNode={(id: string) => {
               setHistory((h) => [...h, nodes]);
               setNodes((prev) => prev.filter((n) => n.id !== id));

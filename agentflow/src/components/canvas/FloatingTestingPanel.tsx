@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, ChevronDown, Play, Pause, Square, RotateCcw } from "lucide-react";
+import { X, ChevronRight, ChevronDown, Play, Pause, Square, RotateCcw, Download } from "lucide-react";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
 import ResultCard from "@/components/canvas/tester/ResultCard";
@@ -15,6 +15,8 @@ import type {
   FlowStartedEvent,
   FlowFinishedEvent,
 } from "@/types/tester";
+import { featureFlags } from "@/config/featureFlags";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/primitives/dialog";
 
 interface FloatingTestingPanelProps {
   nodes: CanvasNode[];
@@ -25,6 +27,8 @@ interface FloatingTestingPanelProps {
   compactMode?: boolean;
   startNodeId?: string | null;
   onTesterEvent?: (event: TesterEvent) => void;
+  projectId?: string | null;
+  projectName?: string | null;
 }
 
 // Timeline component for compact mode
@@ -93,6 +97,8 @@ export default function FloatingTestingPanel({
   compactMode = false,
   startNodeId = null,
   onTesterEvent,
+  projectId = null,
+  projectName = null,
 }: FloatingTestingPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [scenario, setScenario] = useState("");
@@ -107,6 +113,10 @@ export default function FloatingTestingPanel({
   const [runEndedAt, setRunEndedAt] = useState<number | null>(null);
   const [nowTs, setNowTs] = useState<number>(() => Date.now());
   const [breakpoints, setBreakpoints] = useState<Set<string>>(new Set());
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportJson, setExportJson] = useState<string>("");
 
   // Draft map for in-progress node artifacts
   const draftsRef = useRef<Map<string, Partial<NodeExecutionArtifact>>>(new Map());
@@ -602,6 +612,84 @@ export default function FloatingTestingPanel({
             </motion.div>
           )}
         </AnimatePresence>
+        {/* Footer */}
+        {featureFlags.mcpExport.enabled && projectId && (
+          <div className="flex items-center justify-between p-3 border-t border-slate-600/30 bg-slate-900/30">
+            <div className="text-xs text-slate-400">
+              MCP Export
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  if (!projectId) return;
+                  setExportLoading(true);
+                  setExportError(null);
+                  try {
+                    const res = await fetch(`/api/projects/${projectId}/export/mcp`);
+                    const ct = res.headers.get("content-type") || "";
+                    const isJson = ct.includes("application/json");
+                    const data = isJson ? await res.json().catch(() => null) : null;
+                    if (!res.ok || !data) {
+                      const msg = isJson ? (data?.message || "Export failed") : `HTTP ${res.status}`;
+                      throw new Error(msg);
+                    }
+                    const pretty = JSON.stringify(data, null, 2);
+                    setExportJson(pretty);
+                    // Trigger download
+                    const filenameBase = (projectName || "project").toLowerCase().replace(/[^a-z0-9-_]+/g, "-").replace(/^-+|-+$/g, "");
+                    const blob = new Blob([pretty], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `weev-${filenameBase}-mcp.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(url), 5000);
+                    // Open preview (non-blocking)
+                    setExportOpen(true);
+                  } catch (err) {
+                    console.error("MCP export error:", err);
+                    setExportError(err instanceof Error ? err.message : "Unknown error");
+                  } finally {
+                    setExportLoading(false);
+                  }
+                }}
+                disabled={exportLoading}
+                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white text-sm rounded transition-colors"
+                title="Export MCP JSON"
+              >
+                <Download size={14} />
+                {exportLoading ? "Exporting..." : "Export MCP JSON"}
+              </button>
+            </div>
+          </div>
+        )}
+        <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+          <DialogContent className="sm:max-w-[720px]">
+            <DialogHeader>
+              <DialogTitle>Export Preview{projectName ? ` — ${projectName}` : ""}</DialogTitle>
+              <DialogDescription>
+                Pretty-printed MCP JSON for quick inspection. Close anytime; testing can continue.
+              </DialogDescription>
+            </DialogHeader>
+            {exportError ? (
+              <div className="text-sm text-red-400">{exportError}</div>
+            ) : (
+              <div className="space-y-3 max-h-[70vh] overflow-auto">
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-300">
+                  <div className="bg-slate-800/40 rounded p-2"><span className="text-slate-400">Name:</span> <span className="text-slate-200">{projectName || "Untitled Project"}</span></div>
+                  <div className="bg-slate-800/40 rounded p-2"><span className="text-slate-400">Start Node:</span> <span className="text-slate-200">{startNodeId || "—"}</span></div>
+                  <div className="bg-slate-800/40 rounded p-2"><span className="text-slate-400">Nodes:</span> <span className="text-slate-200">{nodes.length}</span></div>
+                  <div className="bg-slate-800/40 rounded p-2"><span className="text-slate-400">Connections:</span> <span className="text-slate-200">{connections.length}</span></div>
+                </div>
+                <pre className="text-xs bg-slate-900/60 p-3 rounded border border-slate-700/40 overflow-auto">
+{exportJson}
+                </pre>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </AnimatePresence>
   );

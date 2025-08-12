@@ -4,6 +4,8 @@ import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
 import FloatingSidebarContainer from "@/components/canvas/FloatingSidebarContainer";
 import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
+import { validateMcpExport, McpExport } from "@/types/mcp.types";
+import { mapFromMcpExport } from "@/lib/mcp/mapFromMcpExport";
 import type {
   TesterEvent,
   NodeStartEvent,
@@ -27,6 +29,9 @@ interface DesignerCanvasProps {
   startNodeId: string | null;
   onStartNodeChange: (id: string | null) => void;
   onDeleteNode: (nodeId: string) => void;
+  projectId?: string | null;
+  projectName?: string | null;
+  onReplaceFlowFromMcp?: (payload: { nodes: CanvasNode[]; connections: Connection[]; startNodeId: string | null }) => Promise<void>;
 }
 
 export default function DesignerCanvas(props: DesignerCanvasProps) {
@@ -47,6 +52,9 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     startNodeId,
     onStartNodeChange,
     onDeleteNode,
+    projectId = null,
+    projectName = null,
+    onReplaceFlowFromMcp,
   } = props;
 
   // --- Local state for test logs and testing status ---
@@ -211,9 +219,52 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
 
   return (
     <div className="flex-1 relative overflow-hidden">
-
       <div className="absolute top-4 left-4 z-30">
-        
+        {/* Replace Flow from MCP */}
+        <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/15 text-xs text-white cursor-pointer select-none">
+          <input
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={async (e) => {
+              try {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const text = await file.text();
+                let parsed: McpExport;
+                try {
+                  parsed = JSON.parse(text);
+                } catch (err) {
+                  alert("Invalid JSON file.");
+                  return;
+                }
+                const validation = validateMcpExport(parsed);
+                if (!validation.valid) {
+                  const first = validation.errors?.[0];
+                  alert(`Invalid MCP file: ${first || "schema validation failed"}`);
+                  return;
+                }
+                const mapped = mapFromMcpExport(parsed);
+                const ok = window.confirm(
+                  `Replace current flow with ${mapped.nodes.length} nodes and ${mapped.connections.length} connections? This will overwrite current canvas.`
+                );
+                if (!ok) return;
+                if (!onReplaceFlowFromMcp) {
+                  alert("Import handler not available in this view.");
+                  return;
+                }
+                await onReplaceFlowFromMcp(mapped);
+              } catch (err) {
+                console.error("MCP import failed:", err);
+                alert(err instanceof Error ? err.message : "MCP import failed");
+              } finally {
+                // reset input value so selecting the same file again will trigger onChange
+                if (e.target) e.target.value = "";
+              }
+            }}
+          />
+          <span className="opacity-80">Replace Flow from MCP</span>
+        </label>
       </div>
       <CanvasEngine
         nodes={nodes}
@@ -243,6 +294,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         }}
         onTesterEvent={handleTesterEvent}
         onConnectionsChange={onConnectionsChange}
+        projectId={projectId}
+        projectName={projectName}
       />
       {/* Pass the selected node id here if available */}
     </div>

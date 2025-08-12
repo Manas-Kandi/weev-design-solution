@@ -21,6 +21,8 @@ interface FloatingSidebarContainerProps {
   // Shared props
   onConnectionsChange: (next: Connection[]) => void;
   startNodeId?: string | null;
+  projectId?: string | null;
+  projectName?: string | null;
 }
 
 export default function FloatingSidebarContainer({
@@ -34,6 +36,8 @@ export default function FloatingSidebarContainer({
   onTesterEvent,
   onConnectionsChange,
   startNodeId,
+  projectId = null,
+  projectName = null,
 }: FloatingSidebarContainerProps) {
   const hasPropertiesPanel = selectedNode !== null;
   const hasTestingPanel = showTesting;
@@ -65,6 +69,8 @@ export default function FloatingSidebarContainer({
           compactMode={bothPanelsVisible}
           onTesterEvent={onTesterEvent}
           startNodeId={startNodeId ?? null}
+          projectId={projectId}
+          projectName={projectName}
         />
       )}
     </>
