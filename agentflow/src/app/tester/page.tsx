@@ -1,5 +1,9 @@
 import React from "react";
-import TesterV2 from "@/components/canvas/tester/TesterV2";
+import dynamic from 'next/dynamic';
+
+const TesterV2 = dynamic(() => import('@/components/canvas/tester/TesterV2'), {
+  ssr: false,
+});
 
 export default function TesterPage() {
   // Standalone entry: until we wire project state here, show an empty harness

@@ -1,7 +1,8 @@
 // Tester Data Contracts (v0.1)
 // Defines structured artifacts and events produced during a test run.
 
-import type { CanvasNode, NodeOutput } from "@/types";
+import type { CanvasNode, NodeOutput, Connection } from "@/types";
+import type { ToolEnvironment } from "@/types/toolSimulator";
 import type { FlowContextBag } from "./flow-io";
 
 export type TesterStatus = "success" | "error" | "skipped";
@@ -125,4 +126,20 @@ export interface NodeDescriptorLite {
   subtype?: string;
   data?: CanvasNode["data"];
   title?: string;
+}
+
+// Manifest describing a single test run, including configuration and results
+export interface RunManifest {
+  id: string;
+  timestamp: number;
+  scenario: string;
+  environment: ToolEnvironment;
+  seed: string;
+  toolProfile: string | null;
+  nodes: CanvasNode[];
+  connections: Connection[];
+  startNodeId: string | null;
+  results: NodeExecutionArtifact[];
+  duration: number;
+  status: "success" | "error" | "cancelled";
 }
