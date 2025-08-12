@@ -2,12 +2,17 @@ import { CanvasNode, Connection, NodeOutput } from "@/types";
 import type { RunExecutionOptions } from "@/types/run";
 import { AgentNode } from "../nodes/agent/AgentNode";
 import { ToolAgentNode } from "../nodes/agent/ToolAgentNode";
+import { ThinkingNode } from "../nodes/thinking/ThinkingNode";
 import { IfElseNode } from "../nodes/logic/IfElseNode";
 import { KnowledgeBaseNode } from "../nodes/knowledge/KnowledgeBaseNode";
 // import { MessageNode } from "../nodes/conversation/MessageNode";
 // FIX: Update the import path if the file exists elsewhere, e.g.:
 // import { MessageNode } from "../nodes/conversation/message/MessageNode";
 import { MessageNode } from "../nodes/conversation/MessageNode";
+import { MessageNode as MessageFormatterNode } from "../nodes/message/MessageNode";
+import { RouterNode } from "../nodes/router/Executor";
+import { MemoryNode } from "../nodes/memory/Executor";
+import { ToolNode } from "../nodes/tool/Executor";
 // Or, if the file does not exist, create MessageNode.ts in the expected directory.
 import { BaseNode } from "../nodes/base/BaseNode";
 import { PromptTemplateNode } from "../nodes/conversation/PromptTemplateNode";
@@ -54,12 +59,22 @@ export class FlowEngine {
         return new AgentNode(node);
       case "tool-agent":
         return new ToolAgentNode(node);
+      case "thinking":
+        return new ThinkingNode(node);
       case "if-else":
         return new IfElseNode(node);
       case "knowledge-base":
         return new KnowledgeBaseNode(node);
       case "message":
         return new MessageNode(node);
+      case "message-formatter":
+        return new MessageFormatterNode(node);
+      case "router":
+        return new RouterNode(node);
+      case "memory":
+        return new MemoryNode(node);
+      case "tool":
+        return new ToolNode(node);
       case "prompt-template":
       case "template":
         return new PromptTemplateNode(node);

@@ -5,6 +5,7 @@ import { Project, CanvasNode, Connection, NodeType } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
 import ProjectDashboard from "@/components/dashboard/ProjectDashboard";
 import DesignerLayout from "@/components/layout/DesignerLayout";
+import ChatPanel from "@/components/chat/ChatPanel";
 
 import { ComponentLibrary } from "@/components/canvas/ComponentLibrary";
 import DesignerCanvas from "@/components/canvas/DesignerCanvas";
@@ -763,7 +764,11 @@ export default function AgentFlowPage() {
             }}
           />
         }
-        right={null}
+        right={
+          <div className="w-96 h-full">
+            <ChatPanel onFlowGenerated={handleReplaceFlowFromMcp} />
+          </div>
+        }
       />
       {statusMessage && (
         <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-3 py-1 rounded shadow">

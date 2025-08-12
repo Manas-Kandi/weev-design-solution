@@ -16,6 +16,11 @@ import SimulatorPropertiesPanel from "@/components/panels/SimulatorPropertiesPan
 import StateMachinePropertiesPanel from "@/components/panels/StateMachinePropertiesPanel";
 import TestCasePropertiesPanel from "@/components/panels/TestCasePropertiesPanel";
 import ToolAgentPropertiesPanel from "@/components/panels/ToolAgentPropertiesPanel";
+import { ToolPropertiesPanel } from "@/components/panels/ToolPropertiesPanel";
+import { ThinkingPropertiesPanel } from "@/components/panels/ThinkingPropertiesPanel";
+import { MessageFormatterPropertiesPanel } from "@/components/panels/MessageFormatterPropertiesPanel";
+import { RouterPropertiesPanel } from "@/components/panels/RouterPropertiesPanel";
+import { MemoryPropertiesPanel } from "@/components/panels/MemoryPropertiesPanel";
 import RuleBoxPropertiesPanel from "@/components/panels/RuleBoxPropertiesPanel";
 import ContextControlsSection from "@/components/primitives/ContextControlsSection";
 import EnhancedPropertiesPanel from "@/components/panels/EnhancedPropertiesPanel";
@@ -119,6 +124,16 @@ export default function PropertiesPanel({
         />
       );
       break;
+    case "thinking":
+      content = (
+        <ThinkingPropertiesPanel
+          node={selectedNode}
+          onNodeUpdate={(nodeId, updates) => {
+            onChange({ ...selectedNode, ...updates });
+          }}
+        />
+      );
+      break;
     case "chat":
       content = (
         <ChatInterfacePropertiesPanel node={selectedNode} onChange={onChange} />
@@ -171,6 +186,38 @@ export default function PropertiesPanel({
           onChange={onChange}
           title="Message Rules"
           subtitle="Describe how to format and route messages."
+        />
+      );
+      break;
+    case "message-formatter":
+      content = (
+        <MessageFormatterPropertiesPanel
+          node={selectedNode}
+          onChange={onChange}
+        />
+      );
+      break;
+    case "router":
+      content = (
+        <RouterPropertiesPanel
+          nodeData={selectedNode.data as any}
+          onChange={(data) => onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } })}
+        />
+      );
+      break;
+    case "memory":
+      content = (
+        <MemoryPropertiesPanel
+          nodeData={selectedNode.data as any}
+          onChange={(data) => onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } })}
+        />
+      );
+      break;
+    case "tool":
+      content = (
+        <ToolPropertiesPanel
+          nodeData={selectedNode.data as any}
+          onChange={(data) => onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } })}
         />
       );
       break;

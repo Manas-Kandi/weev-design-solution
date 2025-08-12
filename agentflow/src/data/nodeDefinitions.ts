@@ -14,6 +14,9 @@ import {
   LayoutDashboard,
   MessageCircle,
   Wrench,
+  Brain,
+  Mail,
+  HardDrive,
 } from "lucide-react";
 import { theme } from "@/data/theme";
 
@@ -91,6 +94,45 @@ export const nodeCategories: NodeCategory[] = [
           { id: "error", label: "Error", type: "text" },
         ],
       },
+      {
+        id: "thinking",
+        name: "Thinking",
+        icon: Brain,
+        color: "#8b5cf6",
+        description: "Structured chain-of-thought reasoning with optional tool calls",
+        type: "agent",
+        subtype: "thinking",
+        systemPrompt: "You are a careful, stepwise thinker. Break down problems methodically and provide clear reasoning for your conclusions.",
+        style: "balanced",
+        allowToolCalls: true,
+        defaultInputs: [
+          { id: "context", label: "Context", type: "text" },
+          { id: "data", label: "Data", type: "json" },
+        ],
+        defaultOutputs: [
+          { id: "result", label: "Result", type: "json" },
+          { id: "reasoning", label: "Reasoning", type: "text" },
+        ],
+      },
+      {
+        id: "tool",
+        name: "Tool",
+        icon: Wrench,
+        color: "#10b981",
+        description: "Execute callable functions with mock/live modes",
+        type: "agent",
+        subtype: "tool",
+        toolName: "web_search",
+        mode: "mock",
+        args: {},
+        defaultInputs: [
+          { id: "input", label: "Input", type: "text" },
+          { id: "context", label: "Context", type: "json" },
+        ],
+        defaultOutputs: [
+          { id: "result", label: "Result", type: "json" },
+        ],
+      },
     ],
   },
   {
@@ -122,6 +164,41 @@ export const nodeCategories: NodeCategory[] = [
         ],
       },
       {
+        id: "message-formatter",
+        name: "Message Formatter",
+        icon: Mail,
+        color: "#ff6b35",
+        description: "Transform upstream data into human-facing messages with presets",
+        type: "conversation",
+        subtype: "message-formatter",
+        preset: "chat",
+        tone: "friendly",
+        formatHint: "markdown",
+        defaultInputs: [
+          { id: "context", label: "Context", type: "text" },
+          { id: "data", label: "Data", type: "json" },
+        ],
+        defaultOutputs: [
+          { id: "message", label: "Formatted Message", type: "text" },
+        ],
+      },
+      {
+        id: "router",
+        name: "Router",
+        icon: GitBranch,
+        color: "#f59e0b",
+        description: "Route flow based on expression or LLM decision",
+        type: "logic",
+        subtype: "router",
+        defaultInputs: [
+          { id: "input", label: "Input", type: "any" },
+        ],
+        defaultOutputs: [
+          { id: "true", label: "True", type: "any" },
+          { id: "false", label: "False", type: "any" },
+        ],
+      },
+      {
         id: "prompt-template",
         name: "Prompt Template",
         icon: FileText,
@@ -131,6 +208,28 @@ export const nodeCategories: NodeCategory[] = [
         subtype: "template",
         defaultInputs: [],
         defaultOutputs: [{ id: "result", label: "Generated Prompt" }],
+      },
+      {
+        id: "memory",
+        name: "Memory",
+        icon: Database,
+        color: "#8b5cf6",
+        description: "Document ingestion and semantic retrieval",
+        type: "conversation",
+        subtype: "memory",
+        defaultInputs: [
+          { id: "query", label: "Query", type: "any" },
+        ],
+        defaultOutputs: [
+          { id: "context", label: "Retrieved Context", type: "json" },
+        ],
+        defaultData: {
+          indexName: "",
+          ingestMode: "full",
+          chunkSize: 800,
+          chunkOverlap: 120,
+          retrievalTopK: 5,
+        },
       },
       {
         id: "knowledge-base",

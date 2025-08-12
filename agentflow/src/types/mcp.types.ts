@@ -21,19 +21,26 @@ import type {
   KnowledgeBaseNodeData,
   CanvasNode,
   Connection,
-} from "./index";
-import type { ToolEnvironment } from "./toolSimulator";
+} from './index';
+import type { ToolEnvironment } from './toolSimulator';
+
+// Re-export ToolEnvironment for external consumers
+export type { ToolEnvironment };
 
 /**
  * Stable MCP schema version string for cross-tool compatibility checks.
  */
-export const MCP_SCHEMA_VERSION = "0.1" as const;
+export const MCP_SCHEMA_VERSION = '0.1' as const;
 
 /**
  * Reduced node set supported by the initial MCP export.
  * These are logical types (title-cased) for portable interchange.
  */
-export type McpNodeKind = "Agent" | "ToolAgent" | "DecisionTree" | "KnowledgeBase";
+export type McpNodeKind =
+  | 'Agent'
+  | 'ToolAgent'
+  | 'DecisionTree'
+  | 'KnowledgeBase';
 
 /**
  * Node configuration payload allowed in MCP. This intentionally maps to the
@@ -167,7 +174,7 @@ export interface McpEnvironmentConfig {
   /** Active mock profile id when mode is mock/mixed. */
   mockProfile?: string;
   /** Randomness seed; string value or 'auto' to indicate non-deterministic. */
-  seed?: string | "auto";
+  seed?: string | 'auto';
   /** Optional latency budget/config. */
   latency?: { min?: number; max?: number };
   /** Optional global error injection configuration. */
@@ -196,7 +203,7 @@ export interface McpExport {
  * Alias to the app's RunManifest for test history persistence, exposed for MCP consumers.
  * This keeps a single source of truth while satisfying the MCP acceptance criteria.
  */
-export type McpRunManifest = import("./tester").RunManifest;
+export type McpRunManifest = import('./tester').RunManifest;
 
 /**
  * Minimal runtime validation result.
@@ -216,55 +223,65 @@ export function validateMcpExport(doc: unknown): McpValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object";
+  const isObject = (v: unknown): v is Record<string, unknown> =>
+    !!v && typeof v === 'object';
 
   if (!isObject(doc)) {
-    return { valid: false, errors: ["Document is not an object"], warnings };
+    return { valid: false, errors: ['Document is not an object'], warnings };
   }
 
-  const version = (doc as Record<string, unknown>)["version"];
-  const flows = (doc as Record<string, unknown>)["flows"];
-  const tools = (doc as Record<string, unknown>)["tools"];
-  const environment = (doc as Record<string, unknown>)["environment"];
+  const version = (doc as Record<string, unknown>)['version'];
+  const flows = (doc as Record<string, unknown>)['flows'];
+  const tools = (doc as Record<string, unknown>)['tools'];
+  const environment = (doc as Record<string, unknown>)['environment'];
 
-  if (typeof version !== "string") {
-    errors.push("version must be a string");
+  if (typeof version !== 'string') {
+    errors.push('version must be a string');
   }
   if (!Array.isArray(flows)) {
-    errors.push("flows must be an array");
+    errors.push('flows must be an array');
   }
   if (!Array.isArray(tools)) {
-    errors.push("tools must be an array");
+    errors.push('tools must be an array');
   }
   if (!isObject(environment)) {
-    errors.push("environment must be an object");
+    errors.push('environment must be an object');
   }
 
   // Validate environment basics
   if (isObject(environment)) {
-    const mode = environment["mode"];
-    if (mode !== "mock" && mode !== "mixed" && mode !== "live") {
+    const mode = environment['mode'];
+    if (mode !== 'mock' && mode !== 'mixed' && mode !== 'live') {
       errors.push("environment.mode must be 'mock' | 'mixed' | 'live'");
     }
-    const seed = environment["seed"];
-    if (seed !== undefined && !(typeof seed === "string" || seed === "auto")) {
+    const seed = environment['seed'];
+    if (seed !== undefined && !(typeof seed === 'string' || seed === 'auto')) {
       errors.push("environment.seed must be a string or 'auto'");
     }
-    const latency = environment["latency"];
+    const latency = environment['latency'];
     if (latency !== undefined) {
-      if (!isObject(latency)) errors.push("environment.latency must be an object if provided");
+      if (!isObject(latency))
+        errors.push('environment.latency must be an object if provided');
       else {
-        const min = latency["min"]; const max = latency["max"];
-        if (min !== undefined && typeof min !== "number") errors.push("environment.latency.min must be a number");
-        if (max !== undefined && typeof max !== "number") errors.push("environment.latency.max must be a number");
+        const min = latency['min'];
+        const max = latency['max'];
+        if (min !== undefined && typeof min !== 'number')
+          errors.push('environment.latency.min must be a number');
+        if (max !== undefined && typeof max !== 'number')
+          errors.push('environment.latency.max must be a number');
       }
     }
-    const errInj = environment["errorInjection"];
+    const errInj = environment['errorInjection'];
     if (errInj !== undefined && errInj !== null) {
-      if (!isObject(errInj)) errors.push("environment.errorInjection must be an object or null");
-      else if (typeof errInj["type"] !== "string") errors.push("environment.errorInjection.type must be a string");
-      else if (errInj["probability"] !== undefined && typeof errInj["probability"] !== "number") {
-        errors.push("environment.errorInjection.probability must be a number");
+      if (!isObject(errInj))
+        errors.push('environment.errorInjection must be an object or null');
+      else if (typeof errInj['type'] !== 'string')
+        errors.push('environment.errorInjection.type must be a string');
+      else if (
+        errInj['probability'] !== undefined &&
+        typeof errInj['probability'] !== 'number'
+      ) {
+        errors.push('environment.errorInjection.probability must be a number');
       }
     }
   }
@@ -276,42 +293,71 @@ export function validateMcpExport(doc: unknown): McpValidationResult {
         errors.push(`flows[${idx}] must be an object`);
         return;
       }
-      if (typeof flow["id"] !== "string") errors.push(`flows[${idx}].id must be a string`);
+      if (typeof flow['id'] !== 'string')
+        errors.push(`flows[${idx}].id must be a string`);
 
-      const nodes = flow["nodes"];
-      if (!Array.isArray(nodes)) errors.push(`flows[${idx}].nodes must be an array`);
+      const nodes = flow['nodes'];
+      if (!Array.isArray(nodes))
+        errors.push(`flows[${idx}].nodes must be an array`);
       else {
         nodes.forEach((node, nIdx) => {
           if (!isObject(node)) {
             errors.push(`flows[${idx}].nodes[${nIdx}] must be an object`);
             return;
           }
-          const id = node["id"]; const kind = node["kind"]; const config = node["config"];
-          if (typeof id !== "string") errors.push(`flows[${idx}].nodes[${nIdx}].id must be a string`);
-          if (kind !== "Agent" && kind !== "ToolAgent" && kind !== "DecisionTree" && kind !== "KnowledgeBase") {
-            errors.push(`flows[${idx}].nodes[${nIdx}].kind must be one of Agent|ToolAgent|DecisionTree|KnowledgeBase`);
+          const id = node['id'];
+          const kind = node['kind'];
+          const config = node['config'];
+          if (typeof id !== 'string')
+            errors.push(`flows[${idx}].nodes[${nIdx}].id must be a string`);
+          if (
+            kind !== 'Agent' &&
+            kind !== 'ToolAgent' &&
+            kind !== 'DecisionTree' &&
+            kind !== 'KnowledgeBase'
+          ) {
+            errors.push(
+              `flows[${idx}].nodes[${nIdx}].kind must be one of Agent|ToolAgent|DecisionTree|KnowledgeBase`,
+            );
           }
-          if (!isObject(config)) errors.push(`flows[${idx}].nodes[${nIdx}].config must be an object`);
+          if (!isObject(config))
+            errors.push(
+              `flows[${idx}].nodes[${nIdx}].config must be an object`,
+            );
         });
       }
 
-      const edges = flow["edges"];
-      if (!Array.isArray(edges)) errors.push(`flows[${idx}].edges must be an array`);
+      const edges = flow['edges'];
+      if (!Array.isArray(edges))
+        errors.push(`flows[${idx}].edges must be an array`);
       else {
         edges.forEach((edge, eIdx) => {
-          if (!isObject(edge)) { errors.push(`flows[${idx}].edges[${eIdx}] must be an object`); return; }
-          if (typeof edge["id"] !== "string") errors.push(`flows[${idx}].edges[${eIdx}].id must be a string`);
-          if (typeof edge["from"] !== "string") errors.push(`flows[${idx}].edges[${eIdx}].from must be a string`);
-          if (typeof edge["to"] !== "string") errors.push(`flows[${idx}].edges[${eIdx}].to must be a string`);
+          if (!isObject(edge)) {
+            errors.push(`flows[${idx}].edges[${eIdx}] must be an object`);
+            return;
+          }
+          if (typeof edge['id'] !== 'string')
+            errors.push(`flows[${idx}].edges[${eIdx}].id must be a string`);
+          if (typeof edge['from'] !== 'string')
+            errors.push(`flows[${idx}].edges[${eIdx}].from must be a string`);
+          if (typeof edge['to'] !== 'string')
+            errors.push(`flows[${idx}].edges[${eIdx}].to must be a string`);
         });
       }
 
-      const meta = flow["meta"];
+      const meta = flow['meta'];
       if (!isObject(meta)) errors.push(`flows[${idx}].meta must be an object`);
       else {
-        if (typeof meta["createdBy"] !== "string") errors.push(`flows[${idx}].meta.createdBy must be a string`);
-        if (typeof meta["createdAt"] !== "number") errors.push(`flows[${idx}].meta.createdAt must be a number (epoch seconds)`);
-        if (meta["tags"] !== undefined && !Array.isArray(meta["tags"])) warnings.push(`flows[${idx}].meta.tags should be an array if provided`);
+        if (typeof meta['createdBy'] !== 'string')
+          errors.push(`flows[${idx}].meta.createdBy must be a string`);
+        if (typeof meta['createdAt'] !== 'number')
+          errors.push(
+            `flows[${idx}].meta.createdAt must be a number (epoch seconds)`,
+          );
+        if (meta['tags'] !== undefined && !Array.isArray(meta['tags']))
+          warnings.push(
+            `flows[${idx}].meta.tags should be an array if provided`,
+          );
       }
     });
   }
@@ -319,13 +365,20 @@ export function validateMcpExport(doc: unknown): McpValidationResult {
   // Validate tools
   if (Array.isArray(tools)) {
     tools.forEach((tool, idx) => {
-      if (!isObject(tool)) { errors.push(`tools[${idx}] must be an object`); return; }
-      if (typeof tool["name"] !== "string") errors.push(`tools[${idx}].name must be a string`);
-      const schema = tool["schema"];
-      if (!isObject(schema)) errors.push(`tools[${idx}].schema must be an object`);
+      if (!isObject(tool)) {
+        errors.push(`tools[${idx}] must be an object`);
+        return;
+      }
+      if (typeof tool['name'] !== 'string')
+        errors.push(`tools[${idx}].name must be a string`);
+      const schema = tool['schema'];
+      if (!isObject(schema))
+        errors.push(`tools[${idx}].schema must be an object`);
       else {
-        if (!isObject(schema["args"])) errors.push(`tools[${idx}].schema.args must be an object`);
-        if (!isObject(schema["returns"])) errors.push(`tools[${idx}].schema.returns must be an object`);
+        if (!isObject(schema['args']))
+          errors.push(`tools[${idx}].schema.args must be an object`);
+        if (!isObject(schema['returns']))
+          errors.push(`tools[${idx}].schema.returns must be an object`);
       }
     });
   }
@@ -347,27 +400,64 @@ export function adaptCanvasToMcpFlow(params: {
   startNodeIds?: string[];
 }): McpFlowSpec {
   const nodes: McpNodeSpec[] = params.nodes
-    .filter((n) => ["agent", "conversation", "logic", "testing", "ui"].includes(n.type))
+    .filter((n) =>
+      ['agent', 'conversation', 'logic', 'testing', 'ui'].includes(n.type),
+    )
     .map((n) => {
       // Map canvas subtype to portable kind (only reduced set supported explicitly)
-      const subtype = (n.subtype || "").toLowerCase();
-      let kind: McpNodeKind = "Agent";
-      if (subtype.includes("tool")) kind = "ToolAgent";
-      else if (subtype.includes("decision")) kind = "DecisionTree";
-      else if (subtype.includes("knowledge")) kind = "KnowledgeBase";
+      const subtype = (n.subtype || '').toLowerCase();
+      let kind: McpNodeKind = 'Agent';
+      if (subtype.includes('tool')) kind = 'ToolAgent';
+      else if (subtype.includes('decision')) kind = 'DecisionTree';
+      else if (subtype.includes('knowledge')) kind = 'KnowledgeBase';
+
+      // Type guards for node data
+      const data = n.data ?? {};
+      let systemPrompt: string | undefined;
+      let userPrompt: string | undefined;
+      let behavior: string | undefined;
+      let temperature: number | undefined;
+      let provider: string | undefined;
+      let model: string | undefined;
+
+      // AgentNodeData
+      if ('systemPrompt' in data && typeof data.systemPrompt === 'string') {
+        systemPrompt = data.systemPrompt;
+      }
+      if ('prompt' in data && typeof data.prompt === 'string') {
+        userPrompt = data.prompt;
+      }
+      if ('behavior' in data && typeof data.behavior === 'string') {
+        behavior = data.behavior;
+      }
+      if ('temperature' in data && typeof data.temperature === 'number') {
+        temperature = data.temperature;
+      }
+      if ('provider' in data && typeof data.provider === 'string') {
+        provider = data.provider;
+      }
+      if ('model' in data && typeof data.model === 'string') {
+        model = data.model;
+      }
 
       return {
         id: n.id,
         kind,
-        label: (n.data as any)?.title || n.subtype || n.id,
-        config: (n.data ?? {}) as McpNodeConfig,
+        label:
+          typeof data === 'object' &&
+          data !== null &&
+          'title' in data &&
+          typeof (data as { title?: unknown }).title === 'string'
+            ? (data as { title: string }).title
+            : n.subtype || n.id,
+        config: data as McpNodeConfig,
         prompts: {
-          systemPrompt: (n.data as any)?.systemPrompt,
-          userPrompt: (n.data as any)?.prompt,
-          behavior: (n.data as any)?.behavior,
-          temperature: (n.data as any)?.temperature,
-          provider: (n.data as any)?.provider as any,
-          model: (n.data as any)?.model,
+          systemPrompt,
+          userPrompt,
+          behavior,
+          temperature,
+          provider,
+          model,
         },
       } satisfies McpNodeSpec;
     });
@@ -376,7 +466,7 @@ export function adaptCanvasToMcpFlow(params: {
     id: c.id,
     from: c.sourceNode,
     to: c.targetNode,
-    label: `${c.sourceOutput ?? "out"}→${c.targetInput ?? "in"}`,
+    label: `${c.sourceOutput ?? 'out'}→${c.targetInput ?? 'in'}`,
   }));
 
   return {

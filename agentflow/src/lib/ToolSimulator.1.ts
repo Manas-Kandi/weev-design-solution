@@ -1,20 +1,37 @@
-import { 
-  ToolSimulatorInput, 
-  ToolSimulatorResult, 
-  ToolMockConfig, 
-  ToolMockOverride,
-  TOOL_MOCKS,
-  ToolError,
-  ToolMockProfile,
-  ToolEnvironment,
-  ToolErrorType
-} from '@/types/toolSimulator';
+import { ToolSimulatorResult, ToolMockConfig, ToolSimulatorInput, ToolError } from '@/types/toolSimulator';
+import { ToolMockOverride, ToolMockProfile, TOOL_MOCKS } from './toolSimulator';
 
 /**
  * Tool Simulator Service
  * Provides mock data and behavior simulation for external tools
  */
+
 export class ToolSimulator {
+  simulate(toolName: string, inputData: Record<string, any>): ToolSimulatorResult {
+    if (!this.activeProfile) {
+      const error = this.generateError('server', 'system', 'simulate');
+      return { ok: false, error, meta: { latencyMs: 0, mockSource: 'custom' } };
+    }
+
+    const override = this.customOverrides.get(toolName);
+    const toolConfig = this.activeProfile.tools[toolName];
+
+    const config: ToolMockConfig | ToolMockOverride | undefined = override || toolConfig;
+
+    if (!config) {
+      const error = this.generateError('notFound', toolName, 'simulate');
+      return { ok: false, error, meta: { latencyMs: 0, mockSource: 'custom' } };
+    }
+
+    const errorType = (config as any).errorType;
+    if (errorType) {
+      const error = this.generateError(errorType, toolName, 'simulate');
+      return { ok: false, error, meta: { latencyMs: 0, mockSource: 'custom' } };
+    }
+
+    const data = (config as any).mockData || {};
+    return { ok: true, data, meta: { latencyMs: 0, mockSource: 'custom' } };
+  }
   private activeProfile: ToolMockProfile | null = null;
   private customOverrides: Map<string, ToolMockOverride> = new Map();
   private storedProfiles: Map<string, ToolMockProfile> = new Map();
@@ -64,8 +81,8 @@ export class ToolSimulator {
 
     // Check for custom override
     const overrideKey = `${name}:${op}`;
-    const override = this.customOverrides.get(overrideKey) || 
-                    this.activeProfile?.tools[overrideKey];
+    const override = this.customOverrides.get(overrideKey) ||
+      this.activeProfile?.tools[overrideKey];
 
     // Apply latency simulation
     const actualLatency = override?.latencyMs || latencyMs || this.getDefaultLatency(name);
@@ -88,7 +105,7 @@ export class ToolSimulator {
 
     // Generate mock response
     const mockData = this.generateMockResponse(name, op, args, override, seed);
-    
+
     return {
       ok: true,
       data: mockData,
@@ -208,9 +225,9 @@ export class ToolSimulator {
   }
 
   private generateMockResponse(
-    toolName: string, 
-    operation: string, 
-    args: Record<string, unknown>, 
+    toolName: string,
+    operation: string,
+    args: Record<string, unknown>,
     override?: ToolMockOverride,
     seed?: string
   ): unknown {
@@ -241,7 +258,7 @@ export class ToolSimulator {
   ): unknown {
     // Simple hash-based deterministic generation
     const hash = this.simpleHash(seed);
-    
+
     switch (toolName) {
       case 'calendar':
         return this.generateCalendarMock(operation, args, hash);
@@ -265,14 +282,14 @@ export class ToolSimulator {
         attendees: [`attendee${i}@example.com`]
       }));
     }
-    
+
     if (operation === 'createEvent') {
       return {
         id: `evt_${hash}`,
         htmlLink: `https://calendar.google.com/event?eid=${hash}`
       };
     }
-    
+
     return {};
   }
 
@@ -287,14 +304,14 @@ export class ToolSimulator {
         date: new Date(Date.now() - (i * 3600000)).toISOString()
       }));
     }
-    
+
     if (operation === 'send') {
       return {
         id: `sent_${hash}`,
         threadId: `thread_${hash}`
       };
     }
-    
+
     return {};
   }
 
@@ -309,7 +326,7 @@ export class ToolSimulator {
         data: { message: 'Mock HTTP response', timestamp: Date.now() }
       };
     }
-    
+
     return {};
   }
 
@@ -321,7 +338,7 @@ export class ToolSimulator {
       server: `Server error in ${toolName}.${operation}`,
       validation: `Validation error in ${toolName}.${operation}`
     };
-    
+
     return {
       kind: type,
       message: messages[type] || `Error in ${toolName}.${operation}`,
@@ -347,12 +364,3 @@ export class ToolSimulator {
     return this.activeProfile || ToolSimulator.DEFAULT_PROFILE;
   }
 }
-
-const toolSimulator = new ToolSimulator();
-
-if (typeof window !== 'undefined') {
-  toolSimulator.initialize();
-}
-
-export { toolSimulator };
-export { TOOL_MOCKS, ToolMockProfile, ToolMockOverride, ToolError, ToolErrorType };

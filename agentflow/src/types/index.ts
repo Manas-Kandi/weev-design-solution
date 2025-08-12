@@ -1,5 +1,14 @@
 import React from "react";
 import { ToolAgentRules, ToolAgentSimulationConfig } from "./simulation";
+import type { FlowContextBag, FlowMode } from "./flow-io";
+import type { RunExecutionOptions } from "./run";
+
+// Shared I/O envelope used by all nodes
+export type FlowIO = {
+  type: 'text' | 'json' | 'binary';
+  content: string | Record<string, unknown>;
+  meta?: Record<string, unknown>; // timestamps, nodeId, model, tool traces, etc.
+};
 
 // Node data types shared across the application for type safety
 export interface DashboardNodeData {
@@ -168,6 +177,9 @@ export interface AgentNodeData {
   personalityTraits?: PersonalityTrait[];
   behaviorRules?: BehaviorRule[];
   knowledge?: string;
+  expression?: string;
+  mode?: 'expression' | 'llm';
+  llmRule?: string;
   [key: string]: unknown;
 }
 
@@ -189,6 +201,46 @@ export interface ToolAgentNodeData extends AgentNodeData {
   simulation?: ToolAgentSimulationConfig;
 }
 
+export interface ThinkingNodeData {
+  title: string;
+  description: string;
+  color: string;
+  icon: string;
+  systemPrompt?: string;
+  style: "balanced" | "fast" | "deep";
+  schemaHint?: string; // Optional JSON schema string for expected output shape
+  allowToolCalls: boolean;
+  [key: string]: unknown;
+}
+
+export interface MessageFormatterNodeData {
+  title: string;
+  description: string;
+  color: string;
+  icon: string;
+  preset: "email" | "chat" | "report" | "custom";
+  tone: "neutral" | "friendly" | "formal";
+  audience?: string; // Optional audience description
+  formatHint: "markdown" | "plain" | "html";
+  customTemplate?: string; // Only used when preset=custom
+  [key: string]: unknown;
+}
+
+export interface ToolNodeData {
+  title: string;
+  description: string;
+  color: string;
+  icon: string;
+  toolName: string; // Tool name from catalog or "custom"
+  operation?: string; // For multi-operation tools (e.g., search, createEvent)
+  args: Record<string, unknown>; // Key/value arguments with types
+  mode: "mock" | "live"; // Execution mode, default mock
+  mockPreset?: string; // Selected mock preset for testing
+  latencyMs?: number; // Simulated latency for mock mode
+  errorMode?: string; // Error simulation mode
+  [key: string]: unknown;
+}
+
 export interface CanvasNode {
   id: string;
   type: "agent" | "logic" | "conversation" | "testing" | "ui";
@@ -198,6 +250,9 @@ export interface CanvasNode {
   data:
     | AgentNodeData
     | ToolAgentNodeData
+    | ToolNodeData
+    | ThinkingNodeData
+    | MessageFormatterNodeData
     | ChatNodeData
     | PromptTemplateNodeData
     | ComplexIfElseNodeData
@@ -277,6 +332,23 @@ export interface NodeType {
   personality?: string; // Agent personality traits
   escalationLogic?: string; // Escalation logic instructions
   confidenceThreshold?: number; // Confidence threshold for escalation
+  // Thinking node specific properties
+  style?: "balanced" | "fast" | "deep"; // Reasoning style for thinking nodes
+  allowToolCalls?: boolean; // Whether thinking nodes can propose tool calls
+  // Message formatter node specific properties
+  preset?: "email" | "chat" | "report" | "custom"; // Message format preset
+  tone?: "neutral" | "friendly" | "formal"; // Message tone
+  formatHint?: "markdown" | "plain" | "html"; // Output format hint
+  // Router node specific properties
+  mode?: "expression" | "llm"; // Router decision mode
+  expression?: string; // JavaScript expression for expression mode
+  llmRule?: string; // LLM rule for llm mode
+  // Memory node specific properties
+  indexName?: string; // Memory index name
+  ingestMode?: "full" | "summary-only"; // Document ingest mode
+  chunkSize?: number; // Text chunk size for processing
+  chunkOverlap?: number; // Overlap between chunks
+  retrievalTopK?: number; // Number of results to retrieve
 }
 
 export interface ViewportTransform {
@@ -302,23 +374,25 @@ export interface Colors {
   green: string;
 }
 
-export type NodeOutput =
-  | string
-  | {
-      // Standard fields
-      gemini?: unknown;
-      error?: string;
-      info?: string; // Added for UI node info messages
-      // Backward-compatible fields used by specific nodes
-      previousState?: string;
-      currentState?: string;
-      event?: string;
-      transition?: string;
-      output?: string;
-      message?: string;
-      // Allow arbitrary structured outputs from tool/custom nodes
-      [key: string]: unknown;
-    };
+export interface LLMOutput {
+  choices?: { message?: { content?: string } }[];
+  candidates?: { content?: { parts?: { text?: string }[] } }[];
+}
+
+export interface GeminiOutput {
+  candidates?: { content?: { parts?: { text?: string }[] } }[];
+}
+
+export type NodeOutputObject = {
+  output?: string;
+  message?: string;
+  content?: string;
+  llm?: LLMOutput;
+  gemini?: GeminiOutput;
+  provider?: GeminiOutput;
+};
+
+export type NodeOutput = string | NodeOutputObject;
 
 // --- MCP Schema Exports (v0.1) ---
 export {
@@ -341,3 +415,15 @@ export type {
   McpRunManifest,
   McpValidationResult,
 } from "./mcp.types";
+
+export interface NodeContext {
+  nodes: CanvasNode[];
+  connections: Connection[];
+  nodeOutputs: Record<string, NodeOutput>;
+  currentNode: CanvasNode;
+  inputs?: Record<string, NodeOutput>;
+  config?: Record<string, unknown>;
+  flowContext?: FlowContextBag;
+  mode?: FlowMode;
+  runOptions?: RunExecutionOptions;
+}
