@@ -566,29 +566,40 @@ export function EnhancedTestingPanel({
   if (!isVisible) return null;
 
   return (
-    <>
-      <motion.div
-        style={getPanelStyle()}
-        initial={{ opacity: 0, x: 100 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 100 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="flex flex-col"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-slate-100">Testing Panel</h2>
-            <StatusIndicator status={
-              isRunning ? (isPaused ? 'paused' : 'running') : 
-              runEndedAt ? 'finished' : 'idle'
-            } />
-            {isRunning && (
-              <span className="text-sm text-slate-400">
-                {Math.round(elapsed / 1000)}s
-              </span>
-            )}
-          </div>
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      className={`fixed right-4 top-4 bottom-4 w-96 z-50 flex flex-col ${
+        compactMode ? 'w-80' : 'w-96'
+      }`}
+      style={{
+        background: 'rgba(15, 23, 42, 0.85)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        border: '1px solid rgba(148, 163, 184, 0.2)',
+        borderRadius: '16px',
+        boxShadow: `
+          0 8px 32px rgba(0, 0, 0, 0.3),
+          0 1px 0 rgba(255, 255, 255, 0.1) inset,
+          0 -1px 0 rgba(0, 0, 0, 0.2) inset
+        `,
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-slate-700/30">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold text-slate-100">Testing Panel</h2>
+          <StatusIndicator status={
+            isRunning ? (isPaused ? 'paused' : 'running') : 
+            runEndedAt ? 'finished' : 'idle'
+          } />
+          {isRunning && (
+            <span className="text-sm text-slate-400">
+              {Math.round((nowTs - (runStartedAt || nowTs)) / 1000)}s
+            </span>
+          )}
+        </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}

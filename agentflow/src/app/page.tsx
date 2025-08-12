@@ -73,10 +73,11 @@ export default function AgentFlowPage() {
     fetchProjects();
   }, []);
 
-  const showStatus = (msg: string) => {
+  const showStatus = useCallback((msg: string) => {
     setStatusMessage(msg);
-    setTimeout(() => setStatusMessage(null), 1000);
-  };
+    const timeoutId = setTimeout(() => setStatusMessage(null), 1000);
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   // Replace current flow with data imported from MCP
   const handleReplaceFlowFromMcp = async (payload: { nodes: CanvasNode[]; connections: Connection[]; startNodeId: string | null }) => {
@@ -519,9 +520,9 @@ export default function AgentFlowPage() {
     }
   };
 
-  const handleNodeUpdate = async (updatedNode: CanvasNode) => {
+  const handleNodeUpdate = useCallback(async (updatedNode: CanvasNode) => {
     setHistory((h) => [...h, nodes]);
-    setNodes(nodes.map((n) => (n.id === updatedNode.id ? updatedNode : n)));
+    setNodes(prevNodes => prevNodes.map((n) => (n.id === updatedNode.id ? updatedNode : n)));
     setFuture([]);
     showStatus("Saved");
 
@@ -551,7 +552,7 @@ export default function AgentFlowPage() {
         console.error("Error updating node:", dbErr);
       }
     }
-  };
+  }, [nodes, currentProject]);
 
   const handleTestFlow = async () => {
     // If Tester V2 is enabled, open the new modal and delegate run to it
@@ -764,11 +765,13 @@ export default function AgentFlowPage() {
             }}
           />
         }
-        right={
-          <div className="w-96 h-full">
-            <ChatPanel onFlowGenerated={handleReplaceFlowFromMcp} />
-          </div>
-        }
+        right={null}
+        // Hidden for now - Chat Panel functionality preserved but not displayed
+        // right={
+        //   <div className="w-96 h-full">
+        //     <ChatPanel onFlowGenerated={handleReplaceFlowFromMcp} />
+        //   </div>
+        // }
       />
       {statusMessage && (
         <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-3 py-1 rounded shadow">

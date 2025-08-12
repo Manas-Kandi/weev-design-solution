@@ -34,7 +34,15 @@ interface AgentPropertiesPanelProps {
 }
 
 // Default system prompt for all agents (backend only, not shown to user)
-const DEFAULT_SYSTEM_PROMPT = "You are an autonomous agent operating in a workflow. You will receive further instructions and context.";
+const DEFAULT_SYSTEM_PROMPT = `You are an intelligent reasoning agent in an agentic workflow system. Your role is to:
+1. Analyze incoming information and context carefully
+2. Perform deep reasoning about the task at hand
+3. Decide what resources or tools you need to access (knowledge base, web search, calendar, etc.)
+4. Formulate clear, logical responses based on your analysis
+5. Route information to the appropriate next step in the workflow
+
+You will receive context from connected nodes and should use that information to make informed decisions.
+Always explain your reasoning process when making decisions.`;
 
 // Helper function to ensure system prompt exists
 function ensureSystemPrompt(data: AgentNodeData): string {

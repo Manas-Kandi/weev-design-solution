@@ -98,10 +98,8 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
             setDragConnection(null);
             return;
           }
-          if (srcPort.type && tgtPort.type && srcPort.type !== tgtPort.type) {
-            setDragConnection(null);
-            return;
-          }
+          // Allow all node types to connect to each other
+          // Removed type restriction to enable universal connectivity
           onConnectionsChange([...connections, connectionData]);
           try {
             await onCreateConnection(connectionData);

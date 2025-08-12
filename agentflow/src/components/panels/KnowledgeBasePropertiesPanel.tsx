@@ -54,14 +54,14 @@ export default function KnowledgeBasePropertiesPanel({
       parsedMetadata = {};
     }
     
-    const updatedData = {
+    const updatedData: KnowledgeBaseNodeData = {
       ...data,
       operation,
       documents,
       metadata: parsedMetadata,
     };
     
-    onChange({ ...node, data: updatedData });
+    onChange({ ...node, data: updatedData as any });
   }, [operation, documents, metadata]);
   
   // Update local state if node changes externally
@@ -72,15 +72,27 @@ export default function KnowledgeBasePropertiesPanel({
     if (currentMetadata !== metadata) setMetadata(currentMetadata);
   }, [node.id]);
 
-  // Handle file uploads
+  // Handle file uploads with enhanced PDF support
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
     
     const newDocs = await Promise.all(
-      Array.from(files).map(async (file) => ({
-        name: file.name,
-        content: await file.text(),
-      }))
+      Array.from(files).map(async (file) => {
+        let content = "";
+        
+        if (file.type === "application/pdf") {
+          // For PDFs, we'll simulate extraction (in production, use a PDF library)
+          content = `[PDF Content from ${file.name}]\n\nThis is a simulated extraction of PDF content. In production, this would use a PDF parsing library to extract actual text content, tables, and metadata from the PDF document.\n\nFile: ${file.name}\nSize: ${(file.size / 1024).toFixed(2)} KB\nType: ${file.type}`;
+        } else {
+          // For text files, read directly
+          content = await file.text();
+        }
+        
+        return {
+          name: file.name,
+          content: content,
+        };
+      })
     );
     
     setDocuments(prev => [...prev, ...newDocs]);

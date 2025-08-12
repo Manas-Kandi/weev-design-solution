@@ -3,7 +3,7 @@
 import React from "react";
 import { CanvasNode, Connection } from "@/types";
 import FloatingPropertiesPanel from "./FloatingPropertiesPanel";
-import FloatingTestingPanel from "./FloatingTestingPanel";
+import { SimpleTestingPanel } from "./SimpleTestingPanel";
 
 interface FloatingSidebarContainerProps {
   // Properties Panel props
@@ -60,7 +60,7 @@ export default function FloatingSidebarContainer({
 
       {/* Testing Panel */}
       {hasTestingPanel && (
-        <FloatingTestingPanel
+        <SimpleTestingPanel
           nodes={nodes}
           connections={connections}
           isVisible={true}
@@ -69,8 +69,6 @@ export default function FloatingSidebarContainer({
           compactMode={bothPanelsVisible}
           onTesterEvent={onTesterEvent}
           startNodeId={startNodeId ?? null}
-          projectId={projectId}
-          projectName={projectName}
         />
       )}
     </>

@@ -1,5 +1,13 @@
-import { ToolSimulatorResult, ToolMockConfig, ToolSimulatorInput, ToolError } from '@/types/toolSimulator';
-import { ToolMockOverride, ToolMockProfile, TOOL_MOCKS } from './toolSimulator';
+import {
+  ToolSimulatorResult,
+  ToolMockConfig,
+  ToolSimulatorInput,
+  ToolError,
+  ToolMockOverride,
+  ToolMockProfile,
+  TOOL_MOCKS,
+  ToolPreset
+} from '@/types/toolSimulator';
 
 /**
  * Tool Simulator Service
@@ -239,7 +247,7 @@ export class ToolSimulator {
     // Use preset if specified
     if (override?.presetId) {
       const config = TOOL_MOCKS[toolName];
-      const preset = config?.presets.find(p => p.id === override.presetId);
+      const preset = config?.presets.find((p: ToolPreset) => p.id === override.presetId);
       if (preset) {
         return preset.output;
       }
@@ -364,3 +372,6 @@ export class ToolSimulator {
     return this.activeProfile || ToolSimulator.DEFAULT_PROFILE;
   }
 }
+
+// Export singleton instance for easy use
+export const toolSimulator = new ToolSimulator();

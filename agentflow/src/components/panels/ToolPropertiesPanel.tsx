@@ -39,7 +39,7 @@ export function ToolPropertiesPanel({ nodeData, onChange }: ToolPropertiesPanelP
       latencyMs,
       errorMode
     });
-  }, [selectedTool, selectedOperation, args, mode, mockPreset, latencyMs, errorMode, onChange]);
+  }, [selectedTool, selectedOperation, args, mode, mockPreset, latencyMs, errorMode]);
 
   // Update preview when preset changes
   useEffect(() => {

@@ -1,15 +1,28 @@
 // Enhanced Properties Panel Container with VS Code styling
-import React from "react";
+import React, { useCallback } from "react";
 import { FileQuestion, Settings } from "lucide-react";
 import { CanvasNode } from "@/types";
 import { figmaPropertiesTheme as theme } from "./propertiesPanelTheme";
 import EnhancedAgentPropertiesPanel from "./AgentPropertiesPanel";
 import { AgentNodeData } from "@/types";
 import DecisionTreePropertiesPanel from "./DecisionTreePropertiesPanel";
-// Import other enhanced panels as they're created
-// import EnhancedMessagePropertiesPanel from "./EnhancedMessagePropertiesPanel";
-// import EnhancedPromptTemplatePropertiesPanel from "./EnhancedPromptTemplatePropertiesPanel";
-// etc.
+import ToolAgentPropertiesPanel from "./ToolAgentPropertiesPanel";
+import { ToolPropertiesPanel } from "./ToolPropertiesPanel";
+import MessagePropertiesPanel from "./MessagePropertiesPanel";
+import PromptTemplatePropertiesPanel from "./PromptTemplatePropertiesPanel";
+import IfElsePropertiesPanel from "./IfElsePropertiesPanel";
+import StateMachinePropertiesPanel from "./StateMachinePropertiesPanel";
+import KnowledgeBasePropertiesPanel from "./KnowledgeBasePropertiesPanel";
+import ConversationFlowPropertiesPanel from "./ConversationFlowPropertiesPanel";
+import SimulatorPropertiesPanel from "./SimulatorPropertiesPanel";
+import TestCasePropertiesPanel from "./TestCasePropertiesPanel";
+import DashboardPropertiesPanel from "./DashboardPropertiesPanel";
+import ChatInterfacePropertiesPanel from "./ChatInterfacePropertiesPanel";
+import { MemoryPropertiesPanel } from "./MemoryPropertiesPanel";
+import { RouterPropertiesPanel } from "./RouterPropertiesPanel";
+import { MessageFormatterPropertiesPanel } from "./MessageFormatterPropertiesPanel";
+import RuleBoxPropertiesPanel from "./RuleBoxPropertiesPanel";
+import { ThinkingPropertiesPanel } from "./ThinkingPropertiesPanel";
 
 interface PropertiesPanelProps {
   selectedNode: CanvasNode | null;
@@ -311,21 +324,45 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
         return renderUnknownNodePanel();
 
       case "tool-agent":
-        // TODO: Implement EnhancedToolAgentPropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <ToolAgentPropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
+
+      case "tool":
+        return (
+          <ToolPropertiesPanel
+            nodeData={selectedNode.data as any}
+            onChange={useCallback((data) => onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } }), [selectedNode, onChange])}
+          />
+        );
 
       case "message":
-        // TODO: Implement EnhancedMessagePropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <MessagePropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
 
       case "prompt-template":
       case "template":
-        // TODO: Implement EnhancedPromptTemplatePropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <PromptTemplatePropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
 
       case "if-else":
-        // TODO: Implement EnhancedIfElsePropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <IfElsePropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
 
       case "decision-tree":
         return (
@@ -336,33 +373,101 @@ const EnhancedPropertiesPanel: React.FC<PropertiesPanelProps> = ({
         );
 
       case "state-machine":
-        // TODO: Implement EnhancedStateMachinePropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <StateMachinePropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
 
       case "knowledge-base":
-        // TODO: Implement EnhancedKnowledgeBasePropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <KnowledgeBasePropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
 
       case "conversation-flow":
-        // TODO: Implement EnhancedConversationFlowPropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <ConversationFlowPropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
 
       case "simulator":
-        // TODO: Implement EnhancedSimulatorPropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <SimulatorPropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
 
       case "test-case":
-        // TODO: Implement EnhancedTestCasePropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <TestCasePropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
 
       case "dashboard":
-        // TODO: Implement EnhancedDashboardPropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <DashboardPropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
 
       case "chat":
       case "ui":
-        // TODO: Implement EnhancedChatInterfacePropertiesPanel
-        return renderUnknownNodePanel();
+        return (
+          <ChatInterfacePropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
+
+      case "memory":
+        return (
+          <MemoryPropertiesPanel
+            nodeData={selectedNode.data as any}
+            onChange={(data) => onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } })}
+          />
+        );
+
+      case "router":
+        return (
+          <RouterPropertiesPanel
+            nodeData={selectedNode.data as any}
+            onChange={(data) => onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } })}
+          />
+        );
+
+      case "message-formatter":
+        return (
+          <MessageFormatterPropertiesPanel
+            nodeData={selectedNode.data as any}
+            onChange={(data) => onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } })}
+          />
+        );
+
+      case "rule-box":
+        return (
+          <RuleBoxPropertiesPanel
+            node={selectedNode as CanvasNode}
+            onChange={onChange}
+          />
+        );
+
+      case "thinking":
+        return (
+          <ThinkingPropertiesPanel
+            nodeData={selectedNode.data as any}
+            onChange={(data) => onChange({ ...selectedNode, data: { ...selectedNode.data, ...data } })}
+          />
+        );
 
       default:
         return renderUnknownNodePanel();
