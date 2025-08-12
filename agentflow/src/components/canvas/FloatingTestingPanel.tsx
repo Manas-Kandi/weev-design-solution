@@ -57,8 +57,15 @@ function CompactTimelinePanel({
 
   return (
     <div className="mb-2">
-      <div className="text-[10px] text-slate-400 mb-1">Timeline</div>
-      <div className="relative border border-slate-700 rounded bg-slate-900/50 overflow-x-auto">
+      <div className="text-[10px] text-slate-200 mb-1 drop-shadow-sm">Timeline</div>
+      <div 
+        className="relative rounded-lg overflow-x-auto"
+        style={{
+          background: "rgba(255, 255, 255, 0.06)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.15)",
+        }}
+      >
         <div className="p-1 space-y-1 min-w-full">
           {items.map((item, i) => {
             const leftPct = ((item.startedAt - startTs) / total) * 100;
@@ -67,13 +74,17 @@ function CompactTimelinePanel({
             return (
               <button
                 key={item.nodeId + item.startedAt}
-                className={`relative h-3 rounded text-[9px] text-white font-medium transition-all ${
-                  isSel ? "ring-1 ring-blue-400" : ""
+                className={`relative h-3 rounded-md text-[9px] text-white font-medium transition-all duration-200 ${
+                  isSel ? "" : ""
                 }`}
                 style={{
                   left: `${leftPct}%`,
                   width: `${widthPct}%`,
                   backgroundColor: colorFor(item.status),
+                  border: isSel ? "1px solid rgba(255, 255, 255, 0.3)" : "1px solid rgba(255, 255, 255, 0.1)",
+                  boxShadow: isSel 
+                    ? `0 0 8px ${colorFor(item.status)}40, inset 0 1px 0 rgba(255, 255, 255, 0.2)` 
+                    : "inset 0 1px 0 rgba(255, 255, 255, 0.1)",
                 }}
                 onClick={() => onSelect(item.nodeId)}
                 title={`${item.title} • ${((item.endedAt - item.startedAt) / 1000).toFixed(2)}s`}
@@ -382,11 +393,12 @@ export default function FloatingTestingPanel({
       right: "20px",
       width: "360px",
       zIndex: 1000,
-      background: "rgba(30, 41, 59, 0.65)",
+      background: "linear-gradient(145deg, rgba(15, 23, 42, 0.75) 0%, rgba(30, 41, 59, 0.65) 50%, rgba(15, 23, 42, 0.75) 100%)",
       backdropFilter: "blur(12px)",
-      border: "1px solid rgba(71, 85, 105, 0.3)",
-      borderRadius: "12px",
-      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+      border: "none",
+      borderRadius: "16px",
+      boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06)",
+      overflow: "hidden",
     };
 
     if (compactMode || isPropertiesPanelVisible) {
@@ -418,34 +430,85 @@ export default function FloatingTestingPanel({
         exit={{ opacity: 0, x: 50 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
         style={getPanelStyle()}
+        className="relative"
       >
+        {/* Light diffusion radial gradient */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 60%)",
+            borderRadius: "16px",
+          }}
+        />
+        
+        {/* Subtle shimmer overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.02) 50%, transparent 60%)",
+            animation: "shimmer 10s ease-in-out infinite",
+            borderRadius: "16px",
+          }}
+        />
+        <style jsx>{`
+          @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%) translateY(-100%); }
+            50% { transform: translateX(100%) translateY(100%); }
+          }
+        `}</style>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-600/30">
+        <div className="flex items-center justify-between p-4 relative z-10" style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+              className="p-1.5 rounded-lg transition-all duration-200"
+              style={{
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "none",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+              }}
             >
               {isCollapsed ? (
-                <ChevronRight size={16} className="text-slate-400" />
+                <ChevronRight size={16} className="text-slate-300" />
               ) : (
-                <ChevronDown size={16} className="text-slate-400" />
+                <ChevronDown size={16} className="text-slate-300" />
               )}
             </button>
-            <h3 className="text-sm font-semibold text-slate-200">
+            <h3 className="text-sm font-semibold text-slate-100 drop-shadow-sm">
               Testing Panel
             </h3>
             {compactMode && (
-              <span className="text-xs text-slate-400 bg-slate-700/50 px-2 py-0.5 rounded">
+              <span 
+                className="text-xs text-slate-300 px-2 py-0.5 rounded-md"
+                style={{
+                  background: "rgba(255, 255, 255, 0.04)",
+                  border: "none",
+                }}
+              >
                 Compact
               </span>
             )}
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+            className="p-1.5 rounded-lg transition-all duration-200"
+            style={{
+              background: "rgba(255, 255, 255, 0.04)",
+              border: "none",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+            }}
           >
-            <X size={16} className="text-slate-400" />
+            <X size={16} className="text-slate-300" />
           </button>
         </div>
 
@@ -461,11 +524,32 @@ export default function FloatingTestingPanel({
             >
               <div className="p-4 space-y-4">
                 {/* Controls */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 relative z-10">
                   <button
                     onClick={handleRun}
                     disabled={isRunning}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white text-sm rounded transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-white text-sm rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: isRunning 
+                        ? "rgba(100, 116, 139, 0.3)" 
+                        : "linear-gradient(135deg, rgba(59, 130, 246, 0.7) 0%, rgba(37, 99, 235, 0.8) 100%)",
+                      border: "none",
+                      boxShadow: isRunning 
+                        ? "inset 0 2px 4px rgba(0, 0, 0, 0.2)" 
+                        : "0 2px 8px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isRunning) {
+                        e.currentTarget.style.background = "linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(37, 99, 235, 0.9) 100%)";
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isRunning) {
+                        e.currentTarget.style.background = "linear-gradient(135deg, rgba(59, 130, 246, 0.7) 0%, rgba(37, 99, 235, 0.8) 100%)";
+                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)";
+                      }
+                    }}
                   >
                     <Play size={14} />
                     Run
@@ -473,14 +557,44 @@ export default function FloatingTestingPanel({
                   <button
                     onClick={handlePause}
                     disabled={!isRunning}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-700/50 text-white text-sm rounded transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-white text-sm rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "none",
+                      boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.04)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (isRunning) {
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (isRunning) {
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                        e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255, 255, 255, 0.04)";
+                      }
+                    }}
                   >
                     <Pause size={14} />
                     {isPaused ? "Resume" : "Pause"}
                   </button>
                   <button
                     onClick={handleReset}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-sm rounded transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 text-white text-sm rounded-lg transition-all duration-200"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "none",
+                      boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.04)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                      e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                      e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255, 255, 255, 0.04)";
+                    }}
                   >
                     <RotateCcw size={14} />
                     Reset
@@ -489,15 +603,29 @@ export default function FloatingTestingPanel({
 
                 {/* Scenario Input */}
                 {!compactMode && (
-                  <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <div className="relative z-10">
+                    <label className="block text-xs font-medium text-slate-200 mb-1 drop-shadow-sm">
                       Test Scenario
                     </label>
                     <textarea
                       value={scenario}
                       onChange={(e) => setScenario(e.target.value)}
                       placeholder="Describe the test scenario..."
-                      className="w-full h-16 px-3 py-2 bg-slate-800/50 border border-slate-600/30 rounded text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 resize-none"
+                      className="w-full h-16 px-3 py-2 text-sm text-slate-100 placeholder-slate-400 focus:outline-none resize-none transition-all duration-200"
+                      style={{
+                        background: "rgba(255, 255, 255, 0.04)",
+                        border: "none",
+                        borderRadius: "8px",
+                        boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.1)",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+                        e.currentTarget.style.boxShadow = "inset 0 2px 4px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(59, 130, 246, 0.3)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                        e.currentTarget.style.boxShadow = "inset 0 2px 4px rgba(0, 0, 0, 0.1)";
+                      }}
                     />
                   </div>
                 )}
@@ -514,21 +642,40 @@ export default function FloatingTestingPanel({
                         onSelect={setSelectedId}
                       />
                     ) : (
-                      <div>
-                        <div className="text-xs font-medium text-slate-300 mb-2">Timeline</div>
+                      <div className="relative z-10">
+                        <div className="text-xs font-medium text-slate-200 mb-2 drop-shadow-sm">Timeline</div>
                         <div className="space-y-1 max-h-32 overflow-y-auto">
                           {timelineItems.map((item) => (
                             <button
                               key={item.nodeId}
                               onClick={() => setSelectedId(item.nodeId)}
-                              className={`w-full text-left p-2 rounded text-sm transition-colors ${
-                                selectedId === item.nodeId
-                                  ? "bg-blue-600/20 border border-blue-500/30"
-                                  : "bg-slate-800/30 hover:bg-slate-700/30"
+                              className={`w-full text-left p-2 rounded-lg text-sm transition-all duration-200 ${
+                                selectedId === item.nodeId ? "" : ""
                               }`}
+                              style={{
+                                background: selectedId === item.nodeId 
+                                  ? "rgba(59, 130, 246, 0.12)" 
+                                  : "rgba(255, 255, 255, 0.04)",
+                                border: "none",
+                                boxShadow: selectedId === item.nodeId 
+                                  ? "0 2px 8px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08)" 
+                                  : "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
+                              }}
+                              onMouseEnter={(e) => {
+                                if (selectedId !== item.nodeId) {
+                                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.06)";
+                                  e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255, 255, 255, 0.05)";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (selectedId !== item.nodeId) {
+                                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                                  e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255, 255, 255, 0.03)";
+                                }
+                              }}
                             >
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-200 font-medium">{item.title}</span>
+                                <span className="text-slate-100 font-medium">{item.title}</span>
                                 <span
                                   className={`w-2 h-2 rounded-full ${
                                     item.status === "running"
@@ -537,9 +684,18 @@ export default function FloatingTestingPanel({
                                       ? "bg-green-400"
                                       : "bg-red-400"
                                   }`}
+                                  style={{
+                                    boxShadow: `0 0 4px ${
+                                      item.status === "running"
+                                        ? "rgba(96, 165, 250, 0.6)"
+                                        : item.status === "success"
+                                        ? "rgba(52, 211, 153, 0.6)"
+                                        : "rgba(248, 113, 113, 0.6)"
+                                    }`
+                                  }}
                                 />
                               </div>
-                              <div className="text-xs text-slate-400 mt-1">
+                              <div className="text-xs text-slate-300 mt-1">
                                 {((item.endedAt - item.startedAt) / 1000).toFixed(2)}s
                               </div>
                             </button>
@@ -552,8 +708,8 @@ export default function FloatingTestingPanel({
 
                 {/* Results */}
                 {artifacts.length > 0 && (
-                  <div>
-                    <div className="text-xs font-medium text-slate-300 mb-2">Results</div>
+                  <div className="relative z-10">
+                    <div className="text-xs font-medium text-slate-200 mb-2 drop-shadow-sm">Results</div>
                     <div className={`space-y-2 ${compactMode ? "max-h-32" : "max-h-48"} overflow-y-auto`}>
                       {artifacts.map((artifact) => (
                         <ResultCard
@@ -571,27 +727,48 @@ export default function FloatingTestingPanel({
 
                 {/* Inspector */}
                 {selected && (
-                  <div>
-                    <div className="text-xs font-medium text-slate-300 mb-2">Inspector</div>
-                    <div className="bg-slate-800/30 rounded p-3 text-sm">
-                      <div className="text-slate-200 font-medium mb-2">{selected.title}</div>
+                  <div className="relative z-10">
+                    <div className="text-xs font-medium text-slate-200 mb-2 drop-shadow-sm">Inspector</div>
+                    <div 
+                      className="rounded-lg p-3 text-sm"
+                      style={{
+                        background: "rgba(255, 255, 255, 0.04)",
+                        border: "none",
+                        boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.1)",
+                      }}
+                    >
+                      <div className="text-slate-100 font-medium mb-2 drop-shadow-sm">{selected.title}</div>
                       <div className="space-y-2 text-xs">
                         <div>
-                          <span className="text-slate-400">Status:</span>{" "}
-                          <span className={selected.status === "error" ? "text-red-400" : "text-green-400"}>
+                          <span className="text-slate-300">Status:</span>{" "}
+                          <span 
+                            className={selected.status === "error" ? "text-red-300" : "text-green-300"}
+                            style={{
+                              textShadow: selected.status === "error" 
+                                ? "0 0 4px rgba(248, 113, 113, 0.4)" 
+                                : "0 0 4px rgba(52, 211, 153, 0.4)"
+                            }}
+                          >
                             {selected.status}
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-400">Duration:</span>{" "}
-                          <span className="text-slate-200">
+                          <span className="text-slate-300">Duration:</span>{" "}
+                          <span className="text-slate-100">
                             {selected.durationMs ? `${selected.durationMs}ms` : "N/A"}
                           </span>
                         </div>
                         {selected.output && (
                           <div>
-                            <span className="text-slate-400">Output:</span>
-                            <div className="mt-1 p-2 bg-slate-900/50 rounded font-mono text-xs">
+                            <span className="text-slate-300">Output:</span>
+                            <div 
+                              className="mt-1 p-2 rounded-md font-mono text-xs"
+                              style={{
+                                background: "rgba(0, 0, 0, 0.15)",
+                                border: "none",
+                                boxShadow: "inset 0 2px 4px rgba(0, 0, 0, 0.15)",
+                              }}
+                            >
                               <NodeOutputRenderer artifact={selected} />
                             </div>
                           </div>
