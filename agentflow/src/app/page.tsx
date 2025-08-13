@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Project, CanvasNode, Connection, NodeType } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
-import ProjectDashboard from "@/components/dashboard/ProjectDashboard";
+import CleanDashboard from "@/components/dashboard/CleanDashboard";
 import DesignerLayout from "@/components/layout/DesignerLayout";
 import ChatPanel from "@/components/chat/ChatPanel";
 
@@ -654,7 +654,7 @@ export default function AgentFlowPage() {
   // Render
   if (currentView === "projects") {
     return (
-      <ProjectDashboard
+      <CleanDashboard
         projects={projects}
         onCreateProject={() =>
           handleCreateProject({
@@ -666,6 +666,14 @@ export default function AgentFlowPage() {
           })
         }
         onOpenProject={handleOpenProject}
+        onManageFolders={() => {
+          // TODO: Implement folder management
+          console.log('Manage folders clicked');
+        }}
+        onManageMCPServers={() => {
+          // TODO: Implement MCP server management
+          console.log('Manage MCP servers clicked');
+        }}
       />
     );
   }

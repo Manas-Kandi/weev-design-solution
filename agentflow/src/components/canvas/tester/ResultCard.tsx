@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { Copy, Check } from "lucide-react";
 import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/components/canvas/tester/Renderers";
 import type { NodeExecutionArtifact } from "@/types/tester";
 
@@ -33,6 +34,7 @@ export default function ResultCard({
   onToggleBreakpoint?: () => void;
 }) {
   const [tab, setTab] = useState<TabId>("summary");
+  const [copied, setCopied] = useState(false);
 
   const outputObj: Record<string, unknown> | null =
     artifact.output && typeof artifact.output === "object" && !Array.isArray(artifact.output)
@@ -45,6 +47,21 @@ export default function ResultCard({
     () => `${artifact.nodeType}${artifact.nodeSubtype ? ":" + artifact.nodeSubtype : ""}`,
     [artifact.nodeType, artifact.nodeSubtype]
   );
+
+  // Add copy to clipboard function
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  // Get output as string for copying
+  const getOutputAsString = useMemo(() => {
+    if (!artifact.output) return '';
+    if (typeof artifact.output === 'string') return artifact.output;
+    return JSON.stringify(artifact.output, null, 2);
+  }, [artifact.output]);
 
   return (
     <div
@@ -110,28 +127,50 @@ export default function ResultCard({
 
       {/* Tabs */}
       <div className="mt-2">
-        <div className="flex items-center gap-1 text-[11px]">
-          {([
-            { id: "summary", label: "Summary" },
-            { id: "output", label: "Output" },
-            { id: "inputs", label: "Inputs" },
-            { id: "llm", label: "LLM", disabled: !isLLM },
-            { id: "trace", label: "Trace" },
-            { id: "errors", label: "Errors" },
-          ] as TabDef[]).map((t) => (
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-1 text-[11px]">
+            {([
+              { id: "summary", label: "Summary" },
+              { id: "output", label: "Output" },
+              { id: "inputs", label: "Inputs" },
+              { id: "llm", label: "LLM", disabled: !isLLM },
+              { id: "trace", label: "Trace" },
+              { id: "errors", label: "Errors" },
+            ] as TabDef[]).map((t) => (
+              <button
+                key={t.id}
+                disabled={!!t.disabled}
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  "px-2 py-1 rounded",
+                  tab === t.id ? "bg-gray-800 text-gray-100" : "text-gray-400 hover:bg-[#1a1c20]",
+                  t.disabled ? "opacity-50 cursor-not-allowed" : undefined
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {tab === "output" && getOutputAsString && (
             <button
-              key={t.id}
-              disabled={!!t.disabled}
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "px-2 py-1 rounded",
-                tab === t.id ? "bg-gray-800 text-gray-100" : "text-gray-400 hover:bg-[#1a1c20]",
-                t.disabled ? "opacity-50 cursor-not-allowed" : undefined
-              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard(getOutputAsString);
+              }}
+              className="text-xs text-gray-400 hover:text-gray-200 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-800"
+              title="Copy output to clipboard"
             >
-              {t.label}
+              {copied ? (
+                <>
+                  <Check size={12} /> Copied!
+                </>
+              ) : (
+                <>
+                  <Copy size={12} /> Copy
+                </>
+              )}
             </button>
-          ))}
+          )}
         </div>
         <div className="mt-2">
           {tab === "summary" && <SummaryText text={artifact.summary} maxChars={800} />}
