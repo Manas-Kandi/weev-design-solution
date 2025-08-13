@@ -105,10 +105,10 @@ export async function runWorkflow(
     try {
       // Execute the node based on its type with comprehensive LLM integration
       if (currentNode.subtype === 'agent') {
-        // Enhanced agent reasoning with context awareness
+        // Enhanced agent reasoning with context awareness - using actual properties panel data
         const systemPrompt = (currentNode.data as any).systemPrompt || 'You are a helpful AI assistant.';
-        const behavior = (currentNode.data as any).behavior || '';
-        const userPrompt = inputData.input || (currentNode.data as any).prompt || '';
+        const behavior = (currentNode.data as any).behavior || ''; // This comes from properties panel
+        const userPrompt = inputData.input || testingOptions?.scenario?.description || '';
         
         // Gather context from connected knowledge base nodes
         let contextInfo = "";
@@ -116,7 +116,8 @@ export async function runWorkflow(
         for (const conn of kbConnections) {
           const sourceNode = nodes.find(n => n.id === conn.sourceNode);
           if (sourceNode?.subtype === 'knowledge-base' && executionResults[conn.sourceNode]) {
-            contextInfo += `\n\nContext from Knowledge Base (${sourceNode.data?.title || sourceNode.id}):\n${executionResults[conn.sourceNode][conn.sourceOutput]}`;
+            const nodeName = (sourceNode.data as any)?.title || sourceNode.id;
+            contextInfo += `\n\nContext from Knowledge Base (${nodeName}):\n${executionResults[conn.sourceNode][conn.sourceOutput]}`;
           }
         }
         
@@ -125,60 +126,124 @@ export async function runWorkflow(
         for (const conn of inputConnections) {
           const sourceNode = nodes.find(n => n.id === conn.sourceNode);
           if (sourceNode && executionResults[conn.sourceNode] && sourceNode.subtype !== 'knowledge-base') {
-            previousNodeOutputs += `\n\nOutput from ${sourceNode.data?.title || sourceNode.id} (${sourceNode.subtype}):\n${executionResults[conn.sourceNode][conn.sourceOutput]}`;
+            const nodeName = (sourceNode.data as any)?.title || sourceNode.id;
+            previousNodeOutputs += `\n\nOutput from ${nodeName} (${sourceNode.subtype}):\n${executionResults[conn.sourceNode][conn.sourceOutput]}`;
           }
         }
         
+        // Build comprehensive prompt using properties panel data
         const fullPrompt = `${systemPrompt}
 
-${behavior ? `Behavior Instructions: ${behavior}` : ''}
+${behavior ? `User-Defined Behavior: ${behavior}` : 'No specific behavior defined - use general AI assistant capabilities.'}
 
 ${contextInfo}${previousNodeOutputs}
 
 User Input: ${userPrompt}
 
-Please provide a thoughtful, detailed response that takes into account all the context and previous outputs provided above.`.trim();
+Based on the behavior defined in the properties panel and the context provided, please provide a thoughtful, detailed response that demonstrates the specific behavior and capabilities described.`.trim();
 
-        output = await callGemini(fullPrompt);
-        executionResults[currentNode.id] = { [currentNode.outputs[0].id]: output };
+        const llmResponse = await callGemini(fullPrompt);
+        
+        // Create enhanced output with friendly format + metadata
+        output = {
+          response: llmResponse,
+          metadata: {
+            nodeType: 'agent',
+            nodeId: currentNode.id,
+            behavior: behavior || 'No specific behavior defined',
+            systemPrompt: systemPrompt,
+            userInput: userPrompt,
+            contextSources: kbConnections.length + inputConnections.length,
+            executionTime: Date.now(),
+            llmProvider: 'gemini'
+          }
+        };
+        executionResults[currentNode.id] = { [currentNode.outputs[0].id]: llmResponse };
         
       } else if (currentNode.subtype === 'tool-agent') {
-        // Enhanced tool execution with LLM reasoning
-        const toolName = (currentNode.data as any).toolName || 'generic';
-        const operation = (currentNode.data as any).operation || 'execute';
-        const args = (currentNode.data as any).args || {};
+        // Enhanced tool execution with LLM reasoning - using actual properties panel data
+        const toolBehavior = (currentNode.data as any).rules?.nl || ''; // This comes from properties panel
+        const simulation = (currentNode.data as any).simulation || {};
+        const providerId = simulation.providerId || 'generic';
+        const operation = simulation.operation || 'execute';
+        const userPrompt = inputData.input || testingOptions?.scenario?.description || '';
         
-        // Use LLM to reason about tool usage
-        const toolReasoningPrompt = `You are executing a tool operation. Here are the details:
+        // Gather context from connected nodes
+        let previousNodeOutputs = "";
+        for (const conn of inputConnections) {
+          const sourceNode = nodes.find(n => n.id === conn.sourceNode);
+          if (sourceNode && executionResults[conn.sourceNode]) {
+            const nodeName = (sourceNode.data as any)?.title || sourceNode.id;
+            previousNodeOutputs += `\n\nInput from ${nodeName} (${sourceNode.subtype}):\n${executionResults[conn.sourceNode][conn.sourceOutput]}`;
+          }
+        }
+        
+        // Use LLM to reason about tool usage based on properties panel behavior
+        const toolReasoningPrompt = `You are a tool agent with the following behavior defined by the user:
 
-Tool: ${toolName}
+Tool Behavior: ${toolBehavior || 'No specific behavior defined - act as a general tool agent.'}
+
+Provider: ${providerId}
 Operation: ${operation}
-Arguments: ${JSON.stringify(args, null, 2)}
-Input Data: ${JSON.stringify(inputData, null, 2)}
+${previousNodeOutputs}
 
-Please simulate the execution of this tool and provide a realistic, detailed result that would be expected from this operation. Be specific and provide structured output that reflects what this tool would actually return.`;
+User Input: ${userPrompt}
+
+Based on the behavior defined in the properties panel, simulate executing this tool and provide a realistic, detailed result. Make sure your response demonstrates the specific behavior and capabilities described by the user. Be specific and provide structured output that reflects what this tool would actually return.`;
 
         const toolResult = await callGemini(toolReasoningPrompt);
-        output = toolResult;
-        executionResults[currentNode.id] = { [currentNode.outputs[0].id]: output };
+        
+        // Create enhanced output with friendly format + metadata
+        output = {
+          response: toolResult,
+          metadata: {
+            nodeType: 'tool-agent',
+            nodeId: currentNode.id,
+            behavior: toolBehavior || 'No specific behavior defined',
+            provider: providerId,
+            operation: operation,
+            userInput: userPrompt,
+            contextSources: inputConnections.length,
+            executionTime: Date.now(),
+            llmProvider: 'gemini'
+          }
+        };
+        executionResults[currentNode.id] = { [currentNode.outputs[0].id]: toolResult };
         
       } else if (currentNode.subtype === 'knowledge-base') {
-        // Enhanced knowledge base with LLM-powered retrieval simulation
-        const query = inputData.input || inputData.query || '';
-        const kbTitle = (currentNode.data as any).title || 'Knowledge Base';
+        // Enhanced knowledge base with LLM-powered retrieval simulation - using actual properties panel data
+        const query = inputData.input || testingOptions?.scenario?.description || '';
+        const operation = (currentNode.data as any).operation || 'retrieve';
         const documents = (currentNode.data as any).documents || [];
+        const metadata = (currentNode.data as any).metadata || {};
         
-        const kbPrompt = `You are a knowledge base system named "${kbTitle}". 
+        const kbPrompt = `You are a knowledge base system performing a ${operation} operation.
 
-Available documents: ${documents.map((doc: any) => `- ${doc.name || doc.title || 'Document'}`).join('\n')}
+Available documents: ${documents.map((doc: any) => `- ${doc.name || doc.title || 'Document'}: ${doc.content ? doc.content.substring(0, 100) + '...' : 'No content preview'}`).join('\n')}
 
 Query: ${query}
 
-Please simulate retrieving relevant information from this knowledge base and provide a comprehensive, well-structured response that would be typical for this type of query. Include specific details and examples that would be found in the documents.`;
+Metadata: ${JSON.stringify(metadata, null, 2)}
+
+Based on the documents uploaded in the properties panel, simulate retrieving relevant information and provide a comprehensive, well-structured response. Include specific details and examples that would realistically be found in these documents.`;
 
         const kbResult = await callGemini(kbPrompt);
-        output = kbResult;
-        executionResults[currentNode.id] = { [currentNode.outputs[0].id]: output };
+        
+        // Create enhanced output with friendly format + metadata
+        output = {
+          response: kbResult,
+          metadata: {
+            nodeType: 'knowledge-base',
+            nodeId: currentNode.id,
+            operation: operation,
+            documentsCount: documents.length,
+            query: query,
+            metadata: metadata,
+            executionTime: Date.now(),
+            llmProvider: 'gemini'
+          }
+        };
+        executionResults[currentNode.id] = { [currentNode.outputs[0].id]: kbResult };
         
       } else if (currentNode.subtype === 'decision-tree' || currentNode.subtype === 'router') {
         // Enhanced decision making with LLM reasoning for complex routing
@@ -190,9 +255,10 @@ Please simulate retrieving relevant information from this knowledge base and pro
         const outputConnections = connections.filter(c => c.sourceNode === currentNode.id);
         const availableRoutes = outputConnections.map(conn => {
           const targetNode = nodes.find(n => n.id === conn.targetNode);
+          const targetNodeName = (targetNode?.data as any)?.title || targetNode?.id || 'Unknown';
           return {
             outputId: conn.sourceOutput,
-            targetNode: targetNode?.data?.title || targetNode?.id || 'Unknown',
+            targetNode: targetNodeName,
             targetType: targetNode?.subtype || 'unknown'
           };
         });
