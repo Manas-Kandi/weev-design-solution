@@ -24,21 +24,21 @@ import { CanvasNode, Connection } from "@/types";
 
 interface FloatingPropertiesPanelProps {
   selectedNode: CanvasNode | null;
-  onChange: (updatedNode: CanvasNode) => void;
-  nodes: CanvasNode[];
-  connections: Connection[];
+  onNodeChange: (updatedNode: CanvasNode) => void;
   onConnectionsChange: (next: Connection[]) => void;
   onClose: () => void;
+  isTestingPanelVisible?: boolean;
   compactMode?: boolean;
+  isVerticalSplit?: boolean;
 }
 
-const getFloatingPanelStyle = (compactMode: boolean): React.CSSProperties => ({
-  position: "fixed",
-  right: 20,
-  top: 20,
-  bottom: compactMode ? undefined : 20,
-  height: compactMode ? "calc(50vh - 30px)" : undefined,
-  width: 360,
+const getFloatingPanelStyle = (compactMode: boolean, isVerticalSplit: boolean = false): React.CSSProperties => ({
+  position: isVerticalSplit ? "relative" : "fixed",
+  right: isVerticalSplit ? undefined : 20,
+  top: isVerticalSplit ? undefined : 20,
+  bottom: compactMode && !isVerticalSplit ? undefined : isVerticalSplit ? undefined : 20,
+  height: isVerticalSplit ? "100%" : compactMode ? "calc(50vh - 30px)" : undefined,
+  width: isVerticalSplit ? "100%" : 360,
   background: "rgba(30, 30, 30, 0.65)",
   backdropFilter: "blur(8px)",
   WebkitBackdropFilter: "blur(8px)",
@@ -56,12 +56,12 @@ const getFloatingPanelStyle = (compactMode: boolean): React.CSSProperties => ({
 
 export default function FloatingPropertiesPanel({
   selectedNode,
-  onChange,
-  nodes,
-  connections,
+  onNodeChange,
   onConnectionsChange,
   onClose,
+  isTestingPanelVisible = false,
   compactMode = false,
+  isVerticalSplit = false,
 }: FloatingPropertiesPanelProps) {
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -99,7 +99,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <AgentPropertiesPanel
             node={selectedNode as any}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -107,7 +107,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <ToolAgentPropertiesPanel
             node={selectedNode as any}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -115,7 +115,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <MessagePropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -123,7 +123,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <PromptTemplatePropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -132,7 +132,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <IfElsePropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -140,7 +140,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <KnowledgeBasePropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -148,7 +148,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <DecisionTreePropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -156,7 +156,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <StateMachinePropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -164,7 +164,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <SimulatorPropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -172,7 +172,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <TestCasePropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -180,7 +180,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <ChatInterfacePropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -188,7 +188,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <DashboardPropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -196,7 +196,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <ConversationFlowPropertiesPanel
             node={selectedNode as any}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -204,7 +204,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <RuleBoxPropertiesPanel
             node={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
         break;
@@ -212,7 +212,7 @@ export default function FloatingPropertiesPanel({
         content = (
           <EnhancedPropertiesPanel
             selectedNode={selectedNode}
-            onChange={onChange}
+            onChange={onNodeChange}
           />
         );
     }

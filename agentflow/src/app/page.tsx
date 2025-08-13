@@ -555,26 +555,9 @@ export default function AgentFlowPage() {
   }, [nodes, currentProject]);
 
   const handleTestFlow = async () => {
-    // If Tester V2 is enabled, open the new modal and delegate run to it
-    if (TESTER_V2_ENABLED) {
-      setShowTester(true);
-      return;
-    }
-
-    // Legacy behavior (V1): run immediately and show side results panel
-    setIsTesting(true);
-    setTestFlowResult(null);
-    try {
-      const result = await runWorkflow(nodes, connections, startNodeId);
-      setTestFlowResult(result);
-    } catch (err) {
-      console.error("Error running workflow:", err);
-      setTestFlowResult({
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
-    } finally {
-      setIsTesting(false);
-    }
+    // Show the SimpleTestingPanel (our liquid glassmorphism testing panel)
+    setShowTester(true);
+    return;
   };
 
   // Debug logging for connections state

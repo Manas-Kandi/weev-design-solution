@@ -28,6 +28,7 @@ interface SimpleTestingPanelProps {
   startNodeId?: string | null;
   onTesterEvent?: (event: any) => void;
   onNodeSelect?: (nodeId: string) => void;
+  isVerticalSplit?: boolean;
 }
 
 // Status indicator component
@@ -207,6 +208,7 @@ export function SimpleTestingPanel({
   startNodeId = null,
   onTesterEvent,
   onNodeSelect,
+  isVerticalSplit = false,
 }: SimpleTestingPanelProps) {
   const [scenario, setScenario] = useState("email writer");
   const [isRunning, setIsRunning] = useState(false);
@@ -330,26 +332,91 @@ export function SimpleTestingPanel({
   if (!isVisible) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      className={`fixed right-4 top-4 bottom-4 z-50 flex flex-col ${
-        compactMode ? 'w-80' : 'w-96'
-      }`}
+    <div
+      className={`${isVerticalSplit ? 'h-full' : 'fixed top-4 bottom-4'} z-50 flex flex-col`}
       style={{
-        background: 'rgba(15, 23, 42, 0.85)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        right: isVerticalSplit ? undefined : (isPropertiesPanelVisible ? '340px' : '16px'),
+        width: isVerticalSplit ? '100%' : (isPropertiesPanelVisible ? '320px' : '400px'),
+        background: 'rgba(15, 23, 42, 0.95)',
+        backdropFilter: 'blur(12px)',
         border: '1px solid rgba(148, 163, 184, 0.2)',
-        borderRadius: '16px',
-        boxShadow: `
-          0 8px 32px rgba(0, 0, 0, 0.3),
-          0 1px 0 rgba(255, 255, 255, 0.1) inset,
-          0 -1px 0 rgba(0, 0, 0, 0.2) inset
-        `,
+        borderRadius: '12px',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
       }}
     >
+      {/* Liquid Glassmorphism Effects */}
+      <div 
+        className="absolute inset-0 pointer-events-none liquid-overlay"
+        style={{
+          background: `
+            radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+              rgba(59, 130, 246, 0.1) 0%, 
+              transparent 40%
+            )
+          `,
+          borderRadius: '20px',
+          opacity: 0.6,
+          animation: 'liquidFlow 8s ease-in-out infinite'
+        }}
+      />
+      
+      {/* Animated Border Glow */}
+      <div 
+        className="absolute inset-0 pointer-events-none border-glow"
+        style={{
+          background: `
+            linear-gradient(45deg, 
+              rgba(59, 130, 246, 0.3) 0%, 
+              rgba(139, 92, 246, 0.3) 25%,
+              rgba(16, 185, 129, 0.3) 50%,
+              rgba(236, 72, 153, 0.3) 75%,
+              rgba(59, 130, 246, 0.3) 100%
+            )
+          `,
+          borderRadius: '20px',
+          padding: '1px',
+          mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          maskComposite: 'xor',
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+          animation: 'borderFlow 6s linear infinite',
+          backgroundSize: '400% 400%'
+        }}
+      />
+
+      {/* Floating Orbs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ borderRadius: '20px' }}>
+        <div 
+          className="absolute w-32 h-32 rounded-full opacity-20"
+          style={{
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%)',
+            top: '10%',
+            left: '20%',
+            animation: 'float1 12s ease-in-out infinite'
+          }}
+        />
+        <div 
+          className="absolute w-24 h-24 rounded-full opacity-15"
+          style={{
+            background: 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%)',
+            bottom: '20%',
+            right: '15%',
+            animation: 'float2 10s ease-in-out infinite reverse'
+          }}
+        />
+        <div 
+          className="absolute w-20 h-20 rounded-full opacity-25"
+          style={{
+            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, transparent 70%)',
+            top: '60%',
+            left: '70%',
+            animation: 'float3 14s ease-in-out infinite'
+          }}
+        />
+      </div>
+
+      {/* Content Container */}
+      <div className="relative z-10 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-slate-700/30">
         <div className="flex items-center gap-3">
@@ -496,6 +563,64 @@ export function SimpleTestingPanel({
           )}
         </div>
       </div>
-    </motion.div>
+      </div>
+
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes liquidFlow {
+          0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+          25% { transform: translate(10px, -5px) rotate(1deg) scale(1.02); }
+          50% { transform: translate(-5px, 10px) rotate(-0.5deg) scale(0.98); }
+          75% { transform: translate(-10px, -10px) rotate(0.5deg) scale(1.01); }
+        }
+
+        @keyframes borderFlow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float1 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; }
+          25% { transform: translate(15px, -20px) scale(1.1); opacity: 0.3; }
+          50% { transform: translate(-10px, 15px) scale(0.9); opacity: 0.15; }
+          75% { transform: translate(-20px, -10px) scale(1.05); opacity: 0.25; }
+        }
+
+        @keyframes float2 {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.15; }
+          33% { transform: translate(-12px, 18px) rotate(120deg); opacity: 0.25; }
+          66% { transform: translate(18px, -12px) rotate(240deg); opacity: 0.1; }
+        }
+
+        @keyframes float3 {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.25; }
+          20% { transform: translate(8px, -15px) scale(1.15); opacity: 0.35; }
+          40% { transform: translate(-15px, 8px) scale(0.85); opacity: 0.15; }
+          60% { transform: translate(12px, 12px) scale(1.1); opacity: 0.3; }
+          80% { transform: translate(-8px, -18px) scale(0.9); opacity: 0.2; }
+        }
+
+        /* Hover effects for liquid interaction */
+        .testing-panel:hover .liquid-overlay {
+          animation-duration: 4s;
+          opacity: 0.8;
+        }
+
+        .testing-panel:hover .border-glow {
+          animation-duration: 3s;
+        }
+
+        /* Breathing effect for the entire panel */
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.002); }
+        }
+
+        .testing-panel {
+          animation: breathe 8s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
   );
 }

@@ -43,22 +43,60 @@ export default function FloatingSidebarContainer({
   const hasTestingPanel = showTesting;
   const bothPanelsVisible = hasPropertiesPanel && hasTestingPanel;
 
+  if (bothPanelsVisible) {
+    // Vertical split layout when both panels are visible
+    return (
+      <div
+        className="fixed top-4 bottom-4 right-4 z-50 flex flex-col gap-2"
+        style={{ width: '400px' }}
+      >
+        {/* Properties Panel - Top Half */}
+        <div className="flex-1 min-h-0">
+          <FloatingPropertiesPanel
+            selectedNode={selectedNode}
+            onNodeChange={onNodeChange}
+            onClose={onNodeClose}
+            onConnectionsChange={onConnectionsChange}
+            isTestingPanelVisible={hasTestingPanel}
+            compactMode={true}
+            isVerticalSplit={true}
+          />
+        </div>
+
+        {/* Testing Panel - Bottom Half */}
+        <div className="flex-1 min-h-0">
+          <SimpleTestingPanel
+            nodes={nodes}
+            connections={connections}
+            isVisible={true}
+            onClose={onTestingClose}
+            isPropertiesPanelVisible={hasPropertiesPanel}
+            compactMode={true}
+            onTesterEvent={onTesterEvent}
+            startNodeId={startNodeId ?? null}
+            isVerticalSplit={true}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Properties Panel */}
+      {/* Properties Panel - Full Size */}
       {hasPropertiesPanel && (
         <FloatingPropertiesPanel
           selectedNode={selectedNode}
-          onChange={onNodeChange}
-          nodes={nodes}
-          connections={connections}
-          onConnectionsChange={onConnectionsChange}
+          onNodeChange={onNodeChange}
           onClose={onNodeClose}
-          compactMode={bothPanelsVisible}
+          onConnectionsChange={onConnectionsChange}
+          isTestingPanelVisible={hasTestingPanel}
+          compactMode={false}
+          isVerticalSplit={false}
         />
       )}
 
-      {/* Testing Panel */}
+      {/* Testing Panel - Full Size */}
       {hasTestingPanel && (
         <SimpleTestingPanel
           nodes={nodes}
@@ -66,9 +104,10 @@ export default function FloatingSidebarContainer({
           isVisible={true}
           onClose={onTestingClose}
           isPropertiesPanelVisible={hasPropertiesPanel}
-          compactMode={bothPanelsVisible}
+          compactMode={false}
           onTesterEvent={onTesterEvent}
           startNodeId={startNodeId ?? null}
+          isVerticalSplit={false}
         />
       )}
     </>
