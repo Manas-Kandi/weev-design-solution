@@ -20,6 +20,7 @@ interface FloatingSidebarContainerProps {
   // Shared props
   onConnectionsChange: (next: Connection[]) => void;
   startNodeId?: string | null;
+  onPropertiesClose?: () => void;
 }
 
 export default function FloatingSidebarContainer({
@@ -32,6 +33,7 @@ export default function FloatingSidebarContainer({
   onTesterEvent,
   onConnectionsChange,
   startNodeId,
+  onPropertiesClose,
 }: FloatingSidebarContainerProps) {
   const hasPropertiesPanel = selectedNode !== null;
   const hasTestingPanel = showTesting;
@@ -49,6 +51,7 @@ export default function FloatingSidebarContainer({
             nodes={nodes}
             connections={connections}
             onConnectionsChange={onConnectionsChange}
+            onClose={onPropertiesClose}
           />
         </div>
 
@@ -81,6 +84,7 @@ export default function FloatingSidebarContainer({
             nodes={nodes}
             connections={connections}
             onConnectionsChange={onConnectionsChange}
+            onClose={onPropertiesClose}
           />
         </div>
       </div>

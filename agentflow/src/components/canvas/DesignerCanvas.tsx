@@ -283,6 +283,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         }}
         onTesterEvent={handleTesterEvent}
         onConnectionsChange={onConnectionsChange}
+        onPropertiesClose={() => onNodeSelect(null)}
       />
       {/* Pass the selected node id here if available */}
     </div>

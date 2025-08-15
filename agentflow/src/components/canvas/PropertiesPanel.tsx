@@ -2,7 +2,7 @@
 import React from "react";
 import { MousePointerClick } from "lucide-react";
 import { Skeleton } from "@/components/primitives/skeleton";
-import { figmaPropertiesTheme as theme } from "@/components/panels/propertiesPanelTheme";
+import { figmaPropertiesTheme as theme, themeHelpers } from "@/components/panels/propertiesPanelTheme";
 import AgentPropertiesPanel from "@/components/panels/AgentPropertiesPanel";
 import ChatInterfacePropertiesPanel from "@/components/panels/ChatInterfacePropertiesPanel";
 import ConversationFlowPropertiesPanel from "@/components/panels/ConversationFlowPropertiesPanel";
@@ -32,6 +32,7 @@ interface PropertiesPanelProps {
   nodes: CanvasNode[];
   connections: Connection[];
   onConnectionsChange: (next: Connection[]) => void;
+  onClose?: () => void;
 }
 
 const panelStyle: React.CSSProperties = {
@@ -60,6 +61,7 @@ export default function PropertiesPanel({
   nodes,
   connections,
   onConnectionsChange,
+  onClose,
 }: PropertiesPanelProps) {
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -294,7 +296,7 @@ export default function PropertiesPanel({
   }
 
   return (
-    <AnimatedPanel key={nodeType} title={panelTitle}>
+    <AnimatedPanel key={nodeType} title={panelTitle} onClose={onClose}>
       <div className="properties-content flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {content}
         <ContextControlsSection
@@ -308,7 +310,7 @@ export default function PropertiesPanel({
   );
 }
 
-function AnimatedPanel({ title, children }: { title: string; children: React.ReactNode }) {
+function AnimatedPanel({ title, children, onClose }: { title: string; children: React.ReactNode; onClose?: () => void }) {
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {
@@ -326,15 +328,31 @@ function AnimatedPanel({ title, children }: { title: string; children: React.Rea
       <div
         className="properties-header sticky top-0 z-10 px-4 py-3"
         style={{
-          background: "rgba(18,18,20,0.66)",
+          background: "rgba(18,18,20,0.86)",
           WebkitBackdropFilter: "blur(16px) saturate(120%)",
           backdropFilter: "blur(16px) saturate(120%)",
           boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
         }}
       >
         <div className="properties-title text-[16px] leading-5 font-semibold">{title}</div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            aria-label="Close properties"
+            style={{
+              ...themeHelpers.getButtonStyle("secondary"),
+              width: theme.components.button.height,
+              padding: 0,
+            }}
+          >
+            ×
+          </button>
+        )}
       </div>
       {children}
     </div>
