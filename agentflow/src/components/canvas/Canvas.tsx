@@ -6,6 +6,7 @@ import { nodeCategories } from "@/data/nodeDefinitions";
 import ChatBoxNode from "@/components/canvas/ChatBoxNode";
 import Ports from "./Ports";
 import Connections, { ConnectionsHandle } from "./Connections";
+import TrackpadController, { type Transform } from "@/canvas/input/TrackpadController";
 
 const canvasStyle: React.CSSProperties = {
   backgroundColor: "#0D0D0D", // pure dark
@@ -85,6 +86,35 @@ export default function CanvasEngine(props: Props) {
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const connectionsRef = useRef<ConnectionsHandle>(null);
+  const controllerRef = useRef<TrackpadController | null>(null);
+  const latestTransformRef = useRef<Transform>({ x: 0, y: 0, scale: 1 });
+
+  // Keep latest transform in a ref for the controller's getter
+  useEffect(() => {
+    latestTransformRef.current = {
+      x: viewportTransform.x,
+      y: viewportTransform.y,
+      scale: viewportTransform.scale,
+    };
+  }, [viewportTransform.x, viewportTransform.y, viewportTransform.scale]);
+
+  // Initialize TrackpadController
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    controllerRef.current?.dispose?.();
+    controllerRef.current = new TrackpadController(
+      el,
+      () => latestTransformRef.current,
+      (next) => {
+        setViewportTransform({ x: next.x, y: next.y, scale: next.scale });
+      }
+    );
+    return () => {
+      controllerRef.current?.dispose?.();
+      controllerRef.current = null;
+    };
+  }, []);
 
   const handleNodeUpdateWithPulse = useCallback(
     (node: CanvasNode) => {
@@ -328,24 +358,7 @@ export default function CanvasEngine(props: Props) {
     [onNodeSelect]
   );
 
-  // Wheel zoom
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      const scaleFactor = 1.1;
-      const mousePos = screenToCanvas(e.clientX, e.clientY);
-      const newScale =
-        e.deltaY > 0
-          ? Math.max(0.1, viewportTransform.scale / scaleFactor)
-          : Math.min(3, viewportTransform.scale * scaleFactor);
-      setViewportTransform((prev) => ({
-        x: mousePos.x * newScale - (mousePos.x * prev.scale - prev.x),
-        y: mousePos.y * newScale - (mousePos.y * prev.scale - prev.y),
-        scale: newScale,
-      }));
-    },
-    [viewportTransform, screenToCanvas]
-  );
+
 
   // Optimized node dragging with requestAnimationFrame for minimal lag
   useEffect(() => {
@@ -518,13 +531,16 @@ export default function CanvasEngine(props: Props) {
           20 * viewportTransform.scale
         }px`,
         backgroundPosition: `${viewportTransform.x}px ${viewportTransform.y}px`,
+        touchAction: "none",
+        // @ts-expect-error: CSS property supported in modern browsers
+        overscrollBehavior: "none",
+        willChange: "transform",
         cursor: getCursor(),
       }}
       onMouseDown={handleCanvasMouseDown}
       onMouseMove={handleCanvasMouseMove}
       onMouseUp={handleCanvasMouseUp}
       onClick={handleCanvasClick}
-      onWheel={handleWheel}
       tabIndex={0}
       data-start-node-id={startNodeId}
     >
