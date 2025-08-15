@@ -38,14 +38,19 @@ const panelStyle: React.CSSProperties = {
   width: 320,
   minWidth: 260,
   height: "100%",
-  background: "rgba(30,34,44,0.55)",
-  backdropFilter: "blur(12px)",
+  // Liquid Glass surface
+  background: "rgba(18,18,20,0.55)",
+  backdropFilter: "blur(16px) saturate(120%)",
+  WebkitBackdropFilter: "blur(16px) saturate(120%)",
   fontFamily: theme.typography.fontFamily,
   fontSize: 15,
   color: theme.colors.textPrimary,
   display: "flex",
   flexDirection: "column",
-  overflowY: "auto",
+  // Concentric radius + rings + elevation
+  borderRadius: 20,
+  boxShadow:
+    "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(255,255,255,0.05), 0 10px 30px rgba(0,0,0,0.35)",
   boxSizing: "border-box",
 };
 
@@ -98,11 +103,13 @@ export default function PropertiesPanel({
   const nodeType = selectedNode.subtype || selectedNode.type;
 
   let content: React.ReactNode = null;
+  let panelTitle: string = "Properties";
 
   switch (nodeType) {
     case "agent":
-    case "generic":
-    case "human-handoff":
+      case "generic":
+      case "human-handoff":
+      panelTitle = "Agent Rules";
       content = (
         <RuleBoxPropertiesPanel
           node={selectedNode}
@@ -113,6 +120,7 @@ export default function PropertiesPanel({
       );
       break;
     case "tool-agent":
+      panelTitle = "Agent Properties";
       content = (
         <ToolAgentPropertiesPanel
           node={
@@ -125,6 +133,7 @@ export default function PropertiesPanel({
       );
       break;
     case "thinking":
+      panelTitle = "Thinking";
       content = (
         <ThinkingPropertiesPanel
           node={selectedNode}
@@ -135,11 +144,13 @@ export default function PropertiesPanel({
       );
       break;
     case "chat":
+      panelTitle = "Chat Interface";
       content = (
         <ChatInterfacePropertiesPanel node={selectedNode} onChange={onChange} />
       );
       break;
     case "conversation":
+      panelTitle = "Conversation Rules";
       content = (
         <RuleBoxPropertiesPanel
           node={selectedNode}
@@ -150,11 +161,13 @@ export default function PropertiesPanel({
       );
       break;
     case "dashboard":
+      panelTitle = "Dashboard";
       content = (
         <DashboardPropertiesPanel node={selectedNode} onChange={onChange} />
       );
       break;
     case "decision-tree":
+      panelTitle = "Decision Rules";
       content = (
         <RuleBoxPropertiesPanel
           node={selectedNode}
@@ -165,6 +178,7 @@ export default function PropertiesPanel({
       );
       break;
     case "if-else":
+      panelTitle = "Condition Rules";
       content = (
         <RuleBoxPropertiesPanel
           node={selectedNode}
@@ -175,11 +189,13 @@ export default function PropertiesPanel({
       );
       break;
     case "knowledge-base":
+      panelTitle = "Knowledge Base";
       content = (
         <KnowledgeBasePropertiesPanel node={selectedNode} onChange={onChange} />
       );
       break;
     case "message":
+      panelTitle = "Message Rules";
       content = (
         <RuleBoxPropertiesPanel
           node={selectedNode}
@@ -190,6 +206,7 @@ export default function PropertiesPanel({
       );
       break;
     case "message-formatter":
+      panelTitle = "Message Formatter";
       content = (
         <MessageFormatterPropertiesPanel
           node={selectedNode}
@@ -198,6 +215,7 @@ export default function PropertiesPanel({
       );
       break;
     case "router":
+      panelTitle = "Router";
       content = (
         <RouterPropertiesPanel
           nodeData={selectedNode.data as any}
@@ -206,6 +224,7 @@ export default function PropertiesPanel({
       );
       break;
     case "memory":
+      panelTitle = "Memory";
       content = (
         <MemoryPropertiesPanel
           nodeData={selectedNode.data as any}
@@ -214,6 +233,7 @@ export default function PropertiesPanel({
       );
       break;
     case "tool":
+      panelTitle = "Tool Configuration";
       content = (
         <ToolPropertiesPanel
           nodeData={selectedNode.data as any}
@@ -222,6 +242,7 @@ export default function PropertiesPanel({
       );
       break;
     case "template":
+      panelTitle = "Template Rules";
       content = (
         <RuleBoxPropertiesPanel
           node={selectedNode}
@@ -232,11 +253,13 @@ export default function PropertiesPanel({
       );
       break;
     case "simulator":
+      panelTitle = "Simulator";
       content = (
         <SimulatorPropertiesPanel node={selectedNode} onChange={onChange} />
       );
       break;
     case "state-machine":
+      panelTitle = "State Rules";
       content = (
         <RuleBoxPropertiesPanel
           node={selectedNode}
@@ -247,6 +270,7 @@ export default function PropertiesPanel({
       );
       break;
     case "test-case":
+      panelTitle = "Test Rules";
       content = (
         <RuleBoxPropertiesPanel
           node={selectedNode}
@@ -270,19 +294,21 @@ export default function PropertiesPanel({
   }
 
   return (
-    <AnimatedPanel key={nodeType}>
-      {content}
-      <ContextControlsSection
-        node={selectedNode as CanvasNode}
-        nodes={nodes}
-        connections={connections}
-        onConnectionsChange={onConnectionsChange}
-      />
+    <AnimatedPanel key={nodeType} title={panelTitle}>
+      <div className="properties-content flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+        {content}
+        <ContextControlsSection
+          node={selectedNode as CanvasNode}
+          nodes={nodes}
+          connections={connections}
+          onConnectionsChange={onConnectionsChange}
+        />
+      </div>
     </AnimatedPanel>
   );
 }
 
-function AnimatedPanel({ children }: { children: React.ReactNode }) {
+function AnimatedPanel({ title, children }: { title: string; children: React.ReactNode }) {
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {
@@ -293,10 +319,23 @@ function AnimatedPanel({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={panelStyle}
-      className={`transition-all duration-300 ${
+      className={`properties-shell transition-all duration-300 ${
         visible ? "translate-x-0 opacity-100" : "translate-x-2 opacity-0"
       }`}
     >
+      <div
+        className="properties-header sticky top-0 z-10 px-4 py-3"
+        style={{
+          background: "rgba(18,18,20,0.66)",
+          WebkitBackdropFilter: "blur(16px) saturate(120%)",
+          backdropFilter: "blur(16px) saturate(120%)",
+          boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset",
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+        }}
+      >
+        <div className="properties-title text-[16px] leading-5 font-semibold">{title}</div>
+      </div>
       {children}
     </div>
   );

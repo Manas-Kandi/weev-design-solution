@@ -4,27 +4,28 @@
 
 export const figmaPropertiesTheme = {
   colors: {
-    background: "#0D0D0D", // solid black
-    backgroundSecondary: "rgba(32,32,36,0.38)", // even more transparent
-    backgroundTertiary: "rgba(40,40,44,0.22)", // hover/input, barely visible
-    backgroundElevated: "rgba(50,50,54,0.32)", // cards, very subtle
-    border: "rgba(60,60,60,0.18)", // subtle gray left border
-    borderLight: "rgba(40,40,44,0.06)", // almost invisible
-    borderActive: "#007acc", // VS Code blue for active states
-    textPrimary: "#cccccc", // Primary text - VS Code text color
-    textSecondary: "#9d9d9d", // Secondary text
-    textMuted: "#6a6a6a", // Muted text
-    textAccent: "#007acc", // Accent text/links - VS Code blue
+    // Liquid Glass tokens (dark)
+    background: "rgba(18,18,20,0.55)", // base glass surface
+    backgroundSecondary: "rgba(18,18,20,0.66)", // strong surface (headers)
+    backgroundTertiary: "rgba(255,255,255,0.06)", // field bg
+    backgroundElevated: "rgba(18,18,20,0.55)", // cards
+    border: "rgba(255,255,255,0.08)", // field/card border
+    borderLight: "rgba(255,255,255,0.06)", // ring
+    borderActive: "#5AA7FF", // accent
+    textPrimary: "rgba(255,255,255,0.92)",
+    textSecondary: "rgba(255,255,255,0.72)",
+    textMuted: "rgba(255,255,255,0.56)",
+    textAccent: "#5AA7FF",
     success: "#4ec9b0", // VS Code success green
     warning: "#ffcd3c", // VS Code warning yellow
     error: "#f44747", // VS Code error red
     info: "#007acc", // VS Code info blue
-    buttonPrimary: "#007acc",
-    buttonSecondary: "#2d2d30",
-    buttonHover: "#005a9e",
+    buttonPrimary: "#5AA7FF",
+    buttonSecondary: "rgba(255,255,255,0.08)",
+    buttonHover: "#7BB8FF",
     codeBackground: "#0d1117",
     tagBackground: "#2d2d30",
-    accentGlow: "rgba(0, 122, 204, 0.3)",
+    accentGlow: "rgba(90, 167, 255, 0.24)",
   },
   spacing: {
     xs: "4px",
@@ -69,10 +70,10 @@ export const figmaPropertiesTheme = {
   borderRadius: {
     none: "0px",
     xs: "2px",
-    sm: "4px",
-    md: "4px",
-    lg: "6px",
-    xl: "8px",
+    sm: "12px", // inputs and compact controls
+    md: "12px",
+    lg: "16px",
+    xl: "16px", // section cards
   },
   shadows: {
     none: "none",
@@ -130,8 +131,8 @@ export const figmaPropertiesTheme = {
     zIndex: 100,
     display: "flex",
     flexDirection: "column",
-    backgroundColor: "#0D0D0D",
-    borderLeft: `1px solid rgba(60,60,60,0.18)`,
+    backgroundColor: "rgba(18,18,20,0.55)",
+    borderLeft: `1px solid rgba(255,255,255,0.05)`,
     fontFamily:
       'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontSize: "13px",
@@ -147,8 +148,8 @@ export const figmaPropertiesTheme = {
     display: "flex",
     alignItems: "center",
     padding: "0 16px",
-    borderBottom: `1px solid rgba(60,60,60,0.18)`,
-    backgroundColor: "rgba(32,32,36,0.38)",
+    borderBottom: `1px solid rgba(255,255,255,0.06)`,
+    backgroundColor: "rgba(18,18,20,0.66)",
   },
   title: {
     fontSize: "13px",
@@ -162,9 +163,9 @@ export const figmaPropertiesTheme = {
   section: {
     marginBottom: "12px",
     padding: "12px 16px",
-    border: `1px solid rgba(40,40,44,0.10)`,
-    backgroundColor: "rgba(45,45,48,0.32)",
-    borderRadius: "4px",
+    border: `1px solid rgba(255,255,255,0.08)`,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: "16px",
   },
   label: {
     fontFamily:
@@ -172,7 +173,7 @@ export const figmaPropertiesTheme = {
     fontSize: "11px",
     fontWeight: 500,
     lineHeight: 1.4,
-    color: "#9d9d9d",
+    color: "rgba(255,255,255,0.72)",
     marginBottom: "4px",
     display: "block",
   },
@@ -185,10 +186,10 @@ export const figmaPropertiesTheme = {
       'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontWeight: 400,
     lineHeight: 1.4,
-    borderRadius: "4px",
-    border: `1px solid rgba(60,60,60,0.18)`,
-    backgroundColor: "rgba(40,40,44,0.22)",
-    color: "#cccccc",
+    borderRadius: "12px",
+    border: `1px solid rgba(255,255,255,0.08)`,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    color: "rgba(255,255,255,0.92)",
     outline: "none",
     transition: `all 0.1s ease-out`,
   },
@@ -201,10 +202,10 @@ export const figmaPropertiesTheme = {
       'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontWeight: 400,
     lineHeight: 1.4,
-    borderRadius: "4px",
-    border: `1px solid rgba(60,60,60,0.18)`,
-    backgroundColor: "rgba(40,40,44,0.22)",
-    color: "#cccccc",
+    borderRadius: "12px",
+    border: `1px solid rgba(255,255,255,0.08)`,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    color: "rgba(255,255,255,0.92)",
     outline: "none",
     transition: `all 0.1s ease-out`,
   },
@@ -216,10 +217,10 @@ export const figmaPropertiesTheme = {
       'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     fontWeight: 400,
     lineHeight: 1.4,
-    borderRadius: "4px",
-    border: `1px solid rgba(60,60,60,0.18)`,
-    backgroundColor: "rgba(40,40,44,0.22)",
-    color: "#cccccc",
+    borderRadius: "12px",
+    border: `1px solid rgba(255,255,255,0.08)`,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    color: "rgba(255,255,255,0.92)",
     outline: "none",
     transition: `all 0.1s ease-out`,
   },
@@ -231,9 +232,9 @@ export const figmaPropertiesTheme = {
     height: "28px",
     padding: `0 12px`,
     borderRadius: "4px",
-    border: `1px solid rgba(60,60,60,0.18)`,
-    backgroundColor: "#2d2d30",
-    color: "#cccccc",
+    border: `1px solid rgba(255,255,255,0.08)`,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    color: "rgba(255,255,255,0.92)",
     cursor: "pointer",
     outline: "none",
     transition: `all 0.1s ease-out`,
@@ -252,36 +253,36 @@ export const figmaPropertiesTheme = {
       '"SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace',
   },
   helpText: {
-    fontSize: "11px",
-    color: "#9d9d9d",
+    fontSize: "12px",
+    color: "rgba(255,255,255,0.56)",
     marginTop: "4px",
   },
   states: {
     default: {
-      background: "rgba(45,45,48,0.32)",
-      border: "rgba(40,40,44,0.10)",
-      text: "#cccccc",
+      background: "rgba(255,255,255,0.06)",
+      border: "rgba(255,255,255,0.08)",
+      text: "rgba(255,255,255,0.92)",
     },
     hover: {
-      background: "rgba(55,55,58,0.18)",
-      border: "rgba(40,40,44,0.14)",
-      text: "#cccccc",
+      background: "rgba(255,255,255,0.10)",
+      border: "rgba(255,255,255,0.10)",
+      text: "rgba(255,255,255,0.92)",
     },
     focus: {
-      background: "rgba(45,45,48,0.18)",
-      border: "rgba(40,40,44,0.18)",
-      text: "#cccccc",
-      boxShadow: "0 0 0 2px rgba(0,0,0,0.10)",
+      background: "rgba(255,255,255,0.06)",
+      border: "#5AA7FF",
+      text: "rgba(255,255,255,0.92)",
+      boxShadow: "0 0 0 2px rgba(90,167,255,0.24)",
     },
     active: {
-      background: "rgba(40,40,44,0.22)",
-      border: "rgba(40,40,44,0.18)",
+      background: "rgba(255,255,255,0.10)",
+      border: "rgba(255,255,255,0.10)",
       text: "white",
     },
     disabled: {
-      background: "rgba(45,45,48,0.10)",
-      border: "rgba(40,40,44,0.06)",
-      text: "#6a6a6a",
+      background: "rgba(255,255,255,0.06)",
+      border: "rgba(255,255,255,0.06)",
+      text: "rgba(255,255,255,0.56)",
       opacity: 0.6,
     },
   },
@@ -336,7 +337,7 @@ export const themeHelpers = {
     outline: "none",
     transition: `all ${figmaPropertiesTheme.animation.fast}`,
     ...(state === "focus" && {
-      boxShadow: figmaPropertiesTheme.shadows.glow,
+      boxShadow: "0 0 0 2px rgba(90,167,255,0.24)",
     }),
   }),
   getButtonStyle: (
