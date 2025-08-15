@@ -26,13 +26,12 @@ import {
 } from "lucide-react";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
-import { toolSimulator } from '@/lib/toolSimulator';
-
-import ResultCard from "@/components/canvas/tester/ResultCard";
-import { ToolMockEditor } from './tester/ToolMockEditor';
-import { ScenarioInput } from './tester/ScenarioInput';
-import { EnvironmentSelector } from './tester/EnvironmentSelector';
-import { RunHistory } from './tester/RunHistory';
+import { toolSimulator } from '@/features/testing/lib/toolSimulator';
+import ResultCard from "@/features/testing/tester/ResultCard";
+import { ToolMockEditor } from '@/features/testing/tester/ToolMockEditor';
+import { ScenarioInput } from '@/features/testing/tester/ScenarioInput';
+import { EnvironmentSelector } from '@/features/testing/tester/EnvironmentSelector';
+import { RunHistory } from '@/features/testing/tester/RunHistory';
 import type {
   TesterEvent,
   NodeExecutionArtifact,
@@ -41,9 +40,9 @@ import type {
   FlowStartedEvent,
   FlowFinishedEvent,
   RunManifest,
-} from "@/types/tester";
-import type { ToolEnvironment } from "@/types/toolSimulator";
-import type { ToolMockProfile } from "@/types/toolSimulator";
+} from "@/features/testing/types/tester";
+import type { ToolEnvironment } from "@/features/testing/types/toolSimulator";
+import type { ToolMockProfile } from "@/features/testing/types/toolSimulator";
 
 interface EnhancedTestingPanelProps {
   nodes: CanvasNode[];
@@ -265,7 +264,7 @@ export function EnhancedTestingPanel({
           startedAt,
           endedAt: e.at,
           durationMs: e.durationMs,
-          status: evt.type === 'flow-finished' ? 'success' : 'error',
+          status: e.status,
           output: e.output,
           summary: e.summary,
           error: e.error,
@@ -302,7 +301,7 @@ export function EnhancedTestingPanel({
             startNodeId: startNodeId || null,
             results: artifacts,
             duration: e.at - runStartedAt,
-            status: e.status || 'success'
+            status: 'success'
           };
           
           setRunHistory(prev => [manifest, ...prev.slice(0, 49)]);
@@ -565,7 +564,7 @@ export function EnhancedTestingPanel({
 
   if (!isVisible) return null;
 
-  return (
+  return (<>
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
@@ -769,7 +768,6 @@ export function EnhancedTestingPanel({
                             return next;
                           });
                         }}
-                        isBreakpoint={breakpoints.has(artifact.nodeId)}
                       />
                     ))}
                     

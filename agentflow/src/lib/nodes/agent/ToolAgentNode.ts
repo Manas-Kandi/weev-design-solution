@@ -129,7 +129,7 @@ export class ToolAgentNode extends BaseNode {
         }
       };
 
-      let text = clean(llm.text || "");
+      const text = clean(llm.text || "");
       let parsed: any | null = null;
       if (text) {
         try { parsed = JSON.parse(text); } catch {}

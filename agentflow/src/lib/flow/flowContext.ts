@@ -8,7 +8,7 @@ import type {
   TransformSpec,
   FlowContextBag,
 } from "@/types/flow-io";
-import type { FlowContextDiff } from "@/types/tester";
+import type { FlowContextDiff } from "@/features/testing/types/tester";
 
 // Defaults per product guidance
 export const DEFAULT_BYTE_LIMIT = 2048; // ~2KB

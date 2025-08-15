@@ -10,7 +10,7 @@ import type {
   TesterEvent,
   NodeStartEvent,
   NodeFinishEvent,
-} from "@/types/tester";
+} from "@/features/testing/types/tester";
 
 interface DesignerCanvasProps {
   nodes: CanvasNode[];

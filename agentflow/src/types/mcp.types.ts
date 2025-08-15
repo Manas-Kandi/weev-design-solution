@@ -22,7 +22,7 @@ import type {
   CanvasNode,
   Connection,
 } from './index';
-import type { ToolEnvironment } from './toolSimulator';
+import type { ToolEnvironment } from '@/features/testing/types/toolSimulator';
 
 // Re-export ToolEnvironment for external consumers
 export type { ToolEnvironment };
@@ -203,7 +203,7 @@ export interface McpExport {
  * Alias to the app's RunManifest for test history persistence, exposed for MCP consumers.
  * This keeps a single source of truth while satisfying the MCP acceptance criteria.
  */
-export type McpRunManifest = import('./tester').RunManifest;
+export type McpRunManifest = import('@/features/testing/types/tester').RunManifest;
 
 /**
  * Minimal runtime validation result.

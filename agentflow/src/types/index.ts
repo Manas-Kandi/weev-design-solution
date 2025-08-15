@@ -2,6 +2,7 @@ import React from "react";
 import { ToolAgentRules, ToolAgentSimulationConfig } from "./simulation";
 import type { FlowContextBag, FlowMode } from "./flow-io";
 import type { RunExecutionOptions } from "./run";
+import type { RouterNodeData } from "@/lib/nodes/router/types";
 
 // Shared I/O envelope used by all nodes
 export type FlowIO = {
@@ -261,7 +262,8 @@ export interface CanvasNode {
     | DashboardNodeData
     | TestCaseNodeData
     | ConversationFlowNodeData
-    | IfElseNodeData;
+    | IfElseNodeData
+    | RouterNodeData;
   inputs: { id: string; label: string; type?: string }[];
   outputs: { id: string; label: string; type?: string }[];
   output?: NodeOutput; // Add output property for workflow results
@@ -328,6 +330,7 @@ export interface NodeType {
   subtype?: string;
   defaultInputs?: { id: string; label: string; type?: string }[];
   defaultOutputs?: { id: string; label: string; type?: string }[];
+  defaultData?: Record<string, unknown>;
   systemPrompt?: string; // Guardrail/system prompt for agent nodes
   personality?: string; // Agent personality traits
   escalationLogic?: string; // Escalation logic instructions
@@ -340,7 +343,7 @@ export interface NodeType {
   tone?: "neutral" | "friendly" | "formal"; // Message tone
   formatHint?: "markdown" | "plain" | "html"; // Output format hint
   // Router node specific properties
-  mode?: "expression" | "llm"; // Router decision mode
+  mode?: "expression" | "llm" | "mock" | "live"; // Router or Tool modes
   expression?: string; // JavaScript expression for expression mode
   llmRule?: string; // LLM rule for llm mode
   // Memory node specific properties
@@ -384,12 +387,38 @@ export interface GeminiOutput {
 }
 
 export type NodeOutputObject = {
+  // Discriminator for common output kinds (observed across nodes)
+  type?: 'text' | 'json' | 'error' | string;
+
+  // Common text outputs
   output?: string;
   message?: string;
-  content?: string;
+  // Allow structured content
+  content?: unknown;
+
+  // Error reporting (used by several nodes)
+  error?: string;
+
+  // Structured payloads and metadata (used by tool/agent executors)
+  data?: unknown;
+  metadata?: unknown;
+  // Common alias used by several nodes
+  meta?: Record<string, unknown>;
+
+  // Optional diagnostics/context
+  info?: unknown;
+  timestamp?: number;
+  nodeId?: string;
+
+  // Raw LLM outputs
   llm?: LLMOutput;
   gemini?: GeminiOutput;
-  provider?: GeminiOutput;
+
+  // Provider identifier (string id)
+  provider?: string;
+
+  // Permit additional fields for logic/state outputs (e.g., currentState, previousState, transition, event)
+  [key: string]: unknown;
 };
 
 export type NodeOutput = string | NodeOutputObject;
@@ -421,8 +450,10 @@ export interface NodeContext {
   connections: Connection[];
   nodeOutputs: Record<string, NodeOutput>;
   currentNode: CanvasNode;
+  nodeId?: string;
+  flowId?: string;
   inputs?: Record<string, NodeOutput>;
-  config?: Record<string, unknown>;
+  config?: unknown;
   flowContext?: FlowContextBag;
   mode?: FlowMode;
   runOptions?: RunExecutionOptions;

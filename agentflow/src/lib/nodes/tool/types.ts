@@ -5,7 +5,7 @@
 export interface ToolNodeData {
   toolName: string; // Tool name from catalog or "custom"
   operation?: string; // For multi-operation tools (e.g., search, createEvent)
-  args: Record<string, any>; // Key/value arguments with types
+  args: Record<string, unknown>; // Key/value arguments with types
   mode: "mock" | "live"; // Execution mode, default mock
   mockPreset?: string; // Selected mock preset for testing
   latencyMs?: number; // Simulated latency for mock mode
@@ -15,7 +15,7 @@ export interface ToolNodeData {
 export interface ToolNodeOutput {
   type: 'json';
   content: {
-    result: any; // Tool execution result
+    result: unknown; // Tool execution result
   };
   meta: {
     nodeType: 'tool';
@@ -31,7 +31,7 @@ export interface ToolNodeOutput {
 
 export interface ToolIntent {
   name: string; // Tool name
-  args: Record<string, any>; // Arguments for the tool
+  args: Record<string, unknown>; // Arguments for the tool
   operation?: string; // Optional operation
 }
 
@@ -55,15 +55,15 @@ export interface ToolParameter {
   type: 'string' | 'number' | 'boolean' | 'object' | 'array';
   description: string;
   required: boolean;
-  default?: any;
+  default?: unknown;
   enum?: string[]; // For enumerated values
 }
 
 export interface ToolMockPreset {
   name: string;
   description: string;
-  args?: Record<string, any>; // Example arguments
-  result?: any; // Mock result (optional if error is provided)
+  args?: Record<string, unknown>; // Example arguments
+  result?: unknown; // Mock result (optional if error is provided)
   latencyMs?: number; // Simulated latency
   error?: string; // Error to simulate
 }
@@ -71,7 +71,7 @@ export interface ToolMockPreset {
 export interface ToolInvocationRequest {
   toolName: string;
   operation?: string;
-  args: Record<string, any>;
+  args: Record<string, unknown>;
   mode: 'mock' | 'live';
   seed?: string; // For deterministic mock results
   latencyMs?: number;
@@ -81,7 +81,7 @@ export interface ToolInvocationRequest {
 
 export interface ToolInvocationResult {
   success: boolean;
-  result?: any;
+  result?: unknown;
   error?: string;
   latencyMs: number;
   usedPreset?: string;

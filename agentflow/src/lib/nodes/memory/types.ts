@@ -1,3 +1,4 @@
+import { NodeOutputObject } from "@/types";
 export interface MemoryNodeData {
   indexName?: string;
   ingestMode: "full" | "summary-only";
@@ -37,7 +38,7 @@ export interface RetrievalResult {
   metadata?: Record<string, any>;
 }
 
-export interface MemoryNodeOutput {
+export interface MemoryNodeOutput extends NodeOutputObject {
   type: 'json';
   content: {
     query: string;
@@ -48,7 +49,7 @@ export interface MemoryNodeOutput {
     indexName: string;
     k: number;
     retrievalTime?: number;
-  };
+  } & Record<string, any>;
 }
 
 export interface VectorStoreEntry {

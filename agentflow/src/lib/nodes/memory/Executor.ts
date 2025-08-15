@@ -9,7 +9,8 @@ export class MemoryNode extends BaseNode {
       const data = this.node.data as MemoryNodeData;
       
       // Provide defaults
-      const indexName = data.indexName || `project_${context.config?.projectId || 'default'}`;
+      const cfg: any = (context.config as any) || {};
+      const indexName = data.indexName || `project_${cfg.projectId || 'default'}`;
       const retrievalTopK = data.retrievalTopK || 5;
       
       // Get inputs from connections or use context inputs
@@ -75,7 +76,8 @@ export class MemoryNode extends BaseNode {
       console.error('MemoryNode execution error:', error);
       
       const data = this.node.data as MemoryNodeData;
-      const indexName = data.indexName || `project_${context.config?.projectId || 'default'}`;
+      const cfg: any = (context.config as any) || {};
+      const indexName = data.indexName || `project_${cfg.projectId || 'default'}`;
       
       return {
         type: 'json',

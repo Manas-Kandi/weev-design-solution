@@ -30,7 +30,7 @@ import type {
   FlowStartedEvent,
   FlowFinishedEvent,
   CauseOfExecution,
-} from "@/types/tester";
+} from "@/features/testing/types/tester";
 
 export class FlowEngine {
   private nodes: CanvasNode[];

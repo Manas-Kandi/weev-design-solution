@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, ChevronDown, Play, Pause, Square, RotateCcw, Download } from "lucide-react";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
-import ResultCard from "@/components/canvas/tester/ResultCard";
-import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/components/canvas/tester/Renderers";
+import ResultCard from "@/features/testing/tester/ResultCard";
+import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/features/testing/tester/Renderers";
 import type {
   TesterEvent,
   NodeExecutionArtifact,
@@ -14,7 +14,7 @@ import type {
   NodeFinishEvent,
   FlowStartedEvent,
   FlowFinishedEvent,
-} from "@/types/tester";
+} from "@/features/testing/types/tester";
 import { featureFlags } from "@/config/featureFlags";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/primitives/dialog";
 

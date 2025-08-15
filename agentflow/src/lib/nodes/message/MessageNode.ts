@@ -1,11 +1,11 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
-import { NodeOutput } from "@/types";
+import { NodeOutputObject } from "@/types";
 import { MessageNodeData } from "./types";
 import { getPresetTemplate } from "./presets";
 import { callLLM } from "@/lib/llmClient";
 
 export class MessageNode extends BaseNode {
-  async execute(context: NodeContext): Promise<NodeOutput> {
+  async execute(context: NodeContext): Promise<NodeOutputObject> {
     try {
       const data = this.node.data as MessageNodeData;
       
@@ -49,22 +49,23 @@ export class MessageNode extends BaseNode {
           model: process.env.NEXT_PUBLIC_NVIDIA_MODEL || "openai/gpt-oss-120b",
           tokens: llmResult.raw?.usage?.total_tokens
         }
-      } as NodeOutput;
+      };
 
     } catch (error) {
       console.error('MessageNode execution error:', error);
-      
+      // Re-read node data safely (avoid referencing out-of-scope 'data')
+      const safe = (this.node.data as Partial<MessageNodeData>) || {};
       return {
         type: 'text',
         content: `Error formatting message: ${error instanceof Error ? error.message : String(error)}`,
         meta: {
           nodeType: 'message',
-          preset: data.preset || 'chat',
-          tone: data.tone || 'friendly',
-          formatHint: data.formatHint || 'markdown',
+          preset: safe.preset || 'chat',
+          tone: safe.tone || 'friendly',
+          formatHint: safe.formatHint || 'markdown',
           error: error instanceof Error ? error.message : String(error)
         }
-      } as NodeOutput;
+      };
     }
   }
 

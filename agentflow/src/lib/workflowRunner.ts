@@ -1,5 +1,4 @@
 import { CanvasNode, Connection } from "@/types";
-import { ToolSimulator } from './toolSimulator';
 import { callGemini } from "./geminiClient";
 
 // Local type definitions to make the file self-contained and avoid import issues.

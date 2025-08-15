@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, CheckCircle, AlertCircle, XCircle, Play, Download, Trash2, Search } from 'lucide-react';
-import type { RunManifest } from '@/types/tester';
+import type { RunManifest } from '@/features/testing/types/tester';
 
 interface RunHistoryProps {
   runs: RunManifest[];

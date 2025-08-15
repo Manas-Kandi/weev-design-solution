@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Save, Trash2, Copy, Settings, Clock, AlertCircle } from 'lucide-react';
+import { toolSimulator } from '@/features/testing/lib/toolSimulator';
 import { 
-  toolSimulator, 
-  ToolMockConfig, 
-  ToolMockProfile, 
+  ToolMockConfig,
+  ToolMockProfile,
   ToolMockOverride,
-  ToolError
-} from '@/lib/toolSimulator';
-import { TOOL_MOCKS } from '@/types/toolSimulator';
+  ToolError,
+  TOOL_MOCKS
+} from '@/features/testing/types/toolSimulator';
 
 interface ToolMockEditorProps {
   onClose: () => void;
@@ -58,7 +58,7 @@ export function ToolMockEditor({ onClose }: ToolMockEditorProps) {
   };
 
   const deleteProfile = (profileId: string) => {
-    toolSimulator.deleteBranch(profileId);
+    toolSimulator.deleteProfile(profileId);
     loadProfiles();
   };
 

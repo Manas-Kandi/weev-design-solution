@@ -3,7 +3,7 @@
 import React from "react";
 import dynamic from 'next/dynamic';
 
-const TesterV2 = dynamic(() => import('@/components/canvas/tester/TesterV2'), {
+const TesterV2 = dynamic(() => import('@/features/testing/tester/TesterV2'), {
   ssr: false,
 });
 

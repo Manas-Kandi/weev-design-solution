@@ -143,7 +143,7 @@ export const RouterPropertiesPanel: React.FC<RouterPropertiesPanelProps> = ({
             Examples:<br/>
             • inputs[0]?.content?.score &gt; 0.7<br/>
             • inputs.length &gt; 2<br/>
-            • inputs[0]?.content?.status === 'approved'
+            • inputs[0]?.content?.status === &apos;approved&apos;
           </div>
         </div>
       )}

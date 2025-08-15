@@ -45,7 +45,7 @@ describe('RouterNode', () => {
       inputs: {},
       config: {},
       flowContext: {},
-      mode: 'test',
+      mode: 'NewMode',
       runOptions: {}
     };
 

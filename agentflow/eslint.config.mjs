@@ -19,6 +19,8 @@ const eslintConfig = [
     rules: {
       "no-redeclare": "error",
       "@typescript-eslint/no-redeclare": "error",
+      // Project preference: allow explicit any to avoid noisy errors during migration
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ];

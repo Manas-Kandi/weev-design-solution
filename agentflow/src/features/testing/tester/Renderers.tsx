@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { safeStringify } from "@/lib/flow/flowContext";
-import type { NodeExecutionArtifact } from "@/types/tester";
+import type { NodeExecutionArtifact } from "@/features/testing/types/tester";
 
 function cn(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");

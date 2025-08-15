@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield, Globe, Database } from 'lucide-react';
-import type { ToolEnvironment } from '@/types/toolSimulator';
+import type { ToolEnvironment } from '@/features/testing/types/toolSimulator';
 
 interface EnvironmentSelectorProps {
   value: ToolEnvironment;

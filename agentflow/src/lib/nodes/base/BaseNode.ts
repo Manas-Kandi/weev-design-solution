@@ -8,8 +8,8 @@ export interface NodeContext {
   connections: Connection[];
   nodeOutputs: Record<string, NodeOutput>;
   currentNode: CanvasNode;
-  nodeId: string;
-  flowId: string;
+  nodeId?: string;
+  flowId?: string;
   // --- Optional v2 context fields (non-breaking) ---
   // Inputs addressed by the target node's input port names
   inputs?: Record<string, NodeOutput>;

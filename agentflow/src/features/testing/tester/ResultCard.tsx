@@ -2,8 +2,8 @@
 
 import React, { useMemo, useState } from "react";
 import { Copy, Check } from "lucide-react";
-import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/components/canvas/tester/Renderers";
-import type { NodeExecutionArtifact } from "@/types/tester";
+import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/features/testing/tester/Renderers";
+import type { NodeExecutionArtifact } from "@/features/testing/types/tester";
 
 function cn(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");

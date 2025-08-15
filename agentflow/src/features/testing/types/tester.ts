@@ -2,8 +2,8 @@
 // Defines structured artifacts and events produced during a test run.
 
 import type { CanvasNode, NodeOutput, Connection } from "@/types";
-import type { ToolEnvironment } from "@/types/toolSimulator";
-import type { FlowContextBag } from "./flow-io";
+import type { ToolEnvironment } from "@/features/testing/types/toolSimulator";
+import type { FlowContextBag } from "@/types/flow-io";
 
 export type TesterStatus = "success" | "error" | "skipped";
 

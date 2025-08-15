@@ -7,7 +7,7 @@ import {
   ToolMockProfile,
   TOOL_MOCKS,
   ToolPreset
-} from '@/types/toolSimulator';
+} from '@/features/testing/types/toolSimulator';
 
 /**
  * Tool Simulator Service
@@ -49,7 +49,6 @@ export class ToolSimulator {
     name: 'Default',
     description: 'System default mock profile',
     tools: {},
-    isDefault: true,
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -99,11 +98,11 @@ export class ToolSimulator {
     }
 
     // Handle error simulation
-    if (override?.errorMode || errorMode) {
-      const errorType = override?.errorMode || errorMode;
+    const rawError = override?.errorMode ?? errorMode;
+    if (rawError && rawError !== 'none') {
       return {
         ok: false,
-        error: this.generateError(errorType!, name, op),
+        error: this.generateError(rawError as ToolError['kind'], name, op),
         meta: {
           latencyMs: actualLatency,
           mockSource: override ? 'custom' : 'preset'
@@ -338,7 +337,7 @@ export class ToolSimulator {
     return {};
   }
 
-  private generateError(type: ToolError['kind'], toolName: string, operation: string): ToolError {
+  private generateError(kind: ToolError['kind'], toolName: string, operation: string): ToolError {
     const messages = {
       timeout: `Request to ${toolName}.${operation} timed out`,
       rateLimit: `Rate limit exceeded for ${toolName}.${operation}`,
@@ -348,9 +347,9 @@ export class ToolSimulator {
     };
 
     return {
-      kind: type,
-      message: messages[type] || `Error in ${toolName}.${operation}`,
-      code: type.toUpperCase()
+      kind,
+      message: messages[kind] || `Error in ${toolName}.${operation}`,
+      code: kind.toUpperCase()
     };
   }
 

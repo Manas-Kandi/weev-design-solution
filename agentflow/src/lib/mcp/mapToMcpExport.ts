@@ -1,6 +1,6 @@
 import { adaptCanvasToMcpFlow, McpExport, McpToolDefinition, validateMcpExport, MCP_SCHEMA_VERSION } from "@/types/mcp.types";
 import type { CanvasNode, Connection } from "@/types";
-import { TOOL_MOCKS } from "@/types/toolSimulator";
+import { TOOL_MOCKS } from "@/features/testing/types/toolSimulator";
 
 export interface EnvOverrides {
   mode?: "mock" | "mixed" | "live";
