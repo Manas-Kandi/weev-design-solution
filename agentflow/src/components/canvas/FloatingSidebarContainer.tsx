@@ -67,6 +67,7 @@ export default function FloatingSidebarContainer({
             onTesterEvent={onTesterEvent}
             startNodeId={startNodeId ?? null}
             isVerticalSplit={true}
+            onPropertiesClose={onPropertiesClose}
           />
         </div>
       </div>
@@ -105,6 +106,7 @@ export default function FloatingSidebarContainer({
             onTesterEvent={onTesterEvent}
             startNodeId={startNodeId ?? null}
             isVerticalSplit={false}
+            onPropertiesClose={onPropertiesClose}
           />
         </div>
       </div>

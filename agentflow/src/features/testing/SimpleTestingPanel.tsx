@@ -29,6 +29,7 @@ interface SimpleTestingPanelProps {
   onTesterEvent?: (event: any) => void;
   onNodeSelect?: (nodeId: string) => void;
   isVerticalSplit?: boolean;
+  onPropertiesClose?: () => void;
 }
 
 // Status indicator component
@@ -63,6 +64,7 @@ export function SimpleTestingPanel({
   onTesterEvent,
   onNodeSelect,
   isVerticalSplit = false,
+  onPropertiesClose,
 }: SimpleTestingPanelProps) {
   const [scenario, setScenario] = useState("email writer");
   const [isRunning, setIsRunning] = useState(false);
@@ -73,6 +75,9 @@ export function SimpleTestingPanel({
 
   const handleRun = useCallback(async () => {
     if (isRunning) return;
+    
+    // Auto-close Properties Panel to maximize Testing Panel space
+    onPropertiesClose?.();
     
     setIsRunning(true);
     setIsPaused(false);

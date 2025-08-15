@@ -52,7 +52,7 @@ interface UnifiedPropertiesPanelProps {
 const panelStyle: React.CSSProperties = {
   width: 320,
   minWidth: 260,
-  height: "100%",
+  height: "100vh", // Full viewport height
   // Liquid Glass surface
   background: "rgba(18,18,20,0.55)",
   backdropFilter: "blur(16px) saturate(120%)",
@@ -62,11 +62,15 @@ const panelStyle: React.CSSProperties = {
   color: theme.colors.textPrimary,
   display: "flex",
   flexDirection: "column",
-  // Concentric radius + rings + elevation
-  borderRadius: 20,
+  // Squared edges - no border radius
+  borderRadius: 0,
   boxShadow:
     "inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(255,255,255,0.05), 0 10px 30px rgba(0,0,0,0.35)",
   boxSizing: "border-box",
+  // Position flush to screen edge
+  position: "fixed" as const,
+  top: 0,
+  right: 0,
 };
 
 // ================================================================================
