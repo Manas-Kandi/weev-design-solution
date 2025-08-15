@@ -3,12 +3,12 @@
 import React from "react";
 import { Sparkles } from "lucide-react";
 import { CanvasNode } from "@/types";
-import { PanelSection } from "../primitives/PanelSection";
-import {
-  figmaPropertiesTheme as theme,
-  getPanelContainerStyle,
-} from "./propertiesPanelTheme";
-import { VSCodeButton, VSCodeTextArea } from "../primitives/vsCodeFormComponents";
+import { 
+  PanelContainer, 
+  PanelSection, 
+  FormField, 
+  TextArea 
+} from "./shared/PropertiesPanelPrimitives";
 
 interface RuleBoxPropertiesPanelProps {
   node: CanvasNode;
@@ -51,104 +51,56 @@ export default function RuleBoxPropertiesPanel({
     onChange({ ...node, data: newData } as CanvasNode);
   };
 
-  const headerStyle: React.CSSProperties = {
-    padding: theme.spacing.lg,
-    borderBottom: `1px solid ${theme.colors.border}`,
-    backgroundColor: theme.colors.backgroundSecondary,
-    display: "flex",
-    alignItems: "center",
-    gap: theme.spacing.md,
-  };
-
-  const headerTitleStyle: React.CSSProperties = {
-    fontSize: theme.typography.fontSize.md,
-    fontWeight: theme.typography.fontWeight.semibold,
-    color: theme.colors.textPrimary,
-    margin: 0,
-    lineHeight: theme.typography.lineHeight.tight,
-    fontFamily: theme.typography.fontFamily,
-  };
-
-  const headerSubtitleStyle: React.CSSProperties = {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.textSecondary,
-    margin: `${theme.spacing.xs} 0 0 0`,
-    lineHeight: theme.typography.lineHeight.normal,
-    fontFamily: theme.typography.fontFamily,
-  };
-
-  const contentStyle: React.CSSProperties = {
-    padding: theme.spacing.lg,
-    display: "flex",
-    flexDirection: "column",
-    gap: theme.spacing.lg,
-    flex: 1,
-  };
-
-  const labelStyle: React.CSSProperties = {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.fontSize.sm,
-    marginBottom: theme.spacing.xs,
-    fontFamily: theme.typography.fontFamily,
-  };
-
   return (
-    <div style={getPanelContainerStyle()}>
-      <div style={headerStyle}>
-        <div
-          style={{
-            backgroundColor: theme.colors.buttonPrimary,
-            borderRadius: theme.borderRadius.md,
-            padding: theme.spacing.md,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Sparkles size={20} color="white" />
+    <PanelContainer>
+      <PanelSection 
+        title={title}
+        subtitle={subtitle}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+          <div
+            style={{
+              backgroundColor: "#5AA7FF",
+              borderRadius: "12px",
+              padding: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Sparkles size={16} color="white" />
+          </div>
+          <div style={{ fontSize: "13px", color: "#aaa" }}>
+            Natural language rules are compiled into executable logic
+          </div>
         </div>
-        <div>
-          <h2 style={headerTitleStyle}>{title}</h2>
-          <p style={headerSubtitleStyle}>{subtitle}</p>
-        </div>
-      </div>
 
-      <div style={contentStyle}>
-        <PanelSection
-          title="Behavior Rule"
-          description="Type natural-language rules. We'll compile and apply them."
-          icon={<Sparkles size={16} />}
-        >
-          <label style={labelStyle}>Rule</label>
-          <VSCodeTextArea
+        <FormField label="Rule">
+          <TextArea
             placeholder="e.g., Summarize inputs succinctly, ask clarifying questions if missing context, return JSON with keys: answer, citations"
             value={text}
-            onChange={(e) => {
-              const v = (e.target as HTMLTextAreaElement).value;
-              setText(v);
-              save({ nl: v });
+            onChange={(value) => {
+              setText(value);
+              save({ nl: value });
             }}
             rows={8}
           />
-          <div style={{ display: "flex", alignItems: "center", gap: theme.spacing.md }}>
-            <VSCodeButton
-              variant="secondary"
-              size="small"
-              onClick={() => {
-                const summary = text.trim().slice(0, 120) || "(empty)";
-                save({ compiled: { ...(rules.compiled || {}), summary } });
-              }}
-            >
-              Compile Rules
-            </VSCodeButton>
-            {rules && rules.compiled && rules.compiled.summary && (
-              <span style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.textMuted }}>
-                {rules.compiled.summary}
-              </span>
-            )}
+        </FormField>
+
+        {rules && rules.compiled && rules.compiled.summary && (
+          <div style={{ 
+            fontSize: "11px", 
+            color: "#888", 
+            marginTop: "8px",
+            padding: "8px 12px",
+            backgroundColor: "rgba(255,255,255,0.03)",
+            borderRadius: "8px",
+            border: "1px solid rgba(255,255,255,0.06)"
+          }}>
+            <strong>Compiled:</strong> {rules.compiled.summary}
           </div>
-        </PanelSection>
-      </div>
-    </div>
+        )}
+      </PanelSection>
+    </PanelContainer>
   );
 }
