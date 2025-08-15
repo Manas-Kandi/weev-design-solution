@@ -33,27 +33,41 @@ export default function Ports({
           key={input.id}
           className="absolute cursor-pointer hover:scale-110 transition-all duration-200"
           style={{
-            left: -8,
-            top: (node.size.height / (node.inputs.length + 1)) * (index + 1) - 8,
-            width: 16,
-            height: 16,
+            left: -6,
+            top: (node.size.height / (node.inputs.length + 1)) * (index + 1) - 6,
+            width: 12,
+            height: 12,
             borderRadius: "50%",
-            backgroundColor: "rgba(20, 20, 20, 0.9)",
-            border: "2px solid #333",
+            backgroundColor: "rgba(20, 20, 20, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
             zIndex: 20,
-            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
+            boxShadow: `0 0 6px ${accentColor}44`,
           }}
           onMouseUp={(e) => onInputPortMouseUp(e, node.id, input.id)}
           title={input.label}
         >
+          {/* middle ring */}
           <div
             style={{
               position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              width: 6,
-              height: 6,
+              width: 9,
+              height: 9,
+              borderRadius: "50%",
+              border: `1px solid ${accentColor}66`,
+            }}
+          />
+          {/* inner dot */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 4,
+              height: 4,
               borderRadius: "50%",
               backgroundColor: `${accentColor}CC`,
             }}
@@ -66,27 +80,41 @@ export default function Ports({
           key={output.id}
           className="absolute cursor-pointer hover:scale-110 transition-all duration-200"
           style={{
-            right: -8,
-            top: (node.size.height / (node.outputs.length + 1)) * (index + 1) - 8,
-            width: 16,
-            height: 16,
+            right: -6,
+            top: (node.size.height / (node.outputs.length + 1)) * (index + 1) - 6,
+            width: 12,
+            height: 12,
             borderRadius: "50%",
-            backgroundColor: "rgba(20, 20, 20, 0.9)",
-            border: "2px solid #333",
+            backgroundColor: "rgba(20, 20, 20, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
             zIndex: 20,
-            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
+            boxShadow: `0 0 6px ${accentColor}44`,
           }}
           onMouseDown={(e) => onOutputPortMouseDown(e, node.id, output.id, index)}
           title={output.label}
         >
+          {/* middle ring */}
           <div
             style={{
               position: "absolute",
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              width: 6,
-              height: 6,
+              width: 9,
+              height: 9,
+              borderRadius: "50%",
+              border: `1px solid ${accentColor}66`,
+            }}
+          />
+          {/* inner dot */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 4,
+              height: 4,
               borderRadius: "50%",
               backgroundColor: `${accentColor}CC`,
             }}

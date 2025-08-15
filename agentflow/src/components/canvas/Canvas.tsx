@@ -617,19 +617,24 @@ export default function CanvasEngine(props: Props) {
                 transform: `translate3d(${node.position.x}px, ${node.position.y}px, 0)`,
                 width: node.size.width,
                 height: node.size.height,
-                backgroundColor: "rgba(20, 20, 20, 0.85)",
-                backdropFilter: "blur(8px)",
-                border: "1.5px solid rgba(255, 255, 255, 0.05)",
-                borderRadius: "12px",
-                boxShadow: glowShadow || 
+                backgroundColor: "rgba(18, 18, 18, 0.6)",
+                backdropFilter: "blur(10px) saturate(120%)",
+                border: "1px solid rgba(255, 255, 255, 0.03)",
+                borderRadius: "16px",
+                boxShadow:
+                  glowShadow ||
                   (isSelected
-                    ? `0 0 0 1px ${getNodeAccentColor(node)}80, 0 0 8px ${getNodeAccentColor(node)}40, inset 0 1px 0 rgba(255, 255, 255, 0.05)`
+                    ? `0 0 0 1px ${getNodeAccentColor(node)}66, 0 0 18px ${getNodeAccentColor(node)}33, 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)`
                     : isStart
-                    ? `0 0 0 1px #30d15880, 0 0 8px #30d15840, inset 0 1px 0 rgba(255, 255, 255, 0.05)`
-                    : "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.2)"),
+                    ? `0 0 0 1px #30d15866, 0 0 18px #30d15833, 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)`
+                    : "0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)"),
+                backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0))",
                 zIndex: isSelected ? 10 : isStart ? 9 : 1,
                 // Only apply transitions when not dragging for immediate response
-                transition: draggedNode === node.id ? "none" : "box-shadow 80ms ease-out, border-color 80ms ease-out, background-color 80ms ease-out",
+                transition:
+                  draggedNode === node.id
+                    ? "none"
+                    : "box-shadow 120ms ease-out, border-color 120ms ease-out, background-color 120ms ease-out, filter 120ms ease-out",
                 willChange: draggedNode === node.id ? "transform" : "auto",
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
@@ -638,17 +643,19 @@ export default function CanvasEngine(props: Props) {
               onMouseEnter={(e) => {
                 // Skip hover effects during drag for better performance
                 if (!isSelected && !isStart && draggedNode !== node.id) {
-                  e.currentTarget.style.backgroundColor = "rgba(22, 22, 22, 0.9)";
-                  e.currentTarget.style.boxShadow = `0 0 4px ${getNodeAccentColor(node)}80, inset 0 1px 0 rgba(255, 255, 255, 0.08)`;
-                  e.currentTarget.style.borderColor = `${getNodeAccentColor(node)}40`;
+                  e.currentTarget.style.backgroundColor = "rgba(20, 20, 20, 0.7)";
+                  e.currentTarget.style.boxShadow = `0 0 10px ${getNodeAccentColor(node)}55, 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)`;
+                  e.currentTarget.style.borderColor = `${getNodeAccentColor(node)}33`;
+                  (e.currentTarget as HTMLElement).style.filter = "brightness(1.05)";
                 }
               }}
               onMouseLeave={(e) => {
                 // Skip hover effects during drag for better performance
                 if (!isSelected && !isStart && draggedNode !== node.id) {
-                  e.currentTarget.style.backgroundColor = "rgba(20, 20, 20, 0.85)";
-                  e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.2)";
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)";
+                  e.currentTarget.style.backgroundColor = "rgba(18, 18, 18, 0.6)";
+                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)";
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.03)";
+                  (e.currentTarget as HTMLElement).style.filter = "";
                 }
               }}
             >
@@ -689,10 +696,11 @@ export default function CanvasEngine(props: Props) {
                 <div className="flex items-center gap-2 mb-2">
                   {IconComponent && (
                     <IconComponent
-                      size={14}
+                      size={18}
                       style={{ 
                         color: `${getNodeAccentColor(node)}CC`, // 80% opacity for toned down look
-                        flexShrink: 0
+                        flexShrink: 0,
+                        filter: `drop-shadow(0 0 4px ${getNodeAccentColor(node)}40)`
                       }}
                     />
                   )}
@@ -710,24 +718,7 @@ export default function CanvasEngine(props: Props) {
                     {getNodeTitle(node)}
                   </div>
                 </div>
-                
-                {/* Muted Description */}
-                {getNodeDescription(node) && (
-                  <div
-                    style={{
-                      color: "#AAA",
-                      fontSize: "11px",
-                      lineHeight: "1.3",
-                      overflow: "hidden",
-                      display: "-webkit-box",
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical",
-                      marginTop: "auto",
-                    }}
-                  >
-                    {getNodeDescription(node)}
-                  </div>
-                )}
+                {/* Description intentionally removed for minimal design */}
               </div>
 
               <Ports
