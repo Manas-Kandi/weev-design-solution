@@ -67,7 +67,6 @@ export default function CanvasEngine(props: Props) {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
-
   // Advanced features state
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [selectionRect, setSelectionRect] = useState<{
@@ -482,6 +481,33 @@ export default function CanvasEngine(props: Props) {
     }
   }, [connections]);
 
+  const handleConnect = useCallback(
+    (sourceNodeId: string, outputPortId: string, targetNodeId: string, inputPortId: string) => {
+      // Check if a connection already exists between these nodes
+      const existingConnection = connections.find(
+        (c) => c.sourceNodeId === sourceNodeId && c.targetNodeId === targetNodeId
+      );
+
+      if (!existingConnection) {
+        // Create a new connection
+        const newConnection = {
+          id: `${sourceNodeId}-${targetNodeId}-${Date.now()}`,
+          sourceNodeId,
+          sourcePortId: outputPortId,
+          targetNodeId,
+          targetPortId: inputPortId,
+          createdAt: Date.now(),
+        };
+        onConnectionsChange((prev) => [...prev, newConnection]);
+        onCreateConnection?.(newConnection);
+      }
+      // If a connection exists, we allow multiple connections on the same ports (fan-in/fan-out)
+      // So we still clear the active connection state to reset the UI
+      connectionsRef.current?.setActiveConnection(null);
+    },
+    [connections, onCreateConnection]
+  );
+
   return (
     <div
       ref={canvasRef}
@@ -505,8 +531,11 @@ export default function CanvasEngine(props: Props) {
       {/* Edge pulse keyframes */}
       <style>{`
         @keyframes edgePulse { to { stroke-dashoffset: -20; } }
+        @keyframes nodePulse { 
+          0%, 100% { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.47), 0 0 20px rgba(255, 255, 255, 0.24), 0 6px 20px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.08), inset 0 -1px 1px rgba(255,255,255,0.03); }
+          50% { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.58), 0 0 24px rgba(255, 255, 255, 0.35), 0 6px 20px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.08), inset 0 -1px 1px rgba(255,255,255,0.03); }
+        }
       `}</style>
-
 
       {/* Background Grid and Connections */}
       <Connections
@@ -520,6 +549,7 @@ export default function CanvasEngine(props: Props) {
         onCreateConnection={onCreateConnection}
         pulsingConnectionIds={pulsingConnectionIds}
         theme={theme}
+        onConnect={handleConnect}
       />
 
       {/* Context Menu */}
@@ -552,10 +582,6 @@ export default function CanvasEngine(props: Props) {
           </button>
         </div>
       )}
-
-
-
-
 
       {/* Nodes Layer */}
       <div
@@ -616,26 +642,26 @@ export default function CanvasEngine(props: Props) {
               style={{
                 transform: `translate3d(${node.position.x}px, ${node.position.y}px, 0)`,
                 width: node.size.width,
-                height: node.size.height,
-                backgroundColor: "rgba(18, 18, 18, 0.6)",
-                backdropFilter: "blur(10px) saturate(120%)",
-                border: "1px solid rgba(255, 255, 255, 0.03)",
-                borderRadius: "16px",
+                height: Math.max(46, node.size.height * 0.7),
+                backgroundColor: "rgba(20, 20, 22, 0.32)",
+                backdropFilter: "blur(16px) saturate(160%)",
+                border: "1px solid rgba(255, 255, 255, 0.01)",
+                borderRadius: "22px",
                 boxShadow:
                   glowShadow ||
                   (isSelected
-                    ? `0 0 0 1px ${getNodeAccentColor(node)}66, 0 0 18px ${getNodeAccentColor(node)}33, 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)`
+                    ? `0 0 0 1.5px ${getNodeAccentColor(node)}70, 0 0 22px ${getNodeAccentColor(node)}38, 0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255,255,255,0.1), inset 0 -1px 1.5px rgba(255,255,255,0.04)`
                     : isStart
-                    ? `0 0 0 1px #30d15866, 0 0 18px #30d15833, 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)`
-                    : "0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)"),
-                backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0))",
+                    ? `0 0 0 1.5px #30d15870, 0 0 22px #30d15838, 0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255,255,255,0.1), inset 0 -1px 1.5px rgba(255,255,255,0.04)`
+                    : "0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255, 255, 255, 0.1), inset 0 -1px 1.5px rgba(255,255,255,0.04)"),
+                backgroundImage: "linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))",
                 zIndex: isSelected ? 10 : isStart ? 9 : 1,
-                // Only apply transitions when not dragging for immediate response
                 transition:
                   draggedNode === node.id
                     ? "none"
-                    : "box-shadow 120ms ease-out, border-color 120ms ease-out, background-color 120ms ease-out, filter 120ms ease-out",
+                    : "box-shadow 180ms ease-out, border-color 180ms ease-out, background-color 180ms ease-out, filter 180ms ease-out",
                 willChange: draggedNode === node.id ? "transform" : "auto",
+                animation: isSelected ? "nodePulse 1.8s infinite ease-in-out" : "none",
               }}
               onMouseDown={(e) => handleNodeMouseDown(e, node.id)}
               onClick={(e) => handleNodeClick(e, node.id)}
@@ -643,18 +669,18 @@ export default function CanvasEngine(props: Props) {
               onMouseEnter={(e) => {
                 // Skip hover effects during drag for better performance
                 if (!isSelected && !isStart && draggedNode !== node.id) {
-                  e.currentTarget.style.backgroundColor = "rgba(20, 20, 20, 0.7)";
-                  e.currentTarget.style.boxShadow = `0 0 10px ${getNodeAccentColor(node)}55, 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)`;
-                  e.currentTarget.style.borderColor = `${getNodeAccentColor(node)}33`;
-                  (e.currentTarget as HTMLElement).style.filter = "brightness(1.05)";
+                  e.currentTarget.style.backgroundColor = "rgba(22, 22, 24, 0.42)";
+                  e.currentTarget.style.boxShadow = `0 0 14px ${getNodeAccentColor(node)}60, 0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255, 255, 255, 0.12), inset 0 -1px 1.5px rgba(255,255,255,0.06)`;
+                  e.currentTarget.style.borderColor = `${getNodeAccentColor(node)}40`;
+                  (e.currentTarget as HTMLElement).style.filter = "brightness(1.1) saturate(1.05)";
                 }
               }}
               onMouseLeave={(e) => {
                 // Skip hover effects during drag for better performance
                 if (!isSelected && !isStart && draggedNode !== node.id) {
-                  e.currentTarget.style.backgroundColor = "rgba(18, 18, 18, 0.6)";
-                  e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06)";
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.03)";
+                  e.currentTarget.style.backgroundColor = "rgba(20, 20, 22, 0.32)";
+                  e.currentTarget.style.boxShadow = "0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255, 255, 255, 0.1), inset 0 -1px 1.5px rgba(255,255,255,0.04)";
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.01)";
                   (e.currentTarget as HTMLElement).style.filter = "";
                 }
               }}
@@ -689,11 +715,11 @@ export default function CanvasEngine(props: Props) {
               )}
               {/* Node Content */}
               <div 
-                className="w-full h-full flex flex-col"
-                style={{ padding: "12px 12px 8px 12px" }}
+                className="w-full h-full flex flex-col justify-center"
+                style={{ padding: "8px 14px" }}
               >
                 {/* Compact Header Row */}
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2">
                   {IconComponent && (
                     <IconComponent
                       size={18}
