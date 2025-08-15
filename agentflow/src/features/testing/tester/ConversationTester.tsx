@@ -1,6 +1,7 @@
 import React from 'react';
 import { User, Bot, AlertCircle, TrendingUp } from 'lucide-react';
 import { CanvasNode, Connection } from '@/types';
+import { NodeOutputRenderer, KeyValueList } from '@/features/testing/tester/Renderers';
 
 interface ConversationTesterProps {
   nodes: CanvasNode[];
@@ -41,9 +42,14 @@ export default function ConversationTester({ nodes, connections, onClose }: Conv
                       </span>
                     </div>
                     <div className={`rounded-lg px-4 py-2 ${node.type === 'agent' ? 'bg-gray-700 text-gray-100' : node.type === 'ui' ? 'bg-blue-600 text-white' : node.type === 'logic' ? 'bg-yellow-900 text-yellow-100' : 'bg-gray-800 text-gray-300'}`}>{typeof node.output === 'string' ? node.output : JSON.stringify(node.output)}</div>
-                    <div className="mt-2 text-xs text-gray-500">
-                      <strong>Inputs:</strong> {Object.keys(node.inputs).length ? JSON.stringify(node.inputs) : 'None'}<br />
-                      <strong>Context:</strong> {Object.keys(node.context ?? {}).length ? JSON.stringify(node.context) : 'None'}
+                    <div className={`rounded-lg px-4 py-2 ${node.type === 'agent' ? 'bg-gray-700 text-gray-100' : node.type === 'ui' ? 'bg-blue-600 text-white' : node.type === 'logic' ? 'bg-yellow-900 text-yellow-100' : 'bg-gray-800 text-gray-300'}`}>
+                      <NodeOutputRenderer artifact={{ nodeId: node.id, nodeSubtype: node.type, nodeType: node.type, output: (node as any).output } as any} />
+                    </div>
+                    <div className="mt-2 text-xs text-gray-500 space-y-1">
+                      <div><strong>Inputs:</strong></div>
+                      {Object.keys(node.inputs).length ? <KeyValueList obj={node.inputs as any} /> : <span>None</span>}
+                      <div><strong>Context:</strong></div>
+                      {Object.keys((node.context ?? {} as any)).length ? <KeyValueList obj={node.context as any} /> : <span>None</span>}
                     </div>
                   </div>
                 </div>

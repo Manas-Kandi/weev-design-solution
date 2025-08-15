@@ -40,7 +40,7 @@ export default function ResultCard({
     artifact.output && typeof artifact.output === "object" && !Array.isArray(artifact.output)
       ? (artifact.output as Record<string, unknown>)
       : null;
-  const isLLM = !!(outputObj && ("gemini" in outputObj || "llm" in outputObj));
+  const isLLM = !!(outputObj && ("gemini" in outputObj || "llm" in outputObj || "candidates" in outputObj));
 
   const durationLabel = useMemo(() => ((artifact.durationMs || 0) / 1000).toFixed(2) + "s", [artifact.durationMs]);
   const nodeTypeLabel = useMemo(

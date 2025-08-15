@@ -20,8 +20,17 @@ function TextBlock({ text }: { text: string }) {
 function tryParseJSON<T = unknown>(v: unknown): T | undefined {
   if (typeof v !== "string") return undefined;
   try {
-    return JSON.parse(v) as T;
+    // Strip common code fences (```json ... ```), then attempt direct parse
+    const cleaned = v.replace(/```json|```/gi, "").trim();
+    return JSON.parse(cleaned) as T;
   } catch {
+    // Fallback: extract the first plausible JSON object/array from the text
+    try {
+      const match = (v as string).match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+      if (match) {
+        return JSON.parse(match[1]) as T;
+      }
+    } catch {}
     return undefined;
   }
 }
@@ -34,10 +43,89 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return !!v && typeof v === "object" && !Array.isArray(v);
 }
 
+// --- Friendly text helpers ---
+function sanitizeText(s: string): string {
+  const withoutFences = s.replace(/```[a-z]*|```/gi, " ");
+  const withoutEscapes = withoutFences.replace(/\\[nrt]/g, " ").replace(/[\n\r\t]+/g, " ");
+  const withoutBrackets = withoutEscapes.replace(/[\[\]{}\"]+/g, " ");
+  return withoutBrackets.replace(/\s+/g, " ").trim();
+}
+
+function valueToPlain(v: unknown, maxLen = 200): string {
+  if (v == null) return "";
+  if (typeof v === "string") return sanitizeText(v).slice(0, maxLen);
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  try {
+    const s = safeStringify(v);
+    return sanitizeText(s).slice(0, maxLen);
+  } catch {
+    return String(v);
+  }
+}
+
+function toFriendly(value: unknown): { text?: string; bullets?: string[] } {
+  if (value == null) return { text: "No output provided." };
+  // If it's a string that might contain JSON, parse then recurse
+  if (typeof value === "string") {
+    const parsed = tryParseJSON<any>(value);
+    if (parsed !== undefined) return toFriendly(parsed);
+    const text = sanitizeText(value);
+    return { text: text || "No output provided." };
+  }
+  // Arrays
+  if (Array.isArray(value)) {
+    if (value.length === 0) return { text: "No output provided." };
+    const first = value[0];
+    if (isRecord(first)) {
+      const keys = Object.keys(first).slice(0, 4);
+      const bullets = value.slice(0, 5).map((item, i) => {
+        const rec = isRecord(item) ? item : {};
+        const parts = keys.map((k) => `${k}: ${valueToPlain(rec[k])}`);
+        return `Item ${i + 1} — ${parts.join(", ")}`;
+      });
+      if (value.length > 5) bullets.push(`…and ${value.length - 5} more`);
+      return { bullets };
+    }
+    // Primitive list
+    const bullets = value.slice(0, 8).map((x) => valueToPlain(x));
+    if (value.length > 8) bullets.push(`…and ${value.length - 8} more`);
+    return { bullets };
+  }
+  // Objects
+  if (isRecord(value)) {
+    const entries = Object.entries(value).slice(0, 8);
+    if (entries.length === 0) return { text: "No output provided." };
+    const bullets = entries.map(([k, v]) => `${k}: ${valueToPlain(v)}`);
+    return { bullets };
+  }
+  // Fallback
+  return { text: valueToPlain(value) };
+}
+
+function FriendlyBox({ text, bullets }: { text?: string; bullets?: string[] }) {
+  if ((!text || !text.trim()) && (!bullets || bullets.length === 0)) {
+    text = "No output provided.";
+  }
+  return (
+    <div className="rounded border border-gray-800 bg-[#0e0f13] p-3 text-[12px] text-gray-200">
+      {bullets && bullets.length > 0 ? (
+        <ul className="list-disc pl-4 space-y-1">
+          {bullets.map((b, i) => (
+            <li key={i}>{b}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="whitespace-normal">{text}</p>
+      )}
+    </div>
+  );
+}
+
 export function LLMRawBlock({ outputObj, className }: { outputObj: Record<string, unknown> | null; className?: string }) {
   const oo = outputObj as Record<string, unknown> | null;
   const raw = oo ? ("llm" in oo ? oo["llm"] : oo["gemini"]) : undefined;
-  return <JSONBlock value={raw} className={className} />;
+  const friendly = toFriendly(raw);
+  return <FriendlyBox {...friendly} />;
 }
 
 export function NodeOutputRenderer({ artifact, className }: { artifact: NodeExecutionArtifact; className?: string }) {
@@ -46,80 +134,76 @@ export function NodeOutputRenderer({ artifact, className }: { artifact: NodeExec
   const outputObj: Record<string, unknown> | null =
     output && typeof output === "object" && !Array.isArray(output) ? (output as Record<string, unknown>) : null;
 
-  // ToolAgentNode: prefer structured data path
+  // ToolAgentNode: prefer structured data path, render as friendly text
   if (typeKey === "tool-agent") {
     const data = outputObj ? (outputObj["data"] as unknown) : undefined;
     const metadata = outputObj ? (outputObj["metadata"] as Record<string, unknown> | undefined) : undefined;
     if (typeof data !== "undefined") {
-      // Calendar-style result
-      if (isRecord(data) && Array.isArray(data["free_timeslots"])) {
-        return (
-          <div className={className}>
-            <div className="mb-1 font-medium text-gray-400">Free time slots</div>
-            <TableRenderer data={data["free_timeslots"] as unknown[]} />
-            {isRecord(data) && "assumptions" in data && (
-              <div className="mt-2">
-                <div className="text-[11px] text-gray-400">Assumptions</div>
-                <KeyValueList obj={data["assumptions"] as Record<string, unknown>} />
-              </div>
-            )}
-            {metadata && (
-              <div className="mt-2">
-                <div className="text-[11px] text-gray-400">Metadata</div>
-                <KeyValueList obj={metadata} />
-              </div>
-            )}
-          </div>
-        );
-      }
-      if (Array.isArray(data)) {
-        return <TableRenderer data={data} />;
-      }
-      if (isRecord(data)) {
-        return (
-          <div className={className}>
-            <JSONBlock value={data} />
-            {metadata && (
-              <div className="mt-2">
-                <div className="text-[11px] text-gray-500">Metadata</div>
-                <KeyValueList obj={metadata} />
-              </div>
-            )}
-          </div>
-        );
-      }
+      const friendly = toFriendly(data);
+      return <FriendlyBox {...friendly} />;
     }
-    // Fallbacks
-    if (outputObj && typeof outputObj["output"] === "string") {
-      return <TextBlock text={outputObj["output"] as string} />;
-    }
-    return <JSONBlock value={artifact.output} />;
+    const fallbackFriendly = toFriendly(artifact.output);
+    return <FriendlyBox {...fallbackFriendly} />;
   }
 
   // KnowledgeBaseNode: often returns JSON string for retrieve/search
   if (typeKey === "knowledge-base") {
     if (typeof output === "string") {
       const parsed = tryParseJSON(output);
-      if (Array.isArray(parsed) && isArrayOfObjects(parsed)) {
-        return <TableRenderer data={parsed} />;
-      }
-      return <TextBlock text={output} />;
+      const friendly = toFriendly(parsed ?? output);
+      return <FriendlyBox {...friendly} />;
     }
-    return <JSONBlock value={artifact.output} />;
+    return <FriendlyBox {...toFriendly(artifact.output)} />;
   }
 
   // AgentNode: show assistant text when present
   if (typeKey === "agent" || typeKey === "generic") {
     const text = outputObj && typeof outputObj["output"] === "string" ? (outputObj["output"] as string) : (typeof output === "string" ? output : undefined);
-    if (typeof text === "string") return <TextBlock text={text} />;
-    return <JSONBlock value={artifact.output} />;
+    if (typeof text === "string") {
+      const parsed = tryParseJSON(text);
+      return <FriendlyBox {...toFriendly(parsed ?? text)} />;
+    }
+    // Fallback: Gemini-style response path candidates[0].content.parts[0].text
+    const candidateText = (() => {
+      try {
+        const oo = outputObj as any;
+        const parts = oo?.candidates?.[0]?.content?.parts;
+        const t = Array.isArray(parts) ? parts[0]?.text : undefined;
+        return typeof t === "string" ? t : undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+    if (typeof candidateText === "string") {
+      const parsed = tryParseJSON(candidateText);
+      return <FriendlyBox {...toFriendly(parsed ?? candidateText)} />;
+    }
+    return <FriendlyBox {...toFriendly(artifact.output)} />;
   }
 
   // Message / PromptTemplate are text-centric
   if (typeKey === "message" || typeKey === "prompt-template" || typeKey === "template") {
     const text = typeof output === "string" ? output : outputObj && typeof outputObj["output"] === "string" ? (outputObj["output"] as string) : undefined;
-    if (typeof text === "string") return <TextBlock text={text} />;
-    return <JSONBlock value={artifact.output} />;
+    if (typeof text === "string") {
+      const parsed = tryParseJSON(text);
+      return <FriendlyBox {...toFriendly(parsed ?? text)} />;
+    }
+    // Fallback to candidate style if present (some nodes may pass raw LLM object)
+    const candidateText = (() => {
+      try {
+        const oo = outputObj as any;
+        const parts = oo?.candidates?.[0]?.content?.parts;
+        const t = Array.isArray(parts) ? parts[0]?.text : undefined;
+        return typeof t === "string" ? t : undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+    if (typeof candidateText === "string") {
+      const parsed = tryParseJSON(candidateText);
+      return <FriendlyBox {...toFriendly(parsed ?? candidateText)} />;
+    }
+    return <FriendlyBox {...toFriendly(artifact.output)} />;
   }
 
   // IfElse: decision chip and context info if available
@@ -127,37 +211,15 @@ export function NodeOutputRenderer({ artifact, className }: { artifact: NodeExec
     const decision = outputObj && typeof outputObj["output"] === "string" ? (outputObj["output"] as string) : (typeof output === "string" ? output : "");
     const infoRaw = outputObj && typeof outputObj["info"] === "string" ? (outputObj["info"] as string) : undefined;
     const info = tryParseJSON<Record<string, unknown>>(infoRaw);
-    return (
-      <div className={className}>
-        <div className="mb-1">
-          <span className={cn(
-            "inline-flex items-center rounded px-1.5 py-0.5 text-[10px]",
-            decision === "true" ? "bg-emerald-900/30 text-emerald-200" : decision === "false" ? "bg-red-900/30 text-red-200" : "bg-gray-800 text-gray-300"
-          )}>
-            Decision: {decision || "(unknown)"}
-          </span>
-        </div>
-        {info ? (
-          <div>
-            <div className="text-[11px] text-gray-400">Evaluation</div>
-            <KeyValueList obj={info} />
-          </div>
-        ) : (
-          <JSONBlock value={artifact.output} />
-        )}
-      </div>
-    );
+    const friendly = toFriendly({ Decision: decision || "unknown", ...(info || {}) });
+    return <FriendlyBox {...friendly} />;
   }
 
   // DecisionTree: show chosen branch
   if (typeKey === "decision-tree") {
     const branch = typeof output === "string" ? output : outputObj && typeof outputObj["output"] === "string" ? (outputObj["output"] as string) : undefined;
-    return (
-      <div className={className}>
-        <div className="mb-1 font-medium text-gray-400">Selected Branch</div>
-        <TextBlock text={branch || safeStringify(artifact.output)} />
-      </div>
-    );
+    const friendly = toFriendly(branch ?? artifact.output);
+    return <FriendlyBox {...friendly} />;
   }
 
   // StateMachine: pretty state transition
@@ -166,25 +228,15 @@ export function NodeOutputRenderer({ artifact, className }: { artifact: NodeExec
     const cur = outputObj && typeof outputObj["currentState"] === "string" ? (outputObj["currentState"] as string) : undefined;
     const event = outputObj && typeof outputObj["event"] === "string" ? (outputObj["event"] as string) : undefined;
     const transition = outputObj && typeof outputObj["transition"] === "string" ? (outputObj["transition"] as string) : undefined;
-    return (
-      <div className={className}>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] bg-gray-800 text-gray-300">Event: {event || "(none)"}</span>
-          <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] bg-blue-900/30 text-blue-200">{prev || "?"} → {cur || "?"}</span>
-        </div>
-        {transition && (
-          <div className="text-[11px] text-gray-400">{transition}</div>
-        )}
-        {!transition && <JSONBlock value={artifact.output} />}
-      </div>
-    );
+    const friendly = toFriendly({ Event: event || "none", Transition: `${prev || "?"} to ${cur || "?"}`, Details: transition });
+    return <FriendlyBox {...friendly} />;
   }
 
   // Default: best-effort generic
   if (isArrayOfObjects(artifact.output)) {
-    return <TableRenderer data={artifact.output} />;
+    return <FriendlyBox {...toFriendly(artifact.output)} />;
   }
-  return <JSONBlock value={artifact.output} />;
+  return <FriendlyBox {...toFriendly(artifact.output)} />;
 }
 
 export function CopyButton({ getText, className }: { getText: () => string; className?: string }) {

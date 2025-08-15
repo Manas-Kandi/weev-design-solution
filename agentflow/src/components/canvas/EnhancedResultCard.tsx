@@ -16,8 +16,86 @@ export default function EnhancedResultCard({ result }: EnhancedResultCardProps) 
   const [showMetadata, setShowMetadata] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // --- Helpers for friendly rendering ---
+  const isRecord = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+  const tryParseJSON = <T,>(v: unknown): T | undefined => {
+    if (typeof v !== 'string') return undefined;
+    try {
+      const cleaned = v.replace(/```json|```/gi, '').trim();
+      return JSON.parse(cleaned) as T;
+    } catch {
+      try {
+        const match = (v as string).match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+        if (match) return JSON.parse(match[1]) as T;
+      } catch {}
+      return undefined;
+    }
+  };
+  const sanitizeText = (s: string): string => {
+    const withoutFences = s.replace(/```[a-z]*|```/gi, ' ');
+    const withoutEscapes = withoutFences.replace(/\\[nrt]/g, ' ').replace(/[\n\r\t]+/g, ' ');
+    const withoutBrackets = withoutEscapes.replace(/[\[\]{}\"]+/g, ' ');
+    return withoutBrackets.replace(/\s+/g, ' ').trim();
+  };
+  const valueToPlain = (v: unknown, maxLen = 200): string => {
+    if (v == null) return '';
+    if (typeof v === 'string') return sanitizeText(v).slice(0, maxLen);
+    if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+    try {
+      const s = JSON.stringify(v);
+      return sanitizeText(s).slice(0, maxLen);
+    } catch {
+      return String(v);
+    }
+  };
+  const toFriendly = (value: unknown): { text?: string; bullets?: string[] } => {
+    if (value == null) return { text: 'No output provided.' };
+    if (typeof value === 'string') {
+      const parsed = tryParseJSON<any>(value);
+      if (parsed !== undefined) return toFriendly(parsed);
+      const text = sanitizeText(value);
+      return { text: text || 'No output provided.' };
+    }
+    if (Array.isArray(value)) {
+      if (value.length === 0) return { text: 'No output provided.' };
+      const first = value[0];
+      if (isRecord(first)) {
+        const keys = Object.keys(first).slice(0, 4);
+        const bullets = value.slice(0, 5).map((item, i) => {
+          const rec = isRecord(item) ? item : {};
+          const parts = keys.map((k) => `${k}: ${valueToPlain(rec[k])}`);
+          return `Item ${i + 1} — ${parts.join(', ')}`;
+        });
+        if (value.length > 5) bullets.push(`…and ${value.length - 5} more`);
+        return { bullets };
+      }
+      const bullets = value.slice(0, 8).map((x) => valueToPlain(x));
+      if (value.length > 8) bullets.push(`…and ${value.length - 8} more`);
+      return { bullets };
+    }
+    if (isRecord(value)) {
+      // Special-case Gemini-style candidate text
+      const parts = (value as any)?.candidates?.[0]?.content?.parts;
+      const t = Array.isArray(parts) ? parts[0]?.text : undefined;
+      if (typeof t === 'string') return toFriendly(t);
+      const entries = Object.entries(value).slice(0, 8);
+      if (entries.length === 0) return { text: 'No output provided.' };
+      const bullets = entries.map(([k, v]) => `${k}: ${valueToPlain(v)}`);
+      return { bullets };
+    }
+    return { text: valueToPlain(value) };
+  };
+
   // Extract friendly response and metadata from the output
-  const friendlyResponse = result.output?.response || result.output || 'No response available';
+  const rawResponse = (() => {
+    const fromResponse = result.output?.response;
+    if (typeof fromResponse !== 'undefined') return fromResponse;
+    const parts = (result.output as any)?.candidates?.[0]?.content?.parts;
+    const t = Array.isArray(parts) ? parts[0]?.text : undefined;
+    if (typeof t === 'string') return t;
+    return result.output;
+  })();
+  const friendly = toFriendly(rawResponse);
   const metadata = result.output?.metadata || {
     nodeType: result.nodeSubtype,
     nodeId: result.nodeId,
@@ -72,12 +150,17 @@ export default function EnhancedResultCard({ result }: EnhancedResultCardProps) 
       <div className="space-y-2">
         <h5 className="text-slate-300 text-sm font-medium">Response:</h5>
         <div className="bg-slate-900/50 border border-slate-600/30 rounded p-3">
-          <p className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap">
-            {typeof friendlyResponse === 'string' 
-              ? friendlyResponse 
-              : JSON.stringify(friendlyResponse, null, 2)
-            }
-          </p>
+          {friendly.bullets && friendly.bullets.length > 0 ? (
+            <ul className="list-disc pl-4 space-y-1 text-slate-200 text-sm">
+              {friendly.bullets.map((b, i) => (
+                <li key={i}>{b}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-slate-200 text-sm leading-relaxed whitespace-normal">
+              {friendly.text || 'No output provided.'}
+            </p>
+          )}
         </div>
       </div>
 
