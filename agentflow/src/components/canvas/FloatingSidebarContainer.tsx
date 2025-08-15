@@ -2,7 +2,7 @@
 
 import React from "react";
 import { CanvasNode, Connection } from "@/types";
-import FloatingPropertiesPanel from "./FloatingPropertiesPanel";
+import PropertiesPanel from "./PropertiesPanel";
 import { SimpleTestingPanel } from "@/features/testing/SimpleTestingPanel";
 
 interface FloatingSidebarContainerProps {
@@ -46,20 +46,15 @@ export default function FloatingSidebarContainer({
   if (bothPanelsVisible) {
     // Vertical split layout when both panels are visible
     return (
-      <div
-        className="fixed top-4 bottom-4 right-4 z-50 flex flex-col gap-2"
-        style={{ width: '400px' }}
-      >
+      <div className="w-[320px] h-full flex flex-col gap-2">
         {/* Properties Panel - Top Half */}
         <div className="flex-1 min-h-0">
-          <FloatingPropertiesPanel
+          <PropertiesPanel
             selectedNode={selectedNode}
-            onNodeChange={onNodeChange}
-            onClose={onNodeClose}
+            onChange={onNodeChange}
+            nodes={nodes}
+            connections={connections}
             onConnectionsChange={onConnectionsChange}
-            isTestingPanelVisible={hasTestingPanel}
-            compactMode={true}
-            isVerticalSplit={true}
           />
         </div>
 
@@ -81,35 +76,42 @@ export default function FloatingSidebarContainer({
     );
   }
 
-  return (
-    <>
-      {/* Properties Panel - Full Size */}
-      {hasPropertiesPanel && (
-        <FloatingPropertiesPanel
-          selectedNode={selectedNode}
-          onNodeChange={onNodeChange}
-          onClose={onNodeClose}
-          onConnectionsChange={onConnectionsChange}
-          isTestingPanelVisible={hasTestingPanel}
-          compactMode={false}
-          isVerticalSplit={false}
-        />
-      )}
+  // Single panel visible or none
+  if (hasPropertiesPanel) {
+    return (
+      <div className="w-[320px] h-full flex flex-col">
+        <div className="flex-1 min-h-0">
+          <PropertiesPanel
+            selectedNode={selectedNode}
+            onChange={onNodeChange}
+            nodes={nodes}
+            connections={connections}
+            onConnectionsChange={onConnectionsChange}
+          />
+        </div>
+      </div>
+    );
+  }
 
-      {/* Testing Panel - Full Size */}
-      {hasTestingPanel && (
-        <SimpleTestingPanel
-          nodes={nodes}
-          connections={connections}
-          isVisible={true}
-          onClose={onTestingClose}
-          isPropertiesPanelVisible={hasPropertiesPanel}
-          compactMode={false}
-          onTesterEvent={onTesterEvent}
-          startNodeId={startNodeId ?? null}
-          isVerticalSplit={false}
-        />
-      )}
-    </>
-  );
+  if (hasTestingPanel) {
+    return (
+      <div className="w-[320px] h-full flex flex-col">
+        <div className="flex-1 min-h-0">
+          <SimpleTestingPanel
+            nodes={nodes}
+            connections={connections}
+            isVisible={true}
+            onClose={onTestingClose}
+            isPropertiesPanelVisible={hasPropertiesPanel}
+            compactMode={false}
+            onTesterEvent={onTesterEvent}
+            startNodeId={startNodeId ?? null}
+            isVerticalSplit={false}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }

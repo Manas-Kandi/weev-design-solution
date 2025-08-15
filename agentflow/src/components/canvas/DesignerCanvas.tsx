@@ -158,20 +158,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         nodes,
         connections,
         startNodeId,
-        (nodeId: string, log: string, output?: unknown, error?: string) => {
-          const node = nodes.find((n) => n.id === nodeId);
-          setTestLogs((prev) => [
-            ...prev,
-            {
-              nodeId,
-              title: node ? getNodeTitle(node) : nodeId,
-              type: node?.type || "",
-              log,
-              output,
-              error,
-            },
-          ]);
-        }
+        {},
+        { emitTesterEvent: handleTesterEvent }
       );
       setTestFlowResult(result);
     } catch (err) {
@@ -218,69 +206,73 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
   }
 
   return (
-    <div className="flex-1 relative overflow-hidden">
-      <div className="absolute top-4 left-4 z-30">
-        {/* Replace Flow from MCP */}
-        <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/15 text-xs text-white cursor-pointer select-none">
-          <input
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={async (e) => {
-              try {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const text = await file.text();
-                let parsed: McpExport;
+    <div className="flex-1 flex overflow-hidden">
+      {/* Main canvas area */}
+      <div className="relative overflow-hidden flex-1">
+        <div className="absolute top-4 left-4 z-30">
+          {/* Replace Flow from MCP */}
+          <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/15 text-xs text-white cursor-pointer select-none">
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={async (e) => {
                 try {
-                  parsed = JSON.parse(text);
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const text = await file.text();
+                  let parsed: McpExport;
+                  try {
+                    parsed = JSON.parse(text);
+                  } catch (err) {
+                    alert("Invalid JSON file.");
+                    return;
+                  }
+                  const validation = validateMcpExport(parsed);
+                  if (!validation.valid) {
+                    const first = validation.errors?.[0];
+                    alert(`Invalid MCP file: ${first || "schema validation failed"}`);
+                    return;
+                  }
+                  const mapped = mapFromMcpExport(parsed);
+                  const ok = window.confirm(
+                    `Replace current flow with ${mapped.nodes.length} nodes and ${mapped.connections.length} connections? This will overwrite current canvas.`
+                  );
+                  if (!ok) return;
+                  if (!onReplaceFlowFromMcp) {
+                    alert("Import handler not available in this view.");
+                    return;
+                  }
+                  await onReplaceFlowFromMcp(mapped);
                 } catch (err) {
-                  alert("Invalid JSON file.");
-                  return;
+                  console.error("MCP import failed:", err);
+                  alert(err instanceof Error ? err.message : "MCP import failed");
+                } finally {
+                  // reset input value so selecting the same file again will trigger onChange
+                  if (e.target) e.target.value = "";
                 }
-                const validation = validateMcpExport(parsed);
-                if (!validation.valid) {
-                  const first = validation.errors?.[0];
-                  alert(`Invalid MCP file: ${first || "schema validation failed"}`);
-                  return;
-                }
-                const mapped = mapFromMcpExport(parsed);
-                const ok = window.confirm(
-                  `Replace current flow with ${mapped.nodes.length} nodes and ${mapped.connections.length} connections? This will overwrite current canvas.`
-                );
-                if (!ok) return;
-                if (!onReplaceFlowFromMcp) {
-                  alert("Import handler not available in this view.");
-                  return;
-                }
-                await onReplaceFlowFromMcp(mapped);
-              } catch (err) {
-                console.error("MCP import failed:", err);
-                alert(err instanceof Error ? err.message : "MCP import failed");
-              } finally {
-                // reset input value so selecting the same file again will trigger onChange
-                if (e.target) e.target.value = "";
-              }
-            }}
-          />
-          <span className="opacity-80">Replace Flow from MCP</span>
-        </label>
+              }}
+            />
+            <span className="opacity-80">Replace Flow from MCP</span>
+          </label>
+        </div>
+        <CanvasEngine
+          nodes={nodes}
+          connections={connections}
+          onNodeSelect={onNodeSelect}
+          onNodeUpdate={onNodeUpdate}
+          onConnectionsChange={onConnectionsChange}
+          onCreateConnection={onCreateConnection}
+          onNodeDrag={handleNodeDrag}
+          selectedNodeId={selectedNode ? selectedNode.id : null}
+          startNodeId={startNodeId}
+          onStartNodeChange={onStartNodeChange}
+          onNodeDelete={handleNodeDelete}
+          nodeStatuses={nodeStatuses}
+          pulsingConnectionIds={pulsingConnectionIds}
+        />
       </div>
-      <CanvasEngine
-        nodes={nodes}
-        connections={connections}
-        onNodeSelect={onNodeSelect}
-        onNodeUpdate={onNodeUpdate}
-        onConnectionsChange={onConnectionsChange}
-        onCreateConnection={onCreateConnection}
-        onNodeDrag={handleNodeDrag}
-        selectedNodeId={selectedNode ? selectedNode.id : null}
-        startNodeId={startNodeId}
-        onStartNodeChange={onStartNodeChange}
-        onNodeDelete={handleNodeDelete}
-        nodeStatuses={nodeStatuses}
-        pulsingConnectionIds={pulsingConnectionIds}
-      />
+      {/* Inline right sidebar (properties/testing) */}
       <FloatingSidebarContainer
         selectedNode={selectedNode}
         onNodeChange={onNodeUpdate}
