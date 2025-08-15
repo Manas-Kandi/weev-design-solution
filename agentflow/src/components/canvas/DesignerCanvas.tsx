@@ -52,8 +52,6 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     startNodeId,
     onStartNodeChange,
     onDeleteNode,
-    projectId = null,
-    projectName = null,
     onReplaceFlowFromMcp,
   } = props;
 
@@ -276,7 +274,6 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
       <FloatingSidebarContainer
         selectedNode={selectedNode}
         onNodeChange={onNodeUpdate}
-        onNodeClose={() => onNodeSelect(null)}
         nodes={nodes}
         connections={connections}
         showTesting={showTester}
@@ -286,8 +283,6 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
         }}
         onTesterEvent={handleTesterEvent}
         onConnectionsChange={onConnectionsChange}
-        projectId={projectId}
-        projectName={projectName}
       />
       {/* Pass the selected node id here if available */}
     </div>
