@@ -311,4 +311,190 @@ The Flow Execution Panel provides comprehensive debug information through:
 - Copy functionality for sharing execution results
 - Timeline data for performance analysis
 
-This documentation serves as the complete reference for understanding, maintaining, and extending the Flow Execution Panel system.
+## Current Goal
+Comprehensively debug and fix end-to-end flow output
+
+## Recent Debugging Changes (Step 1775-1803)
+
+### Issue Identified
+- Flow Execution Panel was executing successfully (5 steps, 1369ms) but returning `{"result": null}`
+- Properties Panel input "who is gibby from icarly?" was not producing expected LLM response
+- Workflow runner was completing but final output extraction was failing
+
+### Comprehensive Debugging Added
+
+#### 1. Properties Testing Bridge Debug Logging
+**File**: `/src/lib/propertiesTestingBridge.ts`
+**Changes**:
+- Added comprehensive debug logging to `executeNodeFromProperties()` function
+- Added detailed logging to `executeAgentNode()` function 
+- Added LLM execution logging with error handling
+- Added final result logging for agent node completion
+
+**Debug Output Expected**:
+```javascript
+🔍 Properties Testing Bridge - Node Execution Start: {
+  nodeId: "agent-id",
+  nodeType: "agent", 
+  nodeSubtype: "generic",
+  nodeData: { rules: { nl: "who is gibby from icarly?" } },
+  inputData: { input: "who is gibby from icarly?" }
+}
+
+🤖 Agent Node Execution: {
+  rulesNl: "who is gibby from icarly?",
+  userPrompt: "who is gibby from icarly?",
+  systemPrompt: null,
+  behavior: null,
+  mockResponse: null
+}
+
+🚀 Executing LLM with Properties Panel config: {
+  fullPrompt: "who is gibby from icarly?\n\nUser Input: who is gibby from icarly?\n\nFollow the rules above exactly as specified.",
+  rulesNl: "who is gibby from icarly?"
+}
+
+✅ LLM execution successful: {
+  result: "Gibby is a character from iCarly...",
+  resultType: "string",
+  resultLength: 150
+}
+```
+
+#### 2. Workflow Runner Debug Logging
+**File**: `/src/lib/workflowRunnerPropertiesDriven.ts`
+**Changes**:
+- Added workflow execution start logging
+- Added individual node execution logging
+- Added node output creation logging
+- Added workflow completion logging
+- Fixed LLM executor function signature to match expected interface
+- Enhanced result storage structure with `_rawResult` and `_propertiesResult`
+
+**Debug Output Expected**:
+```javascript
+🚀 Starting workflow execution: {
+  startNodeId: "agent-id",
+  nodeCount: 2,
+  connectionCount: 1,
+  options: { inputs: { input: "who is gibby from icarly?" } }
+}
+
+🔄 Executing node: {
+  nodeId: "agent-id",
+  nodeType: "agent",
+  nodeSubtype: "generic",
+  inputData: { input: "who is gibby from icarly?" }
+}
+
+📦 Creating node outputs: {
+  nodeId: "agent-id",
+  output: "Gibby is a character from iCarly...",
+  nodeOutputIds: ["output"]
+}
+
+🏁 Workflow execution completed: {
+  executionResults: { "agent-id": { output: "Gibby...", _rawResult: "Gibby..." } },
+  resultKeys: ["agent-id"],
+  resultCount: 1
+}
+```
+
+#### 3. Flow Execution Panel Debug Logging
+**File**: `/src/features/testing/FlowExecutionPanel.tsx`
+**Changes**:
+- Enhanced final output extraction with multiple fallback methods
+- Added comprehensive debug logging for result analysis
+- Improved extraction logic to handle different result structures
+- Added detailed logging for each extraction step
+
+**Debug Output Expected**:
+```javascript
+🎯 Final Output Extraction Debug: {
+  result: { "agent-id": { output: "Gibby...", _rawResult: "Gibby..." } },
+  resultEntries: [["agent-id", { output: "Gibby...", _rawResult: "Gibby..." }]],
+  resultKeys: ["agent-id"]
+}
+
+🔍 Last Node Result Analysis: {
+  lastNodeId: "agent-id",
+  lastNodeResult: { output: "Gibby...", _rawResult: "Gibby..." },
+  resultType: "object",
+  resultKeys: ["output", "_rawResult", "_propertiesResult"]
+}
+
+🎯 Final Output Extracted: {
+  finalOutput: "Gibby is a character from iCarly...",
+  outputType: "string",
+  outputLength: 150
+}
+```
+
+### Technical Fixes Applied
+
+#### 1. LLM Executor Function Signature Fix
+**Issue**: TypeScript error due to mismatched function signatures
+**Fix**: Wrapped `callGemini` function to match expected interface:
+```typescript
+async (prompt: string, systemPrompt?: string) => {
+  const result = await callGemini(prompt, systemPrompt ? { systemPrompt } : {});
+  return typeof result === 'string' ? result : JSON.stringify(result);
+}
+```
+
+#### 2. Enhanced Result Storage Structure
+**Issue**: Workflow results were not preserving raw node outputs
+**Fix**: Enhanced result storage to include multiple data points:
+```typescript
+executionResults[currentNode.id] = {
+  ...nodeOutputs,
+  _rawResult: output,
+  _propertiesResult: propertiesResult,
+  _nodeType: currentNode.type,
+  _nodeSubtype: currentNode.subtype
+};
+```
+
+#### 3. Improved Final Output Extraction
+**Issue**: Final output extraction was not finding the actual result
+**Fix**: Multiple fallback extraction methods:
+```typescript
+finalOutput = (lastNodeResult as any)._rawResult || 
+             (lastNodeResult as any).output || 
+             (lastNodeResult as any).result ||
+             Object.values(lastNodeResult)[0] ||
+             lastNodeResult;
+```
+
+#### 4. Robust Start Node Detection
+**File**: `/src/features/testing/FlowExecutionPanel.tsx`
+- Supports both `Connection` shapes: `{sourceNode,targetNode}` and `{source,target}`
+- Prefers agent nodes with configured properties as the start node
+- Adds detailed detection logs to console
+
+#### 5. Effective Node Kind Resolution in Properties Bridge
+**File**: `/src/lib/propertiesTestingBridge.ts`
+- Normalizes node kind using `node.type`/`node.subtype`
+- Maps ambiguous combos (e.g. type `agent`, subtype `generic`) to `agent`
+- Ensures correct executor (`executeAgentNode`, `executeToolNode`, etc.) is selected
+
+### Expected Resolution
+With these comprehensive debugging changes, the Flow Execution Panel should now:
+1. **Extract Properties Panel Input**: "who is gibby from icarly?" from agent node
+2. **Execute LLM Call**: Use Properties Panel input as prompt
+3. **Return Actual Result**: Display LLM response instead of null
+4. **Provide Debug Visibility**: Console logs show exact execution flow
+
+### Next Steps for Verification
+1. Run Flow Execution Panel and check browser console for debug logs
+2. Verify Properties Panel input is being extracted correctly
+3. Confirm LLM execution is successful with proper prompt
+4. Validate final output shows actual answer about Gibby from iCarly
+
+### Debug Information
+
+The Flow Execution Panel provides comprehensive debug information through:
+- Console logging of execution steps
+- Detailed error messages with context
+- Copy functionality for sharing execution results
+- Timeline data for performance analysis

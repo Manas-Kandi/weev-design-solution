@@ -47,6 +47,14 @@ export async function runWorkflowWithProperties(
   callbacks?: TestingCallbacks,
   testingOptions?: TestingOptions
 ): Promise<Record<string, unknown>> {
+  console.log('🚀 Starting workflow execution:', {
+    startNodeId,
+    nodeCount: nodes.length,
+    connectionCount: connections.length,
+    options,
+    testingOptions
+  });
+
   if (!startNodeId) {
     throw new Error("Start node not set");
   }
@@ -88,14 +96,21 @@ export async function runWorkflowWithProperties(
       await callbacks.beforeNodeExecute(currentNode);
     }
 
-    // Prepare input data from connected nodes
+    // Prepare input data from connected nodes (support multiple connection shapes)
     const inputData: Record<string, any> = {};
-    const inputConnections = connections.filter(c => c.targetNode === currentNode.id);
-    for (const conn of inputConnections) {
-      if (executionResults[conn.sourceNode]) {
-        inputData[conn.targetInput] = executionResults[conn.sourceNode][conn.sourceOutput];
+    const inputConnections = connections.filter((c: any) => {
+      const target = c.targetNode ?? c.target;
+      return target === currentNode.id;
+    });
+    for (const raw of inputConnections as any[]) {
+      const sourceNode = raw.sourceNode ?? raw.source;
+      const targetInput = raw.targetInput ?? raw.targetHandle ?? 'input';
+      const sourceOutput = raw.sourceOutput ?? raw.sourceHandle ?? Object.keys(executionResults[sourceNode] || {})[0];
+      if (sourceNode && executionResults[sourceNode]) {
+        inputData[targetInput] = executionResults[sourceNode][sourceOutput];
       }
     }
+    console.log('🔗 Input connection resolution:', { nodeId: currentNode.id, inputConnections, inputData });
 
     // For the start node, merge any initial inputs from options
     if (currentNode.id === startNodeId && options?.inputs) {
@@ -111,25 +126,54 @@ export async function runWorkflowWithProperties(
     let executionError: any = null;
     
     try {
+      console.log('🔄 Executing node:', {
+        nodeId: currentNode.id,
+        nodeType: currentNode.type,
+        nodeSubtype: currentNode.subtype,
+        inputData,
+        nodeData: currentNode.data
+      });
+
       // Use Properties-Testing Bridge for ALL node execution - PROPERTIES PANEL AS AUTHORITATIVE SOURCE
       const propertiesResult = await executeNodeFromProperties(
         currentNode,
         inputData,
-        callGemini
+        async (prompt: string, systemPrompt?: string) => {
+          const result = await callGemini(prompt, systemPrompt ? { systemPrompt } : {});
+          return typeof result === 'string' ? result : JSON.stringify(result);
+        }
       );
+      
+      console.log('✅ Node execution result:', {
+        nodeId: currentNode.id,
+        propertiesResult,
+        output: propertiesResult.result
+      });
       
       // Extract the result for workflow continuation
       output = propertiesResult.result;
       
-      // Store the full properties result for testing panel display
-      executionResults[`${currentNode.id}_properties`] = propertiesResult;
+      console.log('📦 Creating node outputs:', {
+        nodeId: currentNode.id,
+        output,
+        propertiesResult,
+        nodeOutputIds: currentNode.outputs.map(o => o.id)
+      });
       
-      // Create outputs for all node output ports
+      // Create outputs for this node - store both the raw result and structured outputs
       const nodeOutputs: Record<string, any> = {};
       currentNode.outputs.forEach(o => {
         nodeOutputs[o.id] = output;
       });
-      executionResults[currentNode.id] = nodeOutputs;
+      
+      // Store the complete result structure for this node
+      executionResults[currentNode.id] = {
+        ...nodeOutputs,
+        _rawResult: output,
+        _propertiesResult: propertiesResult,
+        _nodeType: currentNode.type,
+        _nodeSubtype: currentNode.subtype
+      };
 
     } catch (error) {
       executionError = error;
@@ -161,8 +205,16 @@ export async function runWorkflowWithProperties(
       flowContextDiff: {}
     });
 
-    const nextConnection = connections.find((c) => c.sourceNode === currentNodeId);
-    currentNodeId = nextConnection ? nextConnection.targetNode : null;
+    // Find next node using normalized connection fields
+    const nextConnection: any = connections.find((c: any) => (c.sourceNode ?? c.source) === currentNodeId);
+    const nextNodeId = nextConnection ? (nextConnection.targetNode ?? nextConnection.target) : null;
+    console.log('🔄 Next Node Traversal:', {
+      currentNodeId,
+      foundNextConnection: !!nextConnection,
+      nextNodeId,
+      connectionDirection: nextConnection ? { source: nextConnection.sourceNode ?? nextConnection.source, target: nextConnection.targetNode ?? nextConnection.target } : null
+    });
+    currentNodeId = nextNodeId;
     executionCount++;
   }
 
@@ -177,6 +229,12 @@ export async function runWorkflowWithProperties(
     at: flowEndTime,
     status: 'success',
     durationMs: flowEndTime - flowStartTime
+  });
+
+  console.log('🏁 Workflow execution completed:', {
+    executionResults,
+    resultKeys: Object.keys(executionResults),
+    resultCount: Object.keys(executionResults).length
   });
 
   return executionResults;

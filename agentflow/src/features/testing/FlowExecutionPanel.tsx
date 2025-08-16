@@ -59,9 +59,49 @@ export default function FlowExecutionPanel({
   // Find the start node (node with no incoming connections)
   const findStartNode = useCallback(() => {
     const nodeIds = nodes.map(n => n.id);
-    const targetNodeIds = new Set(connections.map(c => c.target));
-    const startNodes = nodes.filter(n => !targetNodeIds.has(n.id));
-    return startNodes.length > 0 ? startNodes[0] : nodes[0];
+    // Support both Connection shapes: {targetNode, sourceNode} and {target, source}
+    const targetIds = new Set(
+      connections.map(c => (c as any).targetNode ?? (c as any).target).filter(Boolean)
+    );
+    const startNodes = nodes.filter(n => !targetIds.has(n.id));
+
+    // Heuristic: prefer nodes that look like Agents and have Properties Panel rules
+    const preferAgent = (n: any) => {
+      const d = (n?.data ?? {}) as any;
+      const hasRules = !!(d.rules?.nl || d.systemPrompt || d.behavior || d.mockResponse);
+      return (n.type === 'agent' || n.subtype === 'agent' || d?.kind === 'agent' || d?.type === 'agent') && hasRules;
+    };
+
+    console.log('🔍 Start Node Detection:', {
+      nodeIds,
+      targetIds: Array.from(targetIds),
+      startNodes: startNodes.map(n => ({ id: n.id, type: n.type, subtype: n.subtype, title: (n.data as any)?.title })),
+      connections: connections.map(c => ({ source: (c as any).sourceNode ?? (c as any).source, target: (c as any).targetNode ?? (c as any).target }))
+    });
+
+    // 1) Prefer an agent with configured properties
+    const agentWithProps = startNodes.find(preferAgent);
+    if (agentWithProps) {
+      console.log('🎯 Selected Agent with properties as start node:', agentWithProps.id);
+      return agentWithProps;
+    }
+
+    // 2) Otherwise prefer any agent-like node
+    const anyAgent = startNodes.find(n => n.type === 'agent' || n.subtype === 'agent' || (n.data as any)?.kind === 'agent');
+    if (anyAgent) {
+      console.log('🎯 Selected Agent-like start node:', anyAgent.id);
+      return anyAgent;
+    }
+
+    // 3) Fallback to the first start node or first node
+    const selectedStartNode = startNodes.length > 0 ? startNodes[0] : nodes[0];
+    console.log('🚀 Final start node selected (fallback):', {
+      id: selectedStartNode?.id,
+      type: selectedStartNode?.type,
+      subtype: selectedStartNode?.subtype
+    });
+
+    return selectedStartNode;
   }, [nodes, connections]);
 
   // Execute the entire workflow
@@ -83,22 +123,116 @@ export default function FlowExecutionPanel({
     const startTime = Date.now();
 
     try {
+      // Extract Properties Panel input from start node to use as workflow input
+      const startNodeData = startNode.data as any;
+      let initialInput = '';
+
+      // Helper to probe multiple fields for agent rules/user prompt
+      const pick = (...paths: Array<string>): any => {
+        for (const p of paths) {
+          try {
+            const val = p.split('.').reduce((acc: any, key: string) => (acc ? acc[key] : undefined), startNodeData);
+            if (val !== undefined && val !== null && val !== '') return val;
+          } catch {}
+        }
+        return undefined;
+      };
+
+      // Try to grab the most relevant input text configured in Properties Panel
+      const chosen = pick(
+        'rules.nl',
+        'rulesNl',
+        'agentRules.nl',
+        'llmRule',
+        'prompt',
+        'content',
+        'input',
+        'systemPrompt',
+        'behavior',
+        'config.rules.nl',
+        'properties.rules.nl'
+      );
+      if (chosen) initialInput = String(chosen);
+      
+      // Debug logging
+      console.log('🔍 Flow Execution Debug:', {
+        startNode: startNode.id,
+        startNodeData,
+        initialInput,
+        pickedFrom: initialInput ? 'properties-probe' : 'none',
+        nodeType: startNode.type,
+        nodeSubtype: startNode.subtype
+      });
+      
       const result = await runWorkflowWithProperties(
         nodes,
         connections,
         startNode.id,
-        {}, // options
-        {}, // callbacks
-        {} // testing options
+        { inputs: { input: initialInput } }, // Pass Properties Panel input as workflow input
+        {
+          emitTesterEvent: (event) => {
+            console.log('🔄 Workflow Event:', event);
+          }
+        }, // callbacks with debugging
+        { scenario: { description: initialInput } } // Also pass as scenario for compatibility
       );
 
       const executionTime = Date.now() - startTime;
+      
+      console.log('✅ Workflow Result:', {
+        result,
+        finalOutput: Object.values(result).pop(),
+        executionOrder: Object.keys(result)
+      });
+      
+      // Extract final output - iterate through all node results to find a meaningful output
+      let finalOutput = null;
+      const resultEntries = Object.entries(result);
+      
+      console.log('🎯 Final Output Extraction Debug:', {
+        result,
+        resultEntries,
+        resultKeys: Object.keys(result),
+        resultValues: Object.values(result)
+      });
+      
+      // Iterate through results in reverse to prioritize later nodes, but ensure a meaningful output is found
+      for (let i = resultEntries.length - 1; i >= 0; i--) {
+        const [nodeId, nodeResult] = resultEntries[i];
+        
+        console.log('🔍 Node Result Analysis for Final Output:', {
+          nodeId,
+          nodeResult,
+          resultType: typeof nodeResult,
+          resultKeys: nodeResult && typeof nodeResult === 'object' ? Object.keys(nodeResult) : null
+        });
+
+        if (nodeResult && typeof nodeResult === 'object') {
+          const extracted = (nodeResult as any)._rawResult || 
+                            (nodeResult as any).output || 
+                            (nodeResult as any).result;
+          
+          if (extracted !== undefined && extracted !== null && extracted !== '') {
+            finalOutput = extracted;
+            break; // Found a meaningful object output, stop searching
+          }
+        } else if (nodeResult !== undefined && nodeResult !== null && nodeResult !== '') {
+          finalOutput = nodeResult;
+          break; // Found a meaningful primitive output, stop searching
+        }
+      }
+      
+      console.log('🎯 Final Output Extracted:', {
+        finalOutput,
+        outputType: typeof finalOutput,
+        outputLength: finalOutput?.length
+      });
       
       setExecutionResult({
         success: true,
         executionOrder: Object.keys(result),
         nodeResults: result,
-        finalOutput: Object.values(result).pop(),
+        finalOutput: finalOutput,
         executionTime,
         error: undefined
       });
@@ -368,6 +502,15 @@ function OutputsTab({
             {isCopied ? 'Copied!' : 'Copy'}
           </button>
         )}
+      </div>
+      <div className="mt-2 bg-slate-800/50 p-3 rounded-md">
+        <pre className="text-xs text-slate-200 whitespace-pre-wrap break-words">
+          <code>
+            {typeof executionResult.finalOutput === 'object'
+              ? JSON.stringify(executionResult.finalOutput, null, 2)
+              : String(executionResult.finalOutput)}
+          </code>
+        </pre>
       </div>
 
       {/* Status Indicator */}

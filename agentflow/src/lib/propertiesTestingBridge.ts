@@ -56,18 +56,37 @@ export interface PropertiesSummaryTab {
  */
 export async function executeNodeFromProperties(
   node: CanvasNode,
-  inputData: Record<string, any> = {},
-  llmExecutor?: (prompt: string) => Promise<string>
+  inputData: any,
+  llmExecutor: (prompt: string, systemPrompt?: string) => Promise<string>
 ): Promise<PropertiesExecutionResult> {
   const nodeData = node.data as any;
-  const nodeTitle = nodeData?.title || node.id;
   
+  console.log('🔍 Properties Testing Bridge - Node Execution Start:', {
+    nodeId: node.id,
+    nodeType: node.type,
+    nodeSubtype: node.subtype,
+    nodeData,
+    inputData,
+    hasLlmExecutor: !!llmExecutor
+  });
+  const nodeTitle = nodeData?.title || node.id;
+
+  // Resolve effective node kind from type/subtype to avoid misrouting
+  const rawType = (node.type || '').toLowerCase();
+  const rawSubtype = (node.subtype || '').toLowerCase();
+  const effectiveKind =
+    rawType === 'agent' ? 'agent' :
+    rawType === 'tool' || rawSubtype === 'tool' || rawSubtype === 'tool-agent' ? 'tool' :
+    rawType === 'knowledge-base' || rawSubtype === 'knowledge-base' ? 'knowledge-base' :
+    rawType === 'router' || rawSubtype === 'router' ? 'router' :
+    (rawSubtype || rawType);
+
   // Base result structure
   const baseResult: PropertiesExecutionResult = {
     result: null,
     propertiesUsed: {},
     executionSummary: '',
-    nodeType: node.subtype || node.type,
+    nodeType: effectiveKind,
     nodeId: node.id,
     timestamp: Date.now(),
     inputsTab: {
@@ -89,7 +108,7 @@ export async function executeNodeFromProperties(
   };
 
   try {
-    switch (node.subtype) {
+    switch (effectiveKind) {
       case 'agent':
         return await executeAgentNode(node, nodeData, inputData, llmExecutor, baseResult);
       
@@ -124,15 +143,37 @@ export async function executeNodeFromProperties(
 async function executeAgentNode(
   node: CanvasNode,
   nodeData: any,
-  inputData: Record<string, any>,
-  llmExecutor: ((prompt: string) => Promise<string>) | undefined,
+  inputData: any,
+  llmExecutor: (prompt: string, systemPrompt?: string) => Promise<string>,
   baseResult: PropertiesExecutionResult
 ): Promise<PropertiesExecutionResult> {
-  const systemPrompt = nodeData?.systemPrompt;
-  const behavior = nodeData?.behavior;
-  const rulesNl = nodeData?.rules?.nl; // Generic agent rules from Properties Panel
-  const mockResponse = nodeData?.mockResponse;
-  const userPrompt = inputData.input || '';
+  // Helper to probe multiple possible paths
+  const pick = (...paths: Array<string>): any => {
+    for (const p of paths) {
+      try {
+        const val = p.split('.').reduce((acc: any, key: string) => (acc ? acc[key] : undefined), nodeData);
+        if (val !== undefined && val !== null && val !== '') return val;
+      } catch {}
+    }
+    return undefined;
+  };
+
+  const systemPrompt = pick('systemPrompt', 'config.systemPrompt', 'properties.systemPrompt');
+  const behavior = pick('behavior', 'config.behavior', 'properties.behavior');
+  const rulesNl = pick('rules.nl', 'rulesNl', 'agentRules.nl', 'prompt', 'content', 'input', 'config.rules.nl', 'properties.rules.nl');
+  const mockResponse = pick('mockResponse', 'properties.mockResponse', 'config.mockResponse');
+  const userPrompt = (inputData && (inputData.input ?? inputData.text ?? inputData.content)) || '';
+
+  console.log('🤖 Agent Node Execution:', {
+    nodeId: node.id,
+    systemPrompt,
+    behavior,
+    rulesNl,
+    mockResponse,
+    userPrompt,
+    inputData,
+    nodeData
+  });
 
   // Build inputs tab
   baseResult.inputsTab.properties = [
@@ -215,7 +256,26 @@ User Input: ${userPrompt}
 Respond according to the exact behavior and system prompt configured in the Properties Panel.`.trim();
     }
 
-    baseResult.result = await llmExecutor(fullPrompt);
+    console.log('🚀 Executing LLM with Properties Panel config:', {
+      fullPrompt,
+      rulesNl,
+      systemPrompt,
+      behavior,
+      userPrompt
+    });
+
+    try {
+      baseResult.result = await llmExecutor(fullPrompt);
+      console.log('✅ LLM execution successful:', {
+        result: baseResult.result,
+        resultType: typeof baseResult.result,
+        resultLength: baseResult.result?.length
+      });
+    } catch (error) {
+      console.error('❌ LLM execution failed:', error);
+      baseResult.result = `LLM execution failed: ${error}`;
+    }
+
     baseResult.outputsTab.result = baseResult.result;
     baseResult.outputsTab.resultType = 'computed';
     baseResult.outputsTab.source = 'LLM execution with Properties Panel configuration';
@@ -237,8 +297,17 @@ Respond according to the exact behavior and system prompt configured in the Prop
   baseResult.propertiesUsed = {
     systemPrompt: systemPrompt || null,
     behavior: behavior || null,
-    mockResponse: mockResponse || null
+    mockResponse: mockResponse || null,
+    rulesNl: rulesNl || null
   };
+
+  console.log('🏁 Agent Node Execution Complete:', {
+    nodeId: node.id,
+    result: baseResult.result,
+    outputsTabResult: baseResult.outputsTab.result,
+    executionSummary: baseResult.executionSummary,
+    propertiesUsed: baseResult.propertiesUsed
+  });
 
   return baseResult;
 }
