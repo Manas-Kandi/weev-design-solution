@@ -22,6 +22,8 @@ export class RouterNode extends BaseNode {
       if (mode === 'expression') {
         // Expression-based evaluation
         const expression = data.expression || 'false';
+        // Debugging router expression evaluation for test parity.
+        console.log('Router Expression Evaluation Debug:', { expression, inputs });
         try {
           decision = this.evaluateExpression(expression, inputs);
           evaluationResult = decision;

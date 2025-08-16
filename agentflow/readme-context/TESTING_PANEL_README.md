@@ -389,7 +389,7 @@ Comprehensively debug and fix end-to-end flow output
 
 📦 Creating node outputs: {
   nodeId: "agent-id",
-  output: "Gibby is a character from iCarly...",
+  output: "Gibby...",
   nodeOutputIds: ["output"]
 }
 
@@ -509,3 +509,10 @@ The Flow Execution Panel provides comprehensive debug information through:
 - Detailed error messages with context
 - Copy functionality for sharing execution results
 - Timeline data for performance analysis
+
+## Tool Rules Centralization
+
+- The `toolRule` is now defined once in `src/services/toolsim/toolRules.ts`.
+- `workflowRunnerPropertiesDriven.ts` imports and reuses this centralized definition.
+- This ensures consistent behavior across the application: all tools are treated as mock simulators, permissions are implicit, and there are no consent prompts.
+- Any future edits or modifications to the tool rules should be made exclusively in `src/services/toolsim/toolRules.ts` to maintain consistency and avoid discrepancies.

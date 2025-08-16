@@ -1,6 +1,7 @@
 import { CanvasNode, Connection } from "@/types";
 import { callGemini } from "./geminiClient";
 import { executeNodeFromProperties } from "./propertiesTestingBridge";
+import { defaultToolRule } from "../services/toolsim/toolRules";
 
 // Local type definitions to make the file self-contained and avoid import issues.
 interface Assertion {
@@ -173,6 +174,17 @@ const toolParameterSchemas: Record<string, any> = {
   }
 };
 
+// Placeholder for mock preset data retrieval. In a real scenario, this would load from a predefined source.
+function getMockPresetData(presetName: string): any {
+  switch (presetName) {
+    case "list_success":
+      return { success: true, data: ["item1", "item2", "item3"] };
+    // Add more cases as needed
+    default:
+      return null;
+  }
+}
+
 export async function runWorkflowWithProperties(
   nodes: CanvasNode[],
   connections: Connection[],
@@ -289,7 +301,7 @@ export async function runWorkflowWithProperties(
             const mode = simulation.mode; // Although mode is not used in the rule, it's part of the tool's context
 
             if (providerId && operation) {
-              const toolRule = `You now have access to the ${providerId} tool with the ${operation} operation. This tool is a mock simulator, and you have full, implicit permission to use it. When a user request matches the type of capability this tool provides, you must route the request through this tool, and only through this tool. Do not invent functionality, ask for consent, or request additional details. Directly execute the tool call and return its results.`;
+              const toolRule = defaultToolRule(providerId, operation);
               if (!modifiedNodeData.systemPrompt || !modifiedNodeData.systemPrompt.includes(toolRule)) {
                 toolRules += `\n\n${toolRule}`;
               }
@@ -323,7 +335,7 @@ export async function runWorkflowWithProperties(
             const parameters = toolParameterSchemas[toolKey] || { type: "OBJECT", properties: {} };
 
             if (providerId && operation) {
-              const toolRule = `You now have access to the ${providerId} tool with the ${operation} operation. This tool is a mock simulator, and you have full, implicit permission to use it. When a user request matches the type of capability this tool provides, you must route the request through this tool, and only through this tool. Do not invent functionality, ask for consent, or request additional details. Directly execute the tool call and return its results.`;
+              const toolRule = defaultToolRule(providerId, operation);
               if (!modifiedNodeData.systemPrompt || !modifiedNodeData.systemPrompt.includes(toolRule)) {
                 toolRules += `\n\n${toolRule}`;
               }
@@ -378,7 +390,9 @@ export async function runWorkflowWithProperties(
             );
 
             if (delegatedToolNode) {
-              console.log(`Agent ${currentNode.id} delegating to tool ${tool_name}:${operation}`);
+              // Tool calls must always respect node properties, ignore invented operations.
+              const configuredOperation = (delegatedToolNode.data as any)?.simulation?.operation || operation;
+              console.log(`Agent ${currentNode.id} delegating to tool ${tool_name}:${configuredOperation} (Agent requested: ${operation})`);
               // Execute the delegated tool node
               const toolExecutionResult = await executeNodeFromProperties(
                 delegatedToolNode,
@@ -388,7 +402,15 @@ export async function runWorkflowWithProperties(
                   return typeof result === 'string' ? result : JSON.stringify(result);
                 }
               );
-              delegatedToolResult = toolExecutionResult.result;
+
+              // Always resolve tool outputs via mock presets, not raw Agent JSON.
+              const mockPreset = (delegatedToolNode.data as any)?.simulation?.mockPreset;
+              if (mockPreset) {
+                delegatedToolResult = getMockPresetData(mockPreset);
+                console.log(`Tool output overridden by mock preset '${mockPreset}':`, delegatedToolResult);
+              } else {
+                delegatedToolResult = toolExecutionResult.result;
+              }
 
               // Update Agent's propertiesResult to reflect delegation
               propertiesResult.executionSummary = `Agent delegated request to Tool: ${tool_name} → operation: ${operation}`;

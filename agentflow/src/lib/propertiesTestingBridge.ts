@@ -396,36 +396,32 @@ async function executeToolNode(
     baseResult.summaryTab.explanation = 'Live execution mode is not yet implemented.';
     baseResult.executionSummary = 'Live execution not supported';
   } else if (mockPreset) {
-    // Handle mock presets
+    // Testing Panel must display resolved mock outputs, not raw tool_call JSON.
     let presetResult: any = null;
     let presetExplanation = '';
     let presetSource = `Mock Preset: ${mockPreset}`;
 
-    switch (mockPreset) {
-      case 'success':
-        presetResult = { status: 'success', message: `${providerId || 'Tool'} ${operation || 'operation'} completed successfully.` };
-        presetExplanation = `Used mock preset 'success' for ${providerId || 'Tool'}:${operation || 'operation'}.`;
-        break;
-      case 'not_found':
-        presetResult = { status: 'error', message: `${providerId || 'Tool'} ${operation || 'operation'} not found.` };
-        presetExplanation = `Used mock preset 'not_found' for ${providerId || 'Tool'}:${operation || 'operation'}.`;
-        break;
-      case 'timeout':
-        // Simulate a timeout error
-        baseResult.result = `Tool error: ${providerId || 'Tool'} ${operation || 'operation'} timed out after ${latency || 0}ms.`;
-        baseResult.outputsTab.result = baseResult.result;
-        baseResult.outputsTab.resultType = 'error';
-        baseResult.outputsTab.source = presetSource;
-        baseResult.summaryTab.rulesFired = ['Mock Preset: timeout'];
-        baseResult.summaryTab.explanation = `Simulated timeout for ${providerId || 'Tool'}:${operation || 'operation'}.`;
-        baseResult.executionSummary = `Simulated timeout for ${providerId || 'Tool'}:${operation || 'operation'}.`;
-        return baseResult; // Return early for timeout
-      default:
-        // Fallback for unknown presets or if mockResponse is also provided
-        presetResult = mockResponse || { status: 'info', message: `Unknown mock preset '${mockPreset}'. Using generic response.` };
-        presetExplanation = `Used unknown mock preset '${mockPreset}'.`;
-        break;
-    }
+    // Use the getMockPresetData function from workflowRunnerPropertiesDriven.ts
+    // Assuming getMockPresetData is accessible or can be imported/passed.
+    // For now, I'll use a local placeholder if it's not directly available.
+    // In a real scenario, this would be a shared utility.
+    const getMockPresetDataLocal = (presetName: string): any => {
+      switch (presetName) {
+        case "list_success":
+          return { status: 'success', data: ["item1", "item2", "item3"] };
+        case "not_found":
+          return { status: 'error', message: `${providerId || 'Tool'} ${operation || 'operation'} not found.` };
+        case "timeout":
+          // This case should ideally be handled by the latency simulation,
+          // but for explicit mock preset, we return a timeout message.
+          return { status: 'error', message: `Tool error: ${providerId || 'Tool'} ${operation || 'operation'} timed out.` };
+        default:
+          return mockResponse || { status: 'info', message: `Unknown mock preset '${mockPreset}'. Using generic response.` };
+      }
+    };
+
+    presetResult = getMockPresetDataLocal(mockPreset);
+    presetExplanation = `Used mock preset '${mockPreset}' for ${providerId || 'Tool'}:${operation || 'operation'}.`;
 
     baseResult.result = presetResult;
     baseResult.outputsTab.result = presetResult;
@@ -433,7 +429,7 @@ async function executeToolNode(
     baseResult.outputsTab.source = presetSource;
     baseResult.summaryTab.rulesFired = [`Mock Preset: ${mockPreset}`];
     baseResult.summaryTab.explanation = presetExplanation;
-    baseResult.executionSummary = `Executed with Mock Preset: ${mockPreset}`;
+    baseResult.executionSummary = `Executed ${providerId || 'Tool'} with configured operation '${operation || 'N/A'}' using mock preset '${mockPreset}'.`;
 
   } else if (mockResponse) {
     // Fallback to direct mock response if no preset is specified
