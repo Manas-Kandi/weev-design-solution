@@ -24,6 +24,7 @@ export async function callGemini(prompt: string, params: Record<string, unknown>
   };
   if (Object.keys(generationConfig).length) body.generationConfig = generationConfig;
   if ((params as any).safetySettings) body.safetySettings = (params as any).safetySettings;
+  if ((params as any).tools) body.tools = (params as any).tools;
 
   // DEBUG: Log the outgoing Gemini request body
   if (typeof window !== "undefined" && window?.localStorage) {

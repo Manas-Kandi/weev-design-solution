@@ -213,10 +213,26 @@ export default function FlowExecutionPanel({
                             (nodeResult as any).result;
           
           if (extracted !== undefined && extracted !== null && extracted !== '') {
-            finalOutput = extracted;
-            break; // Found a meaningful object output, stop searching
+            // Attempt to parse if it's a string, assuming it might be a stringified JSON
+            if (typeof extracted === 'string') {
+              try {
+                const parsed = JSON.parse(extracted);
+                // Check if it's an LLM response structure
+                if (parsed.candidates && parsed.candidates[0] && parsed.candidates[0].content && parsed.candidates[0].content.parts && parsed.candidates[0].content.parts[0] && parsed.candidates[0].content.parts[0].text) {
+                  finalOutput = parsed.candidates[0].content.parts[0].text;
+                } else {
+                  finalOutput = parsed; // It's JSON, but not the LLM response structure, keep it as parsed object
+                }
+              } catch (e) {
+                finalOutput = extracted; // Not a valid JSON string, keep as is
+              }
+            } else {
+              finalOutput = extracted; // Already an object or other primitive, keep as is
+            }
+            break; // Found a meaningful output, stop searching
           }
         } else if (nodeResult !== undefined && nodeResult !== null && nodeResult !== '') {
+          // Handle primitive types directly
           finalOutput = nodeResult;
           break; // Found a meaningful primitive output, stop searching
         }
@@ -535,6 +551,44 @@ function OutputsTab({
           Executed in {executionResult.executionTime}ms
         </p>
       </div>
+
+      {/* Agent Delegation Trace */}
+      {executionResult.nodeResults && Object.values(executionResult.nodeResults).some((res: any) => (res.nodeType === 'agent' || res.nodeSubtype === 'agent') && res.trace?.delegatedToTool) && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-slate-300 mt-4">Agent Delegation Trace</h3>
+          {Object.entries(executionResult.nodeResults).map(([nodeId, nodeResult]: [string, any]) => (
+            (nodeResult.nodeType === 'agent' || nodeResult.nodeSubtype === 'agent') && nodeResult.trace?.delegatedToTool && (
+              <div key={nodeId} className="p-3 bg-slate-800/50 rounded-md border border-slate-700">
+                <p className="text-xs text-slate-400 mb-2">Agent Node ID: {nodeId}</p>
+                <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono">
+                  <code>
+                    {JSON.stringify(nodeResult.trace.delegatedToTool, null, 2)}
+                  </code>
+                </pre>
+              </div>
+            )
+          ))}
+        </div>
+      )}
+
+      {/* Tool Execution Trace */}
+      {executionResult.nodeResults && Object.values(executionResult.nodeResults).some((res: any) => res.nodeType === 'tool' && res.trace) && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-slate-300 mt-4">Tool Execution Trace</h3>
+          {Object.entries(executionResult.nodeResults).map(([nodeId, nodeResult]: [string, any]) => (
+            nodeResult.nodeType === 'tool' && nodeResult.trace && (
+              <div key={nodeId} className="p-3 bg-slate-800/50 rounded-md border border-slate-700">
+                <p className="text-xs text-slate-400 mb-2">Node ID: {nodeId}</p>
+                <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono">
+                  <code>
+                    {JSON.stringify(nodeResult.trace, null, 2)}
+                  </code>
+                </pre>
+              </div>
+            )
+          ))}
+        </div>
+      )}
 
       {/* Output Content */}
       {executionResult.error ? (

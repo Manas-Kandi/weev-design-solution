@@ -25,6 +25,7 @@ export interface PropertiesExecutionResult {
   inputsTab: PropertiesInputsTab;
   outputsTab: PropertiesOutputsTab;
   summaryTab: PropertiesSummaryTab;
+  trace: Record<string, any>; // New field for trace information
 }
 
 export interface PropertiesInputsTab {
@@ -57,7 +58,8 @@ export interface PropertiesSummaryTab {
 export async function executeNodeFromProperties(
   node: CanvasNode,
   inputData: any,
-  llmExecutor: (prompt: string, systemPrompt?: string) => Promise<string>
+  llmExecutor: (prompt: string, systemPrompt?: string, tools?: any[]) => Promise<string>,
+  tools?: any[]
 ): Promise<PropertiesExecutionResult> {
   const nodeData = node.data as any;
   
@@ -104,7 +106,8 @@ export async function executeNodeFromProperties(
       explanation: '',
       rulesFired: [],
       missingProperties: []
-    }
+    },
+    trace: {}
   };
 
   try {
@@ -144,8 +147,9 @@ async function executeAgentNode(
   node: CanvasNode,
   nodeData: any,
   inputData: any,
-  llmExecutor: (prompt: string, systemPrompt?: string) => Promise<string>,
-  baseResult: PropertiesExecutionResult
+  llmExecutor: (prompt: string, systemPrompt?: string, tools?: any[]) => Promise<string>,
+  baseResult: PropertiesExecutionResult,
+  tools?: any[]
 ): Promise<PropertiesExecutionResult> {
   // Helper to probe multiple possible paths
   const pick = (...paths: Array<string>): any => {
@@ -240,20 +244,10 @@ async function executeAgentNode(
     
     if (rulesNl) {
       // Use natural language rules directly as the primary instruction
-      fullPrompt = `${rulesNl}
-
-User Input: ${userPrompt}
-
-Follow the rules above exactly as specified.`.trim();
+      fullPrompt = `${rulesNl}\n\nUser Input: ${userPrompt}\n\nFollow the rules above exactly as specified.\n\nIf the user's request involves both a natural language response and a tool call, respond with a JSON object containing both "natural_language_response" and "tool_call" keys. If only a natural language response is needed, respond with plain text. If only a tool call is needed, respond with a JSON object containing only the "tool_call" key.\n\nJSON format for tool call: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}`.trim();
     } else {
       // Fallback to system prompt + behavior format
-      fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}
-
-${behavior ? `User-Defined Behavior: ${behavior}` : ''}
-
-User Input: ${userPrompt}
-
-Respond according to the exact behavior and system prompt configured in the Properties Panel.`.trim();
+      fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}\n\n${behavior ? `User-Defined Behavior: ${behavior}` : ''}\n\nUser Input: ${userPrompt}\n\nRespond according to the exact behavior and system prompt configured in the Properties Panel.\n\nIf the user's request involves both a natural language response and a tool call, respond with a JSON object containing both "natural_language_response" and "tool_call" keys. If only a natural language response is needed, respond with plain text. If only a tool call is needed, respond with a JSON object containing only the "tool_call" key.\n\nJSON format for tool call: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}`.trim();
     }
 
     console.log('🚀 Executing LLM with Properties Panel config:', {
@@ -265,7 +259,7 @@ Respond according to the exact behavior and system prompt configured in the Prop
     });
 
     try {
-      baseResult.result = await llmExecutor(fullPrompt);
+      baseResult.result = await llmExecutor(fullPrompt, undefined, tools);
       console.log('✅ LLM execution successful:', {
         result: baseResult.result,
         resultType: typeof baseResult.result,
@@ -312,6 +306,8 @@ Respond according to the exact behavior and system prompt configured in the Prop
   return baseResult;
 }
 
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 async function executeToolNode(
   node: CanvasNode,
   nodeData: any,
@@ -324,6 +320,9 @@ async function executeToolNode(
   const simulation = nodeData?.simulation || {};
   const providerId = simulation.providerId;
   const operation = simulation.operation;
+  const mode = simulation.mode; // 'mock', 'mixed', 'live'
+  const mockPreset = simulation.mockPreset; // 'success', 'not_found', 'timeout', etc.
+  const latency = simulation.latency; // in ms
 
   // Build inputs tab
   baseResult.inputsTab.properties = [
@@ -350,13 +349,31 @@ async function executeToolNode(
       label: 'Operation',
       value: operation || null,
       configured: !!operation
+    },
+    {
+      key: 'mode',
+      label: 'Mode',
+      value: mode || null,
+      configured: !!mode
+    },
+    {
+      key: 'mockPreset',
+      label: 'Mock Preset',
+      value: mockPreset || null,
+      configured: !!mockPreset
+    },
+    {
+      key: 'latency',
+      label: 'Latency (ms)',
+      value: latency || null,
+      configured: !!latency
     }
   ];
 
   // Check for required properties
-  if (!toolBehavior && !mockResponse && !providerId) {
-    baseResult.summaryTab.missingProperties = ['toolBehavior', 'mockResponse', 'providerId'];
-    baseResult.summaryTab.explanation = `No configuration found in Properties Panel. Please configure Tool Behavior, Mock Response, or Provider.`;
+  if (!toolBehavior && !mockResponse && !providerId && !mode && !mockPreset) {
+    baseResult.summaryTab.missingProperties = ['toolBehavior', 'mockResponse', 'providerId', 'mode', 'mockPreset'];
+    baseResult.summaryTab.explanation = `No configuration found in Properties Panel. Please configure Tool Behavior, Mock Response, Provider, Mode, or Mock Preset.`;
     baseResult.outputsTab.result = 'No info input in properties panel';
     baseResult.outputsTab.resultType = 'error';
     baseResult.outputsTab.source = 'Missing Properties Panel configuration';
@@ -364,8 +381,62 @@ async function executeToolNode(
     return baseResult;
   }
 
+  // Simulate latency if configured
+  if (latency && latency > 0) {
+    await delay(latency);
+    baseResult.propertiesUsed.latency = latency; // Log actual latency applied
+  }
+
   // Execute based on Properties Panel configuration
-  if (mockResponse) {
+  if (mode === 'live') {
+    baseResult.result = `Live execution for ${providerId || 'Tool'}:${operation || 'operation'} is not yet supported.`;
+    baseResult.outputsTab.result = baseResult.result;
+    baseResult.outputsTab.resultType = 'error';
+    baseResult.outputsTab.source = 'Live execution not supported';
+    baseResult.summaryTab.explanation = 'Live execution mode is not yet implemented.';
+    baseResult.executionSummary = 'Live execution not supported';
+  } else if (mockPreset) {
+    // Handle mock presets
+    let presetResult: any = null;
+    let presetExplanation = '';
+    let presetSource = `Mock Preset: ${mockPreset}`;
+
+    switch (mockPreset) {
+      case 'success':
+        presetResult = { status: 'success', message: `${providerId || 'Tool'} ${operation || 'operation'} completed successfully.` };
+        presetExplanation = `Used mock preset 'success' for ${providerId || 'Tool'}:${operation || 'operation'}.`;
+        break;
+      case 'not_found':
+        presetResult = { status: 'error', message: `${providerId || 'Tool'} ${operation || 'operation'} not found.` };
+        presetExplanation = `Used mock preset 'not_found' for ${providerId || 'Tool'}:${operation || 'operation'}.`;
+        break;
+      case 'timeout':
+        // Simulate a timeout error
+        baseResult.result = `Tool error: ${providerId || 'Tool'} ${operation || 'operation'} timed out after ${latency || 0}ms.`;
+        baseResult.outputsTab.result = baseResult.result;
+        baseResult.outputsTab.resultType = 'error';
+        baseResult.outputsTab.source = presetSource;
+        baseResult.summaryTab.rulesFired = ['Mock Preset: timeout'];
+        baseResult.summaryTab.explanation = `Simulated timeout for ${providerId || 'Tool'}:${operation || 'operation'}.`;
+        baseResult.executionSummary = `Simulated timeout for ${providerId || 'Tool'}:${operation || 'operation'}.`;
+        return baseResult; // Return early for timeout
+      default:
+        // Fallback for unknown presets or if mockResponse is also provided
+        presetResult = mockResponse || { status: 'info', message: `Unknown mock preset '${mockPreset}'. Using generic response.` };
+        presetExplanation = `Used unknown mock preset '${mockPreset}'.`;
+        break;
+    }
+
+    baseResult.result = presetResult;
+    baseResult.outputsTab.result = presetResult;
+    baseResult.outputsTab.resultType = 'mock';
+    baseResult.outputsTab.source = presetSource;
+    baseResult.summaryTab.rulesFired = [`Mock Preset: ${mockPreset}`];
+    baseResult.summaryTab.explanation = presetExplanation;
+    baseResult.executionSummary = `Executed with Mock Preset: ${mockPreset}`;
+
+  } else if (mockResponse) {
+    // Fallback to direct mock response if no preset is specified
     try {
       baseResult.result = typeof mockResponse === 'string' ? JSON.parse(mockResponse) : mockResponse;
       baseResult.outputsTab.resultType = 'mock';
@@ -381,6 +452,7 @@ async function executeToolNode(
     baseResult.outputsTab.source = 'Mock Response from Properties Panel';
     baseResult.executionSummary = 'Used mock response from Properties Panel';
   } else if (llmExecutor) {
+    // Use LLM to simulate tool behavior if no mock response or preset is provided
     const toolPrompt = `Tool: ${providerId || 'Generic Tool'}
 Operation: ${operation || 'execute'}
 Behavior: ${toolBehavior || 'No specific behavior defined'}
@@ -400,13 +472,34 @@ Execute according to the exact configuration in the Properties Panel.`;
     ].filter(Boolean);
     baseResult.summaryTab.explanation = `Executed tool with Properties Panel configuration: ${baseResult.summaryTab.rulesFired.join(', ')}`;
     baseResult.executionSummary = `Executed with Properties Panel: ${baseResult.summaryTab.rulesFired.join(', ')}`;
+  } else {
+    // Fallback if no specific execution path is determined
+    baseResult.outputsTab.result = 'No executable configuration for tool node.';
+    baseResult.outputsTab.resultType = 'error';
+    baseResult.outputsTab.source = 'No valid tool configuration';
+    baseResult.summaryTab.explanation = 'Tool node has configuration but no valid execution path (e.g., no mock, preset, or LLM executor).';
+    baseResult.executionSummary = 'No valid tool configuration';
   }
 
   baseResult.propertiesUsed = {
     toolBehavior: toolBehavior || null,
     mockResponse: mockResponse || null,
     providerId: providerId || null,
-    operation: operation || null
+    operation: operation || null,
+    mode: mode || null,
+    mockPreset: mockPreset || null,
+    latency: latency || null
+  };
+
+  // Populate trace information
+  baseResult.trace = {
+    tool: providerId || 'N/A',
+    operation: operation || 'N/A',
+    mode: mode || 'N/A',
+    mockPreset: mockPreset || 'N/A',
+    latencyAppliedMs: latency || 0,
+    simulatedResponse: baseResult.result,
+    executionPath: baseResult.executionSummary // Re-using summary for path
   };
 
   return baseResult;
