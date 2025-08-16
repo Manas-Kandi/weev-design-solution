@@ -455,15 +455,26 @@ executionResults[currentNode.id] = {
 };
 ```
 
-#### 3. Improved Final Output Extraction
-**Issue**: Final output extraction was not finding the actual result
-**Fix**: Multiple fallback extraction methods:
+#### 3. Robust Final Output Extraction
+**Issue**: Final output extraction was not reliably capturing the relevant result when multiple nodes were executed, especially if the last node produced a null or irrelevant output.
+**Fix**: Modified `FlowExecutionPanel.tsx` to iterate through all executed node results in reverse order. It now selects the first meaningful output (`_rawResult`, `output`, or `result`) found, ensuring that the most recent relevant result is displayed, even if subsequent nodes do not produce a primary output.
 ```typescript
-finalOutput = (lastNodeResult as any)._rawResult || 
-             (lastNodeResult as any).output || 
-             (lastNodeResult as any).result ||
-             Object.values(lastNodeResult)[0] ||
-             lastNodeResult;
+// Iterate through results in reverse to prioritize later nodes, but ensure a meaningful output is found
+for (let i = resultEntries.length - 1; i >= 0; i--) {
+  const [nodeId, nodeResult] = resultEntries[i];
+  if (nodeResult && typeof nodeResult === 'object') {
+    const extracted = (nodeResult as any)._rawResult || 
+                      (nodeResult as any).output || 
+                      (nodeResult as any).result;
+    if (extracted !== undefined && extracted !== null && extracted !== '') {
+      finalOutput = extracted;
+      break; // Found a meaningful object output, stop searching
+    }
+  } else if (nodeResult !== undefined && nodeResult !== null && nodeResult !== '') {
+    finalOutput = nodeResult;
+    break; // Found a meaningful primitive output, stop searching
+  }
+}
 ```
 
 #### 4. Robust Start Node Detection
