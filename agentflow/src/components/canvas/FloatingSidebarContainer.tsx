@@ -3,7 +3,7 @@
 import React from "react";
 import { CanvasNode, Connection } from "@/types";
 import PropertiesPanel from "./PropertiesPanel";
-import { SimpleTestingPanel } from "@/features/testing/SimpleTestingPanel";
+import FlowExecutionPanel from "@/features/testing/FlowExecutionPanel";
 
 interface FloatingSidebarContainerProps {
   // Properties Panel props
@@ -55,19 +55,14 @@ export default function FloatingSidebarContainer({
           />
         </div>
 
-        {/* Testing Panel - Bottom Half */}
+        {/* Flow Execution Panel - Bottom Half */}
         <div className="flex-1 min-h-0">
-          <SimpleTestingPanel
+          <FlowExecutionPanel
             nodes={nodes}
             connections={connections}
+            selectedNode={selectedNode}
             isVisible={true}
             onClose={onTestingClose}
-            isPropertiesPanelVisible={hasPropertiesPanel}
-            compactMode={true}
-            onTesterEvent={onTesterEvent}
-            startNodeId={startNodeId ?? null}
-            isVerticalSplit={true}
-            onPropertiesClose={onPropertiesClose}
           />
         </div>
       </div>
@@ -96,17 +91,12 @@ export default function FloatingSidebarContainer({
     return (
       <div className="w-[320px] h-full flex flex-col">
         <div className="flex-1 min-h-0">
-          <SimpleTestingPanel
+          <FlowExecutionPanel
             nodes={nodes}
             connections={connections}
+            selectedNode={selectedNode}
             isVisible={true}
             onClose={onTestingClose}
-            isPropertiesPanelVisible={hasPropertiesPanel}
-            compactMode={false}
-            onTesterEvent={onTesterEvent}
-            startNodeId={startNodeId ?? null}
-            isVerticalSplit={false}
-            onPropertiesClose={onPropertiesClose}
           />
         </div>
       </div>
