@@ -1,7 +1,6 @@
 import { CanvasNode, Connection, NodeOutput, NodeOutputObject } from '@/types';
 import type { FlowContextBag, FlowMode } from '@/types/flow-io';
 import type { RunExecutionOptions } from '@/types/run';
-import { callGemini } from '@/lib/geminiClient';
 
 export interface NodeContext {
   nodes: CanvasNode[];

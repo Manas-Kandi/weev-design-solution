@@ -21,7 +21,7 @@ vi.mock('../../lib/geminiClient', () => ({
 }));
 
 describe('Agent and Tool Node Interaction', () => {
-  it('should override agent's invented operation with tool node's configured operation and return mock preset', async () => {
+  it('should override agent operation with tool config', async () => {
     const agentNode: CanvasNode = {
       id: 'agent-1',
       type: 'agent',

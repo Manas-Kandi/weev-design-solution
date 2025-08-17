@@ -1,5 +1,5 @@
 import { CanvasNode, Connection } from "@/types";
-import { callGemini } from "./geminiClient";
+import { callLLM } from "./llmClient";
 import { executeNodeFromProperties } from "./propertiesTestingBridge";
 import { defaultToolRule } from "../services/toolsim/toolRules";
 import { normalizeCapability } from "@/lib/nodes/tool/capabilityMap";
@@ -282,8 +282,8 @@ export async function runWorkflowWithProperties(
         nodeData: currentNode.data
       });
 
-      let modifiedCurrentNode = { ...currentNode }; // Create a shallow copy of the node
-    let modifiedNodeData = { ...(currentNode.data as any) }; // Create a shallow copy of node data
+      const modifiedCurrentNode = { ...currentNode }; // Create a shallow copy of the node
+    const modifiedNodeData = { ...(currentNode.data as any) }; // Create a shallow copy of node data
 
     // Logic for injecting tool knowledge into Agent node data
     if (modifiedCurrentNode.type === 'agent' || modifiedCurrentNode.subtype === 'agent') {
@@ -368,13 +368,14 @@ export async function runWorkflowWithProperties(
         }).filter(Boolean);
       }
 
-      // Create an llmExecutor that conforms to executeNodeFromProperties expectations
+      // Create an llmExecutor that uses the unified LLM client
       const llmExecutor = async (prompt: string, systemPrompt?: string, toolsParam?: any[]) => {
-        const opts: any = {};
-        if (systemPrompt) opts.systemPrompt = systemPrompt;
-        if (toolsParam) opts.tools = toolsParam;
-        const result = await callGemini(prompt, Object.keys(opts).length ? opts : undefined);
-        return typeof result === 'string' ? result : JSON.stringify(result);
+        const result = await callLLM(prompt, {
+          system: systemPrompt,
+          temperature: 0.7,
+          max_tokens: 1024
+        });
+        return result.text;
       };
 
       const propertiesResult = await executeNodeFromProperties(

@@ -23,8 +23,10 @@ import {
   ArrowRight,
   Clock
 } from 'lucide-react';
-import { CanvasNode, Connection } from '@/types';
-import { runWorkflowWithProperties } from '@/lib/workflowRunnerPropertiesDriven';
+import { CanvasNode, Connection, NodeContext } from '@/types';
+import { FlowEngine } from '@/lib/flow/FlowEngine';
+import { executeNodeFromProperties } from '@/lib/propertiesTestingBridge';
+import { callLLM } from '@/lib/llmClient';
 
 interface FlowExecutionPanelProps {
   nodes: CanvasNode[];
@@ -34,7 +36,7 @@ interface FlowExecutionPanelProps {
   onClose: () => void;
 }
 
-type TabType = 'flow' | 'outputs' | 'timeline';
+type TabType = 'flow' | 'outputs' | 'timeline' | 'context';
 
 interface FlowExecutionResult {
   success: boolean;
@@ -43,6 +45,8 @@ interface FlowExecutionResult {
   finalOutput: any;
   executionTime: number;
   error?: string;
+  contextFlow: Record<string, any>[];
+  events: any[];
 }
 
 export default function FlowExecutionPanel({
@@ -104,7 +108,7 @@ export default function FlowExecutionPanel({
     return selectedStartNode;
   }, [nodes, connections]);
 
-  // Execute the entire workflow
+  // Execute the entire workflow with contextual data flow
   const executeFlow = useCallback(async () => {
     const startNode = findStartNode();
     if (!startNode) {
@@ -114,16 +118,20 @@ export default function FlowExecutionPanel({
         nodeResults: {},
         finalOutput: null,
         executionTime: 0,
-        error: 'No start node found'
+        error: 'No start node found',
+        contextFlow: [],
+        events: []
       });
       return;
     }
 
     setIsExecuting(true);
     const startTime = Date.now();
+    const events: any[] = [];
+    const contextFlow: Record<string, any>[] = [];
 
     try {
-      // Extract Properties Panel input from start node to use as workflow input
+      // Extract Properties Panel input from start node
       const startNodeData = startNode.data as any;
       let initialInput = '';
 
@@ -154,7 +162,6 @@ export default function FlowExecutionPanel({
       );
       if (chosen) initialInput = String(chosen);
       
-      // Debug logging
       console.log('🔍 Flow Execution Debug:', {
         startNode: startNode.id,
         startNodeData,
@@ -163,18 +170,55 @@ export default function FlowExecutionPanel({
         nodeType: startNode.type,
         nodeSubtype: startNode.subtype
       });
-      
-      const result = await runWorkflowWithProperties(
-        nodes,
-        connections,
-        startNode.id,
-        { inputs: { input: initialInput } }, // Pass Properties Panel input as workflow input
+
+      // Create FlowEngine with enhanced context tracking
+      const flowEngine = new FlowEngine(nodes, connections);
+      flowEngine.setStartNode(startNode.id);
+
+      // Execute workflow with context capture
+      const result = await flowEngine.execute(
+        (nodeId, log, output, error) => {
+          console.log(`📝 [${nodeId}] ${log}`);
+          events.push({
+            type: 'log',
+            nodeId,
+            message: log,
+            output,
+            error,
+            timestamp: Date.now()
+          });
+        },
         {
           emitTesterEvent: (event) => {
             console.log('🔄 Workflow Event:', event);
+            events.push(event);
+          },
+          beforeNodeExecute: async (node) => {
+            // Create context packet for this node
+            const contextPacket = {
+              nodeId: node.id,
+              nodeType: node.type,
+              nodeSubtype: node.subtype,
+              timestamp: Date.now(),
+              previousNodes: contextFlow.map(c => ({
+                id: c.nodeId,
+                type: c.nodeType,
+                output: c.output,
+                summary: c.summary
+              })),
+              propertiesData: node.data,
+              inputFromProperties: node.id === startNode.id ? initialInput : undefined
+            };
+            
+            contextFlow.push(contextPacket);
+            
+            console.log('📦 Context packet for node:', {
+              nodeId: node.id,
+              contextPacket,
+              totalPreviousNodes: contextPacket.previousNodes.length
+            });
           }
-        }, // callbacks with debugging
-        { scenario: { description: initialInput } } // Also pass as scenario for compatibility
+        }
       );
 
       const executionTime = Date.now() - startTime;
@@ -185,58 +229,36 @@ export default function FlowExecutionPanel({
         executionOrder: Object.keys(result)
       });
       
-      // Extract final output - iterate through all node results to find a meaningful output
+      // Extract final output from the last node in execution order
       let finalOutput = null;
       const resultEntries = Object.entries(result);
       
-      console.log('🎯 Final Output Extraction Debug:', {
-        result,
-        resultEntries,
-        resultKeys: Object.keys(result),
-        resultValues: Object.values(result)
-      });
-      
-      // Iterate through results in reverse to prioritize later nodes, but ensure a meaningful output is found
+      // Find the most meaningful output
       for (let i = resultEntries.length - 1; i >= 0; i--) {
         const [nodeId, nodeResult] = resultEntries[i];
         
-        console.log('🔍 Node Result Analysis for Final Output:', {
-          nodeId,
-          nodeResult,
-          resultType: typeof nodeResult,
-          resultKeys: nodeResult && typeof nodeResult === 'object' ? Object.keys(nodeResult) : null
-        });
-
         if (nodeResult && typeof nodeResult === 'object') {
-          const extracted = (nodeResult as any)._rawResult || 
-                            (nodeResult as any).output || 
-                            (nodeResult as any).result;
+          const extracted = (nodeResult as any).output || 
+                            (nodeResult as any).result ||
+                            (nodeResult as any).message ||
+                            nodeResult;
           
           if (extracted !== undefined && extracted !== null && extracted !== '') {
-            // Attempt to parse if it's a string, assuming it might be a stringified JSON
-            if (typeof extracted === 'string') {
-              try {
-                const parsed = JSON.parse(extracted);
-                // Check if it's an LLM response structure
-                if (parsed.candidates && parsed.candidates[0] && parsed.candidates[0].content && parsed.candidates[0].content.parts && parsed.candidates[0].content.parts[0] && parsed.candidates[0].content.parts[0].text) {
-                  finalOutput = parsed.candidates[0].content.parts[0].text;
-                } else {
-                  finalOutput = parsed; // It's JSON, but not the LLM response structure, keep it as parsed object
-                }
-              } catch (e) {
-                finalOutput = extracted; // Not a valid JSON string, keep as is
-              }
-            } else {
-              finalOutput = extracted; // Already an object or other primitive, keep as is
-            }
-            break; // Found a meaningful output, stop searching
+            finalOutput = extracted;
+            break;
           }
         } else if (nodeResult !== undefined && nodeResult !== null && nodeResult !== '') {
-          // Handle primitive types directly
           finalOutput = nodeResult;
-          break; // Found a meaningful primitive output, stop searching
+          break;
         }
       }
+      
+      // Update context flow with outputs
+      contextFlow.forEach((context, index) => {
+        const nodeResult = result[context.nodeId];
+        context.output = nodeResult;
+        context.summary = `Node executed with ${typeof nodeResult} output`;
+      });
       
       console.log('🎯 Final Output Extracted:', {
         finalOutput,
@@ -250,6 +272,8 @@ export default function FlowExecutionPanel({
         nodeResults: result,
         finalOutput: finalOutput,
         executionTime,
+        contextFlow,
+        events,
         error: undefined
       });
     } catch (error) {
@@ -260,7 +284,9 @@ export default function FlowExecutionPanel({
         nodeResults: {},
         finalOutput: null,
         executionTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        contextFlow,
+        events
       });
     } finally {
       setIsExecuting(false);
@@ -289,56 +315,57 @@ export default function FlowExecutionPanel({
   const startNode = findStartNode();
 
   return (
-    <div className="w-80 h-full bg-slate-900 border-l border-slate-700 flex flex-col">
+    <div className="w-80 h-full bg-slate-950 border-l border-slate-800 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-700">
+      <div className="flex items-center justify-between p-3 border-b border-slate-800">
         <div className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-blue-400" />
-          <h2 className="text-lg font-semibold text-white">Flow Execution</h2>
+          <Zap className="w-4 h-4 text-blue-400" />
+          <h2 className="text-sm font-medium text-slate-200">Flow Execution</h2>
         </div>
         <button
           onClick={onClose}
-          className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors"
+          className="p-1 hover:bg-slate-800 rounded text-slate-500 hover:text-slate-300 transition-colors"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Execute Button */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-3 border-b border-slate-800">
         <button
           onClick={executeFlow}
           disabled={isExecuting || nodes.length === 0}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white rounded-md transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 text-white rounded text-sm transition-colors"
         >
-          <Play className="w-4 h-4" />
-          {isExecuting ? 'Executing Flow...' : `Execute Flow (${nodes.length} nodes)`}
+          <Play className="w-3 h-3" />
+          {isExecuting ? 'Executing...' : `Execute (${nodes.length})`}
         </button>
         
         {startNode && (
-          <p className="text-xs text-slate-400 mt-2 text-center">
-            Starting from: {(startNode.data as any)?.title || startNode.id}
+          <p className="text-xs text-slate-500 mt-2 text-center">
+            Start: {(startNode.data as any)?.title || startNode.id}
           </p>
         )}
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-700">
+      <div className="flex border-b border-slate-800">
         {[
           { id: 'flow', label: 'Flow', icon: ArrowRight },
           { id: 'outputs', label: 'Output', icon: Zap },
-          { id: 'timeline', label: 'Timeline', icon: Clock }
+          { id: 'timeline', label: 'Timeline', icon: Clock },
+          { id: 'context', label: 'Context', icon: FileText }
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id as TabType)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors flex-1 ${
+            className={`flex items-center gap-1 px-2 py-2 text-xs font-medium transition-colors flex-1 justify-center ${
               activeTab === id
-                ? 'text-blue-400 border-b-2 border-blue-400 bg-slate-800/50'
-                : 'text-slate-400 hover:text-slate-300'
+                ? 'text-blue-400 border-b border-blue-400 bg-slate-900'
+                : 'text-slate-500 hover:text-slate-400'
             }`}
           >
-            <Icon className="w-4 h-4" />
+            <Icon className="w-3 h-3" />
             {label}
           </button>
         ))}
@@ -366,6 +393,13 @@ export default function FlowExecutionPanel({
         
         {activeTab === 'timeline' && (
           <TimelineTab 
+            executionResult={executionResult}
+            isExecuting={isExecuting}
+          />
+        )}
+        
+        {activeTab === 'context' && (
+          <ContextTab 
             executionResult={executionResult}
             isExecuting={isExecuting}
           />
@@ -453,7 +487,33 @@ function FlowTab({
                 if (config) {
                   return (
                     <div className="mt-2 text-xs text-slate-400 bg-slate-800/50 p-2 rounded border">
-                      {config.slice(0, 60)}...
+                      <div className="font-medium text-slate-300 mb-1">Properties Panel Config:</div>
+                      {config.slice(0, 80)}...
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              
+              {/* Show context flow information */}
+              {executionResult?.contextFlow && (() => {
+                const nodeContext = executionResult.contextFlow.find(c => c.nodeId === node.id);
+                if (nodeContext && nodeContext.previousNodes.length > 0) {
+                  return (
+                    <div className="mt-2 text-xs text-slate-400 bg-blue-500/10 p-2 rounded border border-blue-500/20">
+                      <div className="font-medium text-blue-300 mb-1">Context from previous nodes:</div>
+                      <div className="space-y-1">
+                        {nodeContext.previousNodes.slice(-2).map((prev: any, idx: number) => (
+                          <div key={prev.id} className="text-slate-400">
+                            • {prev.id}: {prev.summary || 'executed'}
+                          </div>
+                        ))}
+                        {nodeContext.previousNodes.length > 2 && (
+                          <div className="text-slate-500 italic">
+                            ...and {nodeContext.previousNodes.length - 2} more
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 }
@@ -675,6 +735,115 @@ function TimelineTab({
           Nodes executed: {executionResult.executionOrder.length}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Context Tab - Shows contextual data flow between nodes
+function ContextTab({ 
+  executionResult,
+  isExecuting
+}: { 
+  executionResult: FlowExecutionResult | null;
+  isExecuting: boolean;
+}) {
+  if (isExecuting) {
+    return (
+      <div className="text-center text-slate-400 py-8">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-8 h-8 mx-auto mb-2"
+        >
+          <FileText className="w-8 h-8" />
+        </motion.div>
+        <p>Tracking context flow...</p>
+      </div>
+    );
+  }
+
+  if (!executionResult) {
+    return (
+      <div className="text-center text-slate-400 py-8">
+        <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+        <p>Execute flow to see context packets</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-medium text-slate-300 mb-3">
+        Context Flow Between Nodes
+      </h3>
+      
+      {executionResult.contextFlow && executionResult.contextFlow.length > 0 ? (
+        <div className="space-y-3">
+          {executionResult.contextFlow.map((context, index) => (
+            <div key={context.nodeId} className="bg-slate-800/50 p-3 rounded border border-slate-600">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center">
+                    {index + 1}
+                  </div>
+                  <span className="text-sm font-medium text-slate-300">
+                    {context.nodeId}
+                  </span>
+                  <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded">
+                    {context.nodeSubtype || context.nodeType}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-500">
+                  {new Date(context.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+              
+              {/* Properties Panel Data */}
+              {context.inputFromProperties && (
+                <div className="mb-2 p-2 bg-green-500/10 rounded border border-green-500/20">
+                  <div className="text-xs font-medium text-green-400 mb-1">Input from Properties Panel:</div>
+                  <div className="text-xs text-green-300">
+                    {context.inputFromProperties.slice(0, 100)}...
+                  </div>
+                </div>
+              )}
+              
+              {/* Context from Previous Nodes */}
+              {context.previousNodes && context.previousNodes.length > 0 && (
+                <div className="mb-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                  <div className="text-xs font-medium text-blue-400 mb-1">
+                    Context from {context.previousNodes.length} previous node(s):
+                  </div>
+                  <div className="space-y-1">
+                    {context.previousNodes.map((prev: any, idx: number) => (
+                      <div key={prev.id} className="text-xs text-blue-300">
+                        • {prev.id} ({prev.type}): {prev.summary || 'executed'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Node Output */}
+              {context.output && (
+                <div className="p-2 bg-slate-700/50 rounded border">
+                  <div className="text-xs font-medium text-slate-300 mb-1">Node Output:</div>
+                  <div className="text-xs text-slate-400 font-mono">
+                    {typeof context.output === 'object' 
+                      ? JSON.stringify(context.output, null, 2).slice(0, 200) + '...'
+                      : String(context.output).slice(0, 200) + (String(context.output).length > 200 ? '...' : '')
+                    }
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center text-slate-500 py-4">
+          No context flow data available
+        </div>
+      )}
     </div>
   );
 }

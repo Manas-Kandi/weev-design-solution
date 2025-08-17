@@ -60,7 +60,16 @@ export async function executeNodeFromProperties(
   node: CanvasNode,
   inputData: any,
   llmExecutor: (prompt: string, systemPrompt?: string, tools?: any[]) => Promise<string>,
-  tools?: any[]
+  tools?: any[],
+  contextFromPreviousNodes?: {
+    previousNodes: Array<{
+      id: string;
+      type: string;
+      output: any;
+      summary: string;
+    }>;
+    flowContext?: Record<string, any>;
+  }
 ): Promise<PropertiesExecutionResult> {
   const nodeData = node.data as any;
   
@@ -114,7 +123,7 @@ export async function executeNodeFromProperties(
   try {
     switch (effectiveKind) {
       case 'agent':
-        return await executeAgentNode(node, nodeData, inputData, llmExecutor, baseResult);
+        return await executeAgentNode(node, nodeData, inputData, llmExecutor, baseResult, tools, contextFromPreviousNodes);
       
       case 'tool-agent':
       case 'tool':
@@ -150,7 +159,16 @@ async function executeAgentNode(
   inputData: any,
   llmExecutor: (prompt: string, systemPrompt?: string, tools?: any[]) => Promise<string>,
   baseResult: PropertiesExecutionResult,
-  tools?: any[]
+  tools?: any[],
+  contextFromPreviousNodes?: {
+    previousNodes: Array<{
+      id: string;
+      type: string;
+      output: any;
+      summary: string;
+    }>;
+    flowContext?: Record<string, any>;
+  }
 ): Promise<PropertiesExecutionResult> {
   // Helper to probe multiple possible paths
   const pick = (...paths: Array<string>): any => {
@@ -243,11 +261,27 @@ async function executeAgentNode(
     // Use LLM with Properties Panel configuration
     let fullPrompt = '';
     
+    // Build context from previous nodes if available
+    let contextSection = '';
+    if (contextFromPreviousNodes?.previousNodes && contextFromPreviousNodes.previousNodes.length > 0) {
+      contextSection = `\n\nCONTEXT FROM PREVIOUS NODES:\n`;
+      contextFromPreviousNodes.previousNodes.forEach((prevNode, index) => {
+        contextSection += `${index + 1}. Node "${prevNode.id}" (${prevNode.type}):\n`;
+        if (typeof prevNode.output === 'string') {
+          contextSection += `   Output: ${prevNode.output.slice(0, 200)}${prevNode.output.length > 200 ? '...' : ''}\n`;
+        } else if (prevNode.output && typeof prevNode.output === 'object') {
+          contextSection += `   Output: ${JSON.stringify(prevNode.output).slice(0, 200)}...\n`;
+        }
+        contextSection += `   Summary: ${prevNode.summary}\n\n`;
+      });
+      contextSection += `Use this context to inform your response. Previous nodes have provided relevant information for your task.\n`;
+    }
+    
     if (rulesNl) {
       // Use natural language rules directly as the primary instruction
       // Agent intent extraction from natural language.
       const intentPrompt = `
-Extract exactly one best-fit capability for the user’s rule.
+Extract exactly one best-fit capability for the user's rule.
 Return ONLY JSON: {"capability":"<tool_name>.<operation>"} or null.
 
 Valid capabilities include common ones such as:
@@ -296,10 +330,11 @@ Rule: ${rulesNl}
         baseResult.trace.intent = { raw: intentResult, parsed: null, error: 'parse-failed' };
       }
 
-      // ...existing code...
+      // Build fullPrompt using the rules directly
+      fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}\n\nAGENT RULES:\n${rulesNl}\n\nUser Input: ${userPrompt}${contextSection}\n\nRespond according to the exact rules configured in the Properties Panel. Execute the rules while taking into account any context from previous nodes.\n\nIf the user's request involves both a natural language response and a tool call, respond with a JSON object containing both "natural_language_response" and "tool_call" keys. If only a natural language response is needed, respond with plain text. If only a tool call is needed, respond with a JSON object containing only the "tool_call" key.\n\nJSON format for tool call: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}`.trim();
     } else {
       // Fallback to system prompt + behavior format
-      fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}\n\n${behavior ? `User-Defined Behavior: ${behavior}` : ''}\n\nUser Input: ${userPrompt}\n\nRespond according to the exact behavior and system prompt configured in the Properties Panel.\n\nIf the user's request involves both a natural language response and a tool call, respond with a JSON object containing both "natural_language_response" and "tool_call" keys. If only a natural language response is needed, respond with plain text. If only a tool call is needed, respond with a JSON object containing only the "tool_call" key.\n\nJSON format for tool call: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}`.trim();
+      fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}\n\n${behavior ? `User-Defined Behavior: ${behavior}` : ''}\n\nUser Input: ${userPrompt}${contextSection}\n\nRespond according to the exact behavior and system prompt configured in the Properties Panel.\n\nIf the user's request involves both a natural language response and a tool call, respond with a JSON object containing both "natural_language_response" and "tool_call" keys. If only a natural language response is needed, respond with plain text. If only a tool call is needed, respond with a JSON object containing only the "tool_call" key.\n\nJSON format for tool call: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}`.trim();
     }
 
     console.log('🚀 Executing LLM with Properties Panel config:', {

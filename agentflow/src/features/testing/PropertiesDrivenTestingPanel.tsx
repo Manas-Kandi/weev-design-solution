@@ -9,7 +9,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, 
   X, 
@@ -21,11 +21,13 @@ import {
   AlertTriangle,
   Copy,
   Check,
-  ArrowRight
+  ArrowRight,
+  Settings,
+  Info
 } from 'lucide-react';
 import { CanvasNode, Connection } from '@/types';
-import { runWorkflowWithProperties } from '@/lib/workflowRunnerPropertiesDriven';
-import { callGemini } from '@/lib/geminiClient';
+import { executeNodeFromProperties, PropertiesExecutionResult } from '@/lib/propertiesTestingBridge';
+import { callLLM } from '@/lib/llmClient';
 
 interface FlowExecutionPanelProps {
   nodes: CanvasNode[];
@@ -53,9 +55,10 @@ export default function FlowExecutionPanel({
   isVisible,
   onClose
 }: FlowExecutionPanelProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('flow');
+  const [activeTab, setActiveTab] = useState<TabType>('inputs');
   const [isExecuting, setIsExecuting] = useState(false);
-  const [executionResult, setExecutionResult] = useState<FlowExecutionResult | null>(null);
+  const [executionResults, setExecutionResults] = useState<Map<string, PropertiesExecutionResult>>(new Map());
+  const [lastExecutedNodeId, setLastExecutedNodeId] = useState<string | null>(null);
   const [copiedStates, setCopiedStates] = useState<Map<string, boolean>>(new Map());
 
   // Execute selected node using Properties Panel data ONLY
@@ -83,10 +86,20 @@ export default function FlowExecutionPanel({
         propertiesPanelInput = nodeData.expression; // Router expressions
       }
       
+      // Create an LLM executor that uses the unified LLM client
+      const llmExecutor = async (prompt: string, systemPrompt?: string, tools?: any[]) => {
+        const result = await callLLM(prompt, {
+          system: systemPrompt,
+          temperature: 0.7,
+          max_tokens: 1024
+        });
+        return result.text;
+      };
+
       const result = await executeNodeFromProperties(
         selectedNode,
         { input: propertiesPanelInput }, // Use actual Properties Panel input
-        callGemini
+        llmExecutor
       );
       
       setExecutionResults(prev => new Map(prev).set(selectedNode.id, result));
