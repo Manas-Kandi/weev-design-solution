@@ -192,6 +192,39 @@ export default function EnhancedResultCard({ result }: EnhancedResultCardProps) 
                 {JSON.stringify(metadata, null, 2)}
               </pre>
             </div>
+
+            {/* Show routing results in Testing Panel for visibility. */}
+            {result.output?._propertiesResult?.trace?.delegatedToTool?.toolName && (
+              <div className="mt-2">
+                <h6 className="text-slate-300 text-xs font-medium">Matched Tool:</h6>
+                <p className="text-slate-200 text-sm">
+                  {result.output._propertiesResult.trace.delegatedToTool.toolName}
+                </p>
+                {/* Show routing results in Testing Panel for visibility. */}
+                <p className="text-slate-400 text-xs">
+                  Capability: {result.output._propertiesResult?.parsedIntent?.capability}
+                </p>
+              </div>
+            )}
+
+            {!result.output?._propertiesResult?.trace?.delegatedToTool &&
+              result.output?._propertiesResult?.executionSummary && (
+                <div className="mt-2">
+                  <h6 className="text-slate-300 text-xs font-medium">Routing</h6>
+                  <p className="text-slate-400 text-xs">
+                    {result.output._propertiesResult.executionSummary}
+                  </p>
+                </div>
+              )}
+
+            {result.output?._propertiesResult?.parsedIntent && (
+              <div className="mt-2">
+                <h6 className="text-slate-300 text-xs font-medium">Parsed Intent:</h6>
+                <pre className="text-slate-200 text-sm font-mono">
+                  {JSON.stringify(result.output._propertiesResult.parsedIntent, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         )}
       </div>

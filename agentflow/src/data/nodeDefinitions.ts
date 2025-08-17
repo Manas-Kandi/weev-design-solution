@@ -132,6 +132,8 @@ export const nodeCategories: NodeCategory[] = [
         defaultOutputs: [
           { id: "result", label: "Result", type: "json" },
         ],
+        // Capabilities used for agent-tool intent matching.
+        capabilities: ["web_search.search"],
       },
     ],
   },

@@ -2,6 +2,8 @@ import { CanvasNode, Connection } from "@/types";
 import { callGemini } from "./geminiClient";
 import { executeNodeFromProperties } from "./propertiesTestingBridge";
 import { defaultToolRule } from "../services/toolsim/toolRules";
+import { normalizeCapability } from "@/lib/nodes/tool/capabilityMap";
+import { getToolSchema } from "@/lib/nodes/tool/catalog";
 
 // Local type definitions to make the file self-contained and avoid import issues.
 interface Assertion {
@@ -288,17 +290,19 @@ export async function runWorkflowWithProperties(
       const connectedToolNodes = connections.filter((c: any) => {
         const source = c.sourceNode ?? c.source;
         const target = c.targetNode ?? c.target;
-        return source === modifiedCurrentNode.id && (nodes.find(n => n.id === target)?.type === 'tool' || nodes.find(n => n.id === target)?.subtype === 'tool');
+        const targetNode = nodes.find(n => n.id === target);
+        return (
+          source === modifiedCurrentNode.id &&
+          (!!targetNode && (((targetNode as any).type === 'tool') || ((targetNode as any).subtype === 'tool')))
+        );
       }).map((c: any) => nodes.find(n => n.id === (c.targetNode ?? c.target)));
 
       if (connectedToolNodes.length > 0) {
         let toolRules = '';
         connectedToolNodes.forEach(toolNode => {
           if (toolNode) {
-            const simulation = (toolNode.data as any)?.simulation || {};
-            const providerId = simulation.providerId;
-            const operation = simulation.operation;
-            const mode = simulation.mode; // Although mode is not used in the rule, it's part of the tool's context
+            const providerId = (toolNode.data as any)?.simulation?.providerId;
+            const operation = (toolNode.data as any)?.simulation?.operation;
 
             if (providerId && operation) {
               const toolRule = defaultToolRule(providerId, operation);
@@ -323,28 +327,39 @@ export async function runWorkflowWithProperties(
         const connectedToolNodes = connections.filter((c: any) => {
           const source = c.sourceNode ?? c.source;
           const target = c.targetNode ?? c.target;
-          return source === modifiedCurrentNode.id && (nodes.find(n => n.id === target)?.type === 'tool' || nodes.find(n => n.id === target)?.subtype === 'tool');
+          const targetNode = nodes.find(n => n.id === target);
+          return (
+            source === modifiedCurrentNode.id &&
+            (!!targetNode && (((targetNode as any).type === 'tool') || ((targetNode as any).subtype === 'tool')))
+          );
         }).map((c: any) => nodes.find(n => n.id === (c.targetNode ?? c.target)));
 
         tools = connectedToolNodes.map(toolNode => {
           if (toolNode) {
-            const simulation = (toolNode.data as any)?.simulation || {};
-            const providerId = simulation.providerId;
-            const operation = simulation.operation;
-            const toolKey = `${providerId}.${operation}`;
-            const parameters = toolParameterSchemas[toolKey] || { type: "OBJECT", properties: {} };
+            const provider = (toolNode.data as any)?.simulation?.providerId;
+            const operation = (toolNode.data as any)?.simulation?.operation;
+            const schema = provider ? getToolSchema(provider) : null;
 
-            if (providerId && operation) {
-              const toolRule = defaultToolRule(providerId, operation);
-              if (!modifiedNodeData.systemPrompt || !modifiedNodeData.systemPrompt.includes(toolRule)) {
-                toolRules += `\n\n${toolRule}`;
-              }
+            // Start with schema-declared capabilities (if any)
+            let capabilities = [...(schema?.capabilities ?? [])];
+
+            // Fallback: if schema has none, derive one from the node's configured provider/op
+            if (capabilities.length === 0 && provider && operation) {
+              capabilities.push(`${provider}.${operation}`);
             }
 
+            // Normalize all caps (aliases / legacy)
+            capabilities = capabilities.map(normalizeCapability);
+
+            const toolKey = `${provider}.${operation}`;
+            const parameters = toolParameterSchemas[toolKey] || { type: "OBJECT", properties: {} };
+
             return {
+              toolNode: toolNode, // Include the actual tool node
+              capabilities: capabilities, // Include capabilities
               functionDeclarations: [{
                 name: operation, // Use operation as the function name
-                description: `Tool for ${providerId} with operation ${operation}`,
+                description: `Tool for ${provider} with operation ${operation}`,
                 parameters: parameters,
               }],
             };
@@ -353,13 +368,19 @@ export async function runWorkflowWithProperties(
         }).filter(Boolean);
       }
 
+      // Create an llmExecutor that conforms to executeNodeFromProperties expectations
+      const llmExecutor = async (prompt: string, systemPrompt?: string, toolsParam?: any[]) => {
+        const opts: any = {};
+        if (systemPrompt) opts.systemPrompt = systemPrompt;
+        if (toolsParam) opts.tools = toolsParam;
+        const result = await callGemini(prompt, Object.keys(opts).length ? opts : undefined);
+        return typeof result === 'string' ? result : JSON.stringify(result);
+      };
+
       const propertiesResult = await executeNodeFromProperties(
         modifiedCurrentNode, // Use the potentially modified node
         inputData,
-        async (prompt: string, systemPrompt?: string, tools?: any[]) => {
-          const result = await callGemini(prompt, systemPrompt ? { systemPrompt } : {}, tools ? { tools } : {});
-          return typeof result === 'string' ? result : JSON.stringify(result);
-        },
+        llmExecutor,
         tools // Pass the collected tools to executeNodeFromProperties
       );
       
@@ -372,71 +393,157 @@ export async function runWorkflowWithProperties(
       // Extract the result for workflow continuation
       output = propertiesResult.result;
 
+      // --- Decide whether to delegate to a tool -------------------------------
+      // Prefer intent capability; we’ll also try to parse an explicit tool_call
+      // later. IMPORTANT: Do NOT throw if we have no capability; keep text.
+      const agentIntent = propertiesResult.parsedIntent as
+        | { capability?: string }
+        | null
+        | undefined;
+
+      const agentCapability =
+        agentIntent?.capability ? normalizeCapability(agentIntent.capability) : undefined;
+
+      let matchedTool: any = null; // will be chosen only if we discover a capability
+      // -----------------------------------------------------------------------
+
+      // Match agent intent to the correct tool.
+      matchedTool = agentCapability
+        ? tools.find(t => (t.capabilities ?? []).includes(agentCapability))
+        : null;
+
+      // Debugging agent-to-tool routing logic.
+      console.log("Agent parsed intent:", agentIntent);
+      console.log("Available tools:", tools.map(t => t.capabilities));
+      console.log("Matched tool:", matchedTool?.toolNode?.id);
+
+      if (!matchedTool) {
+        throw new Error(`No matching tool found for intent: ${agentIntent?.capability || 'N/A'}`);
+      }
+
       // --- Tool Delegation Logic --- 
       let delegatedToolResult: any = null;
       let delegatedToolNode: CanvasNode | undefined = undefined;
 
-      if ((currentNode.type === 'agent' || currentNode.subtype === 'agent') && typeof output === 'string') {
+      if (
+        (currentNode.type === 'agent' || currentNode.subtype === 'agent') &&
+        typeof output === 'string'
+      ) {
         try {
           const parsedOutput = JSON.parse(output);
-          if (parsedOutput && parsedOutput.tool_call) {
-            const { tool_name, operation, args } = parsedOutput.tool_call;
 
-            // Find the connected tool node
-            delegatedToolNode = nodes.find(n =>
-              (n.type === 'tool' || n.subtype === 'tool') &&
-              (n.data as any)?.simulation?.providerId === tool_name &&
-              (n.data as any)?.simulation?.operation === operation
+          console.log('DEBUG >> output (raw):', output);
+          console.log('DEBUG >> parsedIntent:', agentIntent);
+          console.log('DEBUG >> parsedOutput:', parsedOutput);
+          console.log(
+            'DEBUG >> availableTools:',
+            tools.map(t => ({
+              id: t.toolNode?.id,
+              provider: (t.toolNode?.data as any)?.simulation?.providerId,
+              op: (t.toolNode?.data as any)?.simulation?.operation,
+              caps: t.capabilities
+            }))
+          );
+          console.log('DEBUG >> matchedTool:', matchedTool?.toolNode?.id);
+
+          // --- Choose routing source ---
+          // 1) Intent capability wins
+          let chosenCapability: string | undefined = agentCapability;
+
+          // Debug chosen capability after it is computed
+          console.log('DEBUG >> chosenCapability:', chosenCapability);
+
+          // 2) Fallback to explicit tool_call JSON from the agent
+          if (
+            !chosenCapability &&
+            parsedOutput?.tool_call?.tool_name &&
+            parsedOutput?.tool_call?.operation
+          ) {
+            chosenCapability = normalizeCapability(
+              `${parsedOutput.tool_call.tool_name}.${parsedOutput.tool_call.operation}`
             );
+          }
 
-            if (delegatedToolNode) {
-              // Tool calls must always respect node properties, ignore invented operations.
-              const configuredOperation = (delegatedToolNode.data as any)?.simulation?.operation || operation;
-              console.log(`Agent ${currentNode.id} delegating to tool ${tool_name}:${configuredOperation} (Agent requested: ${operation})`);
-              // Execute the delegated tool node
-              const toolExecutionResult = await executeNodeFromProperties(
-                delegatedToolNode,
-                args || {},
-                async (prompt: string, systemPrompt?: string) => {
-                  const result = await callGemini(prompt, systemPrompt ? { systemPrompt } : {});
-                  return typeof result === 'string' ? result : JSON.stringify(result);
-                }
-              );
+          // 3) If still none and exactly ONE tool node is connected, pick its first capability.
+          //    This makes simple flows (Agent -> Tool) “just work”.
+          if (!chosenCapability && tools && tools.length === 1) {
+            const onlyCaps = tools[0].capabilities ?? [];
+            chosenCapability = onlyCaps[0];
+          }
 
-              // Always resolve tool outputs via mock presets, not raw Agent JSON.
-              const mockPreset = (delegatedToolNode.data as any)?.simulation?.mockPreset;
-              if (mockPreset) {
-                delegatedToolResult = getMockPresetData(mockPreset);
-                console.log(`Tool output overridden by mock preset '${mockPreset}':`, delegatedToolResult);
-              } else {
-                delegatedToolResult = toolExecutionResult.result;
+          // Debugging agent-to-tool routing logic.
+          console.log('Agent parsed intent:', agentIntent);
+          console.log('Chosen capability:', chosenCapability);
+          console.log('Available tools:', tools.map((t) => t.capabilities));
+
+          // If we STILL don’t have a capability, do not delegate. Keep text.
+          if (!chosenCapability) {
+            propertiesResult.executionSummary =
+              'Agent returned text response (no tool delegation).';
+            // Leave `output` as-is. Exit routing block.
+          } else {
+            // Ensure we actually have tool nodes connected
+            if (!tools || tools.length === 0) {
+              console.warn('Agent requested a tool, but no tool nodes are connected.');
+              propertiesResult.executionSummary =
+                'No tool nodes connected; returned text response.';
+              // Leave `output` as-is. Exit routing block.
+            } else {
+              // Try to match by capability
+              matchedTool = tools.find((t) => (t.capabilities ?? []).includes(chosenCapability!));
+
+              // If agent didn't specify a capability but exactly one tool is connected,
+              // route to that tool instead of throwing.
+              if (!chosenCapability && tools.length === 1 && !matchedTool) {
+                matchedTool = tools[0];
+                console.warn('Routing fallback: no capability provided; using the only connected tool.');
+              }
+              
+              if (!matchedTool) {
+                throw new Error(`No matching tool found for intent: ${chosenCapability}`);
               }
 
-              // Update Agent's propertiesResult to reflect delegation
-              propertiesResult.executionSummary = `Agent delegated request to Tool: ${tool_name} → operation: ${operation}`;
-              propertiesResult.outputsTab.result = delegatedToolResult;
-              propertiesResult.outputsTab.source = `Delegated to Tool: ${tool_name}:${operation}`;
-              propertiesResult.summaryTab.explanation = `Agent delegated to tool ${tool_name}:${operation}.`;
-              propertiesResult.trace.delegatedToTool = {
-                toolName: tool_name,
-                operation: operation,
-                args: args,
-                toolNodeId: delegatedToolNode.id,
-                toolResult: delegatedToolResult
-              };
-              output = delegatedToolResult; // Agent's output becomes the tool's output
-            } else {
-              console.warn(`Agent ${currentNode.id} attempted to call unknown tool: ${tool_name}:${operation}`);
-              propertiesResult.executionSummary = `Agent attempted to call unknown tool: ${tool_name}:${operation}`;
-              propertiesResult.outputsTab.result = `Error: Tool ${tool_name}:${operation} not found or not configured.`;
-              propertiesResult.outputsTab.source = 'Tool delegation failed';
-              propertiesResult.summaryTab.explanation = `Agent attempted to call unknown tool: ${tool_name}:${operation}.`;
-              propertiesResult.trace.delegationError = `Tool ${tool_name}:${operation} not found.`;
+              // When executing, prefer the matched tool node regardless of raw tool_call content.
+              delegatedToolNode = matchedTool.toolNode;
+
+              // Respect node configuration; args from JSON (if any) are inputs only.
+              if (delegatedToolNode) {
+                const delegatedSim = (delegatedToolNode.data as any)?.simulation || {};
+                const toolProvider = delegatedSim.providerId;
+                const toolOperation = delegatedSim.operation;
+                const args = parsedOutput?.tool_call?.args ?? {};
+
+                // Execute the chosen tool node (properties-driven; mock/latency respected).
+                delegatedToolResult = await executeNodeFromProperties(
+                  delegatedToolNode,
+                  { inputs: { args } } as any,
+                  llmExecutor,
+                  tools
+                );
+
+                // Reflect delegation on the Agent node's properties result
+                propertiesResult.executionSummary =
+                  `Agent delegated request to Tool: ${toolProvider} → operation: ${toolOperation}`;
+                propertiesResult.outputsTab.result = delegatedToolResult;
+                propertiesResult.outputsTab.source =
+                  `Delegated to Tool: ${toolProvider}: ${toolOperation}`;
+                propertiesResult.summaryTab.explanation =
+                  `Agent delegated to tool ${toolProvider}:${toolOperation}.`;
+                propertiesResult.trace.delegatedToTool = {
+                  toolName: toolProvider,
+                  operation: toolOperation,
+                  args,
+                  toolNodeId: delegatedToolNode.id,
+                  toolResult: delegatedToolResult,
+                };
+
+                // Agent’s output becomes the tool output
+                output = delegatedToolResult;
+              }
             }
           }
-        } catch (e) {
-          // Not a tool call JSON, or parsing error. Agent's output remains as is.
-          console.log(`Agent output for ${currentNode.id} is not a tool call JSON or parsing error:`, e);
+        } catch {
+          // Not JSON (plain text agent reply) — keep NL output as-is.
         }
       }
       // --- End Tool Delegation Logic ---

@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { ToolNodeData } from '@/types';
 import { TOOL_MODES, MOCK_ERROR_MODES } from '@/lib/nodes/tool/types';
 import { getAvailableTools, getToolSchema, getToolMockPresets, getMockPreset } from '@/lib/nodes/tool/catalog';
+import { nodeCategories } from '@/data/nodeDefinitions';
 import { figmaPropertiesTheme } from './propertiesPanelTheme';
 
 interface ToolPropertiesPanelProps {
@@ -225,6 +226,19 @@ export function ToolPropertiesPanel({ nodeData, onChange }: ToolPropertiesPanelP
                 {toolSchema.operations[selectedOperation].description}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Capabilities Display */}
+        {toolSchema && toolSchema.capabilities && toolSchema.capabilities.length > 0 && (
+          <div style={figmaPropertiesTheme.section}>
+            <label style={figmaPropertiesTheme.label}>Capabilities</label>
+            <div style={figmaPropertiesTheme.codeBlock}>
+              <pre style={{ margin: 0, fontSize: '11px' }}>
+                {toolSchema.capabilities.join('\n')}
+              </pre>
+            </div>
+            {/* Expose tool capabilities in UI for debugging and clarity. */}
           </div>
         )}
 

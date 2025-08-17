@@ -7,53 +7,31 @@ import { ToolSchema, BuiltinToolName } from './types';
 export const TOOL_CATALOG: Record<BuiltinToolName, ToolSchema> = {
   web_search: {
     name: 'web_search',
-    description: 'Search the web for information',
-    parameters: [
-      {
-        name: 'query',
-        type: 'string',
-        description: 'Search query',
-        required: true
-      },
-      {
-        name: 'limit',
-        type: 'number',
-        description: 'Number of results to return',
-        required: false,
-        default: 10
-      },
-      {
-        name: 'domain',
-        type: 'string',
-        description: 'Specific domain to search',
-        required: false
+    description: 'Perform a web search and return results',
+    capabilities: ['web_search.search'],
+    operations: {
+      search: {
+        description: 'Search the web',
+        parameters: [
+          { name: 'query', type: 'string', required: true, description: 'Search query' },
+          { name: 'max_results', type: 'number', required: false, description: 'Limit results' }
+        ],
+        returns: 'Search results list'
       }
-    ],
-    returns: 'Array of search results with title, url, and snippet',
+    },
+    parameters: [],            // multi-op tool
+    returns: 'Varies by operation',
     mockPresets: [
       {
         name: 'success',
         description: 'Successful search with results',
-        args: { query: 'artificial intelligence', limit: 3 },
+        args: { query: 'define inflation', max_results: 5 },
         result: {
           results: [
-            {
-              title: 'What is Artificial Intelligence?',
-              url: 'https://example.com/ai-intro',
-              snippet: 'Artificial Intelligence (AI) is the simulation of human intelligence in machines...'
-            },
-            {
-              title: 'AI Applications in 2024',
-              url: 'https://example.com/ai-2024',
-              snippet: 'Explore the latest applications of AI technology across various industries...'
-            },
-            {
-              title: 'Machine Learning vs AI',
-              url: 'https://example.com/ml-vs-ai',
-              snippet: 'Understanding the difference between Machine Learning and Artificial Intelligence...'
-            }
+            { title: 'What is Inflation?', url: 'https://example.com/inflation', snippet: 'Inflation is the rate at which the general level of prices for goods and services is rising...' },
+            { title: 'Inflation Explained', url: 'https://example.com/inflation-explained', snippet: 'A primer on inflation and its causes.' }
           ],
-          total: 1250000
+          total: 12345
         },
         latencyMs: 800
       },
@@ -82,6 +60,7 @@ export const TOOL_CATALOG: Record<BuiltinToolName, ToolSchema> = {
   http_request: {
     name: 'http_request',
     description: 'Make HTTP requests to external APIs',
+    capabilities: ["http_request.get", "http_request.post"],
     parameters: [
       {
         name: 'url',
@@ -141,6 +120,7 @@ export const TOOL_CATALOG: Record<BuiltinToolName, ToolSchema> = {
   calendar: {
     name: 'calendar',
     description: 'Calendar operations for scheduling and events',
+    capabilities: ["calendar.list_events", "calendar.create_event", "calendar.find_free_time"],
     operations: {
       list_events: {
         description: 'List calendar events',
@@ -189,7 +169,14 @@ export const TOOL_CATALOG: Record<BuiltinToolName, ToolSchema> = {
           }
         ],
         returns: 'Created event object'
-      }
+      },
+      find_free_time: {
+        description: 'Find an available time window',
+        parameters: [
+          { name: 'duration', type: 'number', required: true, description: 'Minutes needed' }
+        ],
+        returns: 'Available time window details',
+      },
     },
     parameters: [], // Multi-operation tool
     returns: 'Varies by operation',
@@ -237,6 +224,7 @@ export const TOOL_CATALOG: Record<BuiltinToolName, ToolSchema> = {
   gmail: {
     name: 'gmail',
     description: 'Gmail operations for email management',
+    capabilities: ["gmail.list_emails", "gmail.send_email"],
     operations: {
       list_emails: {
         description: 'List emails from inbox',
@@ -325,6 +313,7 @@ export const TOOL_CATALOG: Record<BuiltinToolName, ToolSchema> = {
   sheets: {
     name: 'sheets',
     description: 'Google Sheets operations for data management',
+    capabilities: ["sheets.read_range", "sheets.write_range"],
     operations: {
       read_range: {
         description: 'Read data from a range',
@@ -407,6 +396,7 @@ export const TOOL_CATALOG: Record<BuiltinToolName, ToolSchema> = {
   image_gen: {
     name: 'image_gen',
     description: 'AI image generation',
+    capabilities: ["image_gen.generate"],
     parameters: [
       {
         name: 'prompt',
@@ -456,6 +446,7 @@ export const TOOL_CATALOG: Record<BuiltinToolName, ToolSchema> = {
   db_query: {
     name: 'db_query',
     description: 'Database query operations',
+    capabilities: ["db_query.select", "db_query.insert"],
     parameters: [
       {
         name: 'query',

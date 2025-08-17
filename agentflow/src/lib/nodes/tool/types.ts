@@ -38,6 +38,7 @@ export interface ToolIntent {
 export interface ToolSchema {
   name: string;
   description: string;
+  capabilities?: string[]; // Capabilities used for agent-tool intent matching.
   operations?: {
     [key: string]: {
       description: string;

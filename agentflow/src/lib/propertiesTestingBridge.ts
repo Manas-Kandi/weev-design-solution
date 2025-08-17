@@ -26,6 +26,7 @@ export interface PropertiesExecutionResult {
   outputsTab: PropertiesOutputsTab;
   summaryTab: PropertiesSummaryTab;
   trace: Record<string, any>; // New field for trace information
+  parsedIntent?: { capability: string } | null;
 }
 
 export interface PropertiesInputsTab {
@@ -244,7 +245,58 @@ async function executeAgentNode(
     
     if (rulesNl) {
       // Use natural language rules directly as the primary instruction
-      fullPrompt = `${rulesNl}\n\nUser Input: ${userPrompt}\n\nFollow the rules above exactly as specified.\n\nIf the user's request involves both a natural language response and a tool call, respond with a JSON object containing both "natural_language_response" and "tool_call" keys. If only a natural language response is needed, respond with plain text. If only a tool call is needed, respond with a JSON object containing only the "tool_call" key.\n\nJSON format for tool call: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}`.trim();
+      // Agent intent extraction from natural language.
+      const intentPrompt = `
+Extract exactly one best-fit capability for the user’s rule.
+Return ONLY JSON: {"capability":"<tool_name>.<operation>"} or null.
+
+Valid capabilities include common ones such as:
+- "web_search.search"
+- "calendar.list_events", "calendar.create_event", "calendar.find_free_time"
+- "gmail.list_emails", "gmail.send_email"
+- "sheets.read_range", "sheets.write_range"
+
+Rule: ${rulesNl}
+`.trim();
+      // Call the intent extractor using the injected LLM executor (not callGemini)
+      const intentResult = await llmExecutor(intentPrompt, undefined, tools);
+
+      // Parse the intent extractor output and populate baseResult.parsedIntent so
+      // downstream routing can match against tool capabilities.
+      try {
+        let parsed: any = null;
+        if (typeof intentResult === 'string') {
+          try {
+            parsed = JSON.parse(intentResult);
+          } catch {
+            // Not JSON — leave parsed as null and try a regex fallback
+            parsed = null;
+          }
+        } else if (typeof intentResult === 'object') {
+          parsed = intentResult;
+        }
+
+        if (parsed && typeof parsed === 'object' && parsed.capability) {
+          baseResult.parsedIntent = { capability: String(parsed.capability) };
+          baseResult.trace.intent = { raw: intentResult, parsed: baseResult.parsedIntent };
+        } else {
+          // Regex fallback: extract a capability-like token from plain text (e.g. web_search.search)
+          const match = String(intentResult || '').match(/([a-z0-9_]+\.[a-z0-9_]+)/i);
+          if (match) {
+            baseResult.parsedIntent = { capability: match[1] };
+            baseResult.trace.intent = { raw: intentResult, parsed: baseResult.parsedIntent, note: 'regex-fallback' };
+          } else {
+            baseResult.parsedIntent = null;
+            baseResult.trace.intent = { raw: intentResult, parsed: null };
+          }
+        }
+      } catch {
+        // If anything goes wrong while parsing intent, set parsedIntent to null
+        baseResult.parsedIntent = null;
+        baseResult.trace.intent = { raw: intentResult, parsed: null, error: 'parse-failed' };
+      }
+
+      // ...existing code...
     } else {
       // Fallback to system prompt + behavior format
       fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}\n\n${behavior ? `User-Defined Behavior: ${behavior}` : ''}\n\nUser Input: ${userPrompt}\n\nRespond according to the exact behavior and system prompt configured in the Properties Panel.\n\nIf the user's request involves both a natural language response and a tool call, respond with a JSON object containing both "natural_language_response" and "tool_call" keys. If only a natural language response is needed, respond with plain text. If only a tool call is needed, respond with a JSON object containing only the "tool_call" key.\n\nJSON format for tool call: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}`.trim();
@@ -399,7 +451,7 @@ async function executeToolNode(
     // Testing Panel must display resolved mock outputs, not raw tool_call JSON.
     let presetResult: any = null;
     let presetExplanation = '';
-    let presetSource = `Mock Preset: ${mockPreset}`;
+    const presetSource = `Mock Preset: ${mockPreset}`;
 
     // Use the getMockPresetData function from workflowRunnerPropertiesDriven.ts
     // Assuming getMockPresetData is accessible or can be imported/passed.
