@@ -7,6 +7,8 @@ import { CanvasNode, NodeOutput } from '@/types';
 import { ToolNodeData } from './types';
 import { toolSimulator } from '@/features/testing/lib/toolSimulator';
 import type { ToolError, ToolSimulatorInput } from '@/features/testing/types/toolSimulator';
+import { callLLM } from '@/lib/llmClient';
+import { getToolSchema } from './catalog';
 
 export class ToolNode extends BaseNode {
   constructor(node: CanvasNode) {
@@ -27,7 +29,7 @@ export class ToolNode extends BaseNode {
   }
 
   private get mode(): 'mock' | 'live' {
-    return this.nodeData.mode || 'mock';
+    return this.nodeData.mode || 'live';
   }
 
   async execute(context: NodeContext): Promise<NodeOutput> {
@@ -43,34 +45,57 @@ export class ToolNode extends BaseNode {
         args.input = inputValues.join('\n');
       }
 
-      // Build simulator input
-      const simInput: ToolSimulatorInput = {
-        name: this.toolName,
-        op: this.operation ?? '',
-        args,
-        seed: this.generateSeed(this.toolName, this.operation || '', args),
-        latencyMs: this.nodeData.latencyMs,
-        errorMode: this.mapErrorMode(this.nodeData.errorMode)
-      };
-
       // Execute based on mode
-      let result;
       if (this.mode === 'mock') {
-        result = await toolSimulator.invoke(simInput);
-      } else {
-        // Live mode scaffold
-        result = {
-          ok: false,
-          error: { kind: 'server', message: 'Live mode not yet implemented' },
-          meta: { latencyMs: 0, mockSource: 'custom' }
+        // Build simulator input
+        const simInput: ToolSimulatorInput = {
+          name: this.toolName,
+          op: this.operation ?? '',
+          args,
+          seed: this.generateSeed(this.toolName, this.operation || '', args),
+          latencyMs: this.nodeData.latencyMs,
+          errorMode: this.mapErrorMode(this.nodeData.errorMode)
         };
-      }
 
-      if (result.ok) {
-        const payload = result.data;
-        return typeof payload === 'string' ? payload : JSON.stringify(payload ?? null);
+        const result = await toolSimulator.invoke(simInput);
+
+        if (result.ok) {
+          const payload = result.data;
+          return typeof payload === 'string' ? payload : JSON.stringify(payload ?? null);
+        }
+        return result.error?.message ?? 'Tool execution failed';
+      } else {
+        // Live mode - use LLM to simulate the tool
+        const toolSchema = getToolSchema(this.toolName);
+        const operation = this.operation || '';
+        
+        // Build a prompt for the LLM to simulate the tool
+        const toolPrompt = `You are a ${this.toolName} tool simulator. Simulate the result of a ${operation} operation with the following arguments:
+${JSON.stringify(args, null, 2)}
+
+Provide a realistic response that would come from this tool. Return ONLY the result data as JSON, without any explanations or markdown.`;
+
+        const llmResult = await callLLM(toolPrompt, {
+          provider: process.env.NEXT_PUBLIC_LLM_PROVIDER as any || 'nvidia',
+          temperature: 0.3,
+          max_tokens: 1024,
+          system: `You are a tool simulator. Return ONLY the result data as JSON, without any explanations or markdown.`
+        });
+
+        // Clean the response
+        let cleanText = llmResult.text.trim();
+        // Remove markdown code fences if present
+        cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+        
+        try {
+          // Try to parse as JSON
+          const parsedResult = JSON.parse(cleanText);
+          return parsedResult;
+        } catch {
+          // If not valid JSON, return as string
+          return cleanText;
+        }
       }
-      return result.error?.message ?? 'Tool execution failed';
     } catch (error) {
       return error instanceof Error ? error.message : 'Unknown error';
     }

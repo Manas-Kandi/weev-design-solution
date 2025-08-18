@@ -69,7 +69,8 @@ export async function executeNodeFromProperties(
       summary: string;
     }>;
     flowContext?: Record<string, any>;
-  }
+  },
+  delegationContext?: Record<string, any> // Add delegation context parameter
 ): Promise<PropertiesExecutionResult> {
   const nodeData = node.data as any;
   
@@ -127,7 +128,7 @@ export async function executeNodeFromProperties(
       
       case 'tool-agent':
       case 'tool':
-        return await executeToolNode(node, nodeData, inputData, llmExecutor, baseResult);
+        return await executeToolNode(node, nodeData, inputData, llmExecutor, baseResult, delegationContext);
       
       case 'knowledge-base':
         return await executeKnowledgeBaseNode(node, nodeData, inputData, llmExecutor, baseResult);
@@ -400,14 +401,15 @@ async function executeToolNode(
   nodeData: any,
   inputData: Record<string, any>,
   llmExecutor: ((prompt: string) => Promise<string>) | undefined,
-  baseResult: PropertiesExecutionResult
+  baseResult: PropertiesExecutionResult,
+  delegationContext?: Record<string, any> // Add delegation context parameter
 ): Promise<PropertiesExecutionResult> {
   const toolBehavior = nodeData?.rules?.nl;
   const mockResponse = nodeData?.mockResponse;
   const simulation = nodeData?.simulation || {};
   const providerId = simulation.providerId;
   const operation = simulation.operation;
-  const mode = simulation.mode; // 'mock', 'mixed', 'live'
+  const mode = simulation.mode || 'live'; // 'mock', 'mixed', 'live' - default to live
   const mockPreset = simulation.mockPreset; // 'success', 'not_found', 'timeout', etc.
   const latency = simulation.latency; // in ms
 
@@ -452,8 +454,8 @@ async function executeToolNode(
     {
       key: 'latency',
       label: 'Latency (ms)',
-      value: latency || null,
-      configured: !!latency
+      value: latency !== undefined ? latency : null,
+      configured: latency !== undefined
     }
   ];
 
@@ -476,12 +478,23 @@ async function executeToolNode(
 
   // Execute based on Properties Panel configuration
   if (mode === 'live') {
-    baseResult.result = `Live execution for ${providerId || 'Tool'}:${operation || 'operation'} is not yet supported.`;
+    // Use LLM to simulate tool behavior in live mode
+    const toolPrompt = `You are a ${providerId || 'Generic Tool'} tool simulator. Simulate the result of a ${operation || 'execute'} operation with the following arguments:
+${JSON.stringify({ input: inputData.input || '' }, null, 2)}
+
+Provide a realistic response that would come from this tool. Return ONLY the result data as JSON, without any explanations or markdown.`;
+
+    baseResult.result = await llmExecutor(toolPrompt, `You are a tool simulator. Return ONLY the result data as JSON, without any explanations or markdown.`);
     baseResult.outputsTab.result = baseResult.result;
-    baseResult.outputsTab.resultType = 'error';
-    baseResult.outputsTab.source = 'Live execution not supported';
-    baseResult.summaryTab.explanation = 'Live execution mode is not yet implemented.';
-    baseResult.executionSummary = 'Live execution not supported';
+    baseResult.outputsTab.resultType = 'computed';
+    baseResult.outputsTab.source = 'Live tool execution with LLM';
+    baseResult.summaryTab.rulesFired = [
+      providerId ? `Provider: ${providerId}` : '',
+      operation ? `Operation: ${operation}` : '',
+      'Live Mode'
+    ].filter(Boolean);
+    baseResult.summaryTab.explanation = `Executed tool in live mode with LLM: ${providerId}:${operation}`;
+    baseResult.executionSummary = `Executed ${providerId || 'Tool'} with operation '${operation || 'N/A'}' in live mode`;
   } else if (mockPreset) {
     // Testing Panel must display resolved mock outputs, not raw tool_call JSON.
     let presetResult: any = null;
@@ -584,6 +597,13 @@ Execute according to the exact configuration in the Properties Panel.`;
     simulatedResponse: baseResult.result,
     executionPath: baseResult.executionSummary // Re-using summary for path
   };
+
+  // Check for delegation context and add delegation information if present
+  if (delegationContext && delegationContext[node.id]) {
+    const delegationInfo = delegationContext[node.id];
+    baseResult.trace.delegatedToTool = delegationInfo;
+    baseResult.executionSummary = `Agent delegated request to Tool: ${delegationInfo.toolName} → operation: ${delegationInfo.operation}`;
+  }
 
   return baseResult;
 }

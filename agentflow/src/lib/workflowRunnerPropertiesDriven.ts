@@ -5,6 +5,9 @@ import { defaultToolRule } from "../services/toolsim/toolRules";
 import { normalizeCapability } from "@/lib/nodes/tool/capabilityMap";
 import { getToolSchema } from "@/lib/nodes/tool/catalog";
 
+// Shared context for delegation information
+const delegationContext: Record<string, any> = {};
+
 // Local type definitions to make the file self-contained and avoid import issues.
 interface Assertion {
   path: string;
@@ -368,9 +371,13 @@ export async function runWorkflowWithProperties(
         }).filter(Boolean);
       }
 
-      // Create an llmExecutor that uses the unified LLM client
+      // Create an llmExecutor that uses the unified LLM client with proper provider configuration
       const llmExecutor = async (prompt: string, systemPrompt?: string, toolsParam?: any[]) => {
+        // Get the default provider from environment variables
+        const defaultProvider = process.env.NEXT_PUBLIC_LLM_PROVIDER || 'nvidia';
+        
         const result = await callLLM(prompt, {
+          provider: defaultProvider as any,
           system: systemPrompt,
           temperature: 0.7,
           max_tokens: 1024
@@ -382,7 +389,9 @@ export async function runWorkflowWithProperties(
         modifiedCurrentNode, // Use the potentially modified node
         inputData,
         llmExecutor,
-        tools // Pass the collected tools to executeNodeFromProperties
+        tools, // Pass the collected tools to executeNodeFromProperties
+        undefined, // contextFromPreviousNodes
+        delegationContext // Pass delegation context
       );
       
       console.log('✅ Node execution result:', {
@@ -417,10 +426,6 @@ export async function runWorkflowWithProperties(
       console.log("Agent parsed intent:", agentIntent);
       console.log("Available tools:", tools.map(t => t.capabilities));
       console.log("Matched tool:", matchedTool?.toolNode?.id);
-
-      if (!matchedTool) {
-        throw new Error(`No matching tool found for intent: ${agentIntent?.capability || 'N/A'}`);
-      }
 
       // --- Tool Delegation Logic --- 
       let delegatedToolResult: any = null;
@@ -500,51 +505,69 @@ export async function runWorkflowWithProperties(
                 console.warn('Routing fallback: no capability provided; using the only connected tool.');
               }
               
-              if (!matchedTool) {
-                throw new Error(`No matching tool found for intent: ${chosenCapability}`);
+              if (matchedTool) {
+                // When executing, prefer the matched tool node regardless of raw tool_call content.
+                delegatedToolNode = matchedTool.toolNode;
+
+                // Respect node configuration; args from JSON (if any) are inputs only.
+                if (delegatedToolNode) {
+                  const delegatedSim = (delegatedToolNode.data as any)?.simulation || {};
+                  const toolProvider = delegatedSim.providerId;
+                  const toolOperation = delegatedSim.operation;
+                  const args = parsedOutput?.tool_call?.args ?? {};
+
+                  // Execute the chosen tool node (properties-driven; mock/latency respected).
+                  delegatedToolResult = await executeNodeFromProperties(
+                    delegatedToolNode,
+                    { inputs: { args } } as any,
+                    llmExecutor,
+                    tools,
+                    undefined, // contextFromPreviousNodes
+                    delegationContext // Pass delegation context
+                  );
+
+                  // Reflect delegation on the Agent node's properties result
+                  propertiesResult.executionSummary =
+                    `Agent delegated request to Tool: ${toolProvider} → operation: ${toolOperation}`;
+                  propertiesResult.outputsTab.result = delegatedToolResult;
+                  propertiesResult.outputsTab.source =
+                    `Delegated to Tool: ${toolProvider}: ${toolOperation}`;
+                  propertiesResult.summaryTab.explanation =
+                    `Agent delegated to tool ${toolProvider}:${toolOperation}.`;
+                  propertiesResult.trace.delegatedToTool = {
+                    toolName: toolProvider,
+                    operation: toolOperation,
+                    args,
+                    toolNodeId: delegatedToolNode.id,
+                    toolResult: delegatedToolResult,
+                  };
+
+                  // Store delegation information in shared context for tool execution
+                  delegationContext[delegatedToolNode.id] = {
+                    toolName: toolProvider,
+                    operation: toolOperation,
+                    args,
+                    toolNodeId: delegatedToolNode.id,
+                    toolResult: delegatedToolResult,
+                  };
+
+                  // Agent's output becomes the tool output
+                  output = delegatedToolResult;
+                }
+              } else {
+                // If no tool matched but we have a capability, log a warning but don't throw
+                console.warn(`No matching tool found for intent: ${chosenCapability}`);
+                propertiesResult.executionSummary = `No matching tool found for intent: ${chosenCapability || 'N/A'}`;
               }
-
-              // When executing, prefer the matched tool node regardless of raw tool_call content.
-              delegatedToolNode = matchedTool.toolNode;
-
-              // Respect node configuration; args from JSON (if any) are inputs only.
-              if (delegatedToolNode) {
-                const delegatedSim = (delegatedToolNode.data as any)?.simulation || {};
-                const toolProvider = delegatedSim.providerId;
-                const toolOperation = delegatedSim.operation;
-                const args = parsedOutput?.tool_call?.args ?? {};
-
-                // Execute the chosen tool node (properties-driven; mock/latency respected).
-                delegatedToolResult = await executeNodeFromProperties(
-                  delegatedToolNode,
-                  { inputs: { args } } as any,
-                  llmExecutor,
-                  tools
-                );
-
-                // Reflect delegation on the Agent node's properties result
-                propertiesResult.executionSummary =
-                  `Agent delegated request to Tool: ${toolProvider} → operation: ${toolOperation}`;
-                propertiesResult.outputsTab.result = delegatedToolResult;
-                propertiesResult.outputsTab.source =
-                  `Delegated to Tool: ${toolProvider}: ${toolOperation}`;
-                propertiesResult.summaryTab.explanation =
-                  `Agent delegated to tool ${toolProvider}:${toolOperation}.`;
-                propertiesResult.trace.delegatedToTool = {
-                  toolName: toolProvider,
-                  operation: toolOperation,
-                  args,
-                  toolNodeId: delegatedToolNode.id,
-                  toolResult: delegatedToolResult,
-                };
 
                 // Agent’s output becomes the tool output
                 output = delegatedToolResult;
               }
             }
           }
-        } catch {
+        } catch (parseError) {
           // Not JSON (plain text agent reply) — keep NL output as-is.
+          console.log('Could not parse agent output as JSON, keeping as text response');
         }
       }
       // --- End Tool Delegation Logic ---

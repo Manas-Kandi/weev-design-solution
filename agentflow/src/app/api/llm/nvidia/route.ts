@@ -12,6 +12,8 @@ function normalizeBase(url: string): string {
   return `${trimmed}/v1`;
 }
 
+const NVIDIA_BASE_URL = normalizeBase(RAW_BASE);
+
 export async function GET(req: NextRequest) {
   const ip = getClientIp(req);
   if (!checkRateLimit(ip)) {
@@ -39,8 +41,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err?.message || "Internal error" }, { status: 500 });
   }
 }
-const NVIDIA_BASE_URL = normalizeBase(RAW_BASE);
-
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   if (!checkRateLimit(ip)) {
