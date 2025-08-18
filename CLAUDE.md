@@ -146,7 +146,7 @@ The Testing Panel enables developers to dry-run canvas flows (Agent → Tool →
 1. Auto-detect nodes with no incoming connections as start candidates
 2. Prefer Agent nodes with `generic`/`thinking` subtypes
 3. Allow manual override via dropdown
-4. Log: `🔍 Start Node Detection` and `🎯 Selected {title} as start node`
+4. Log: ` Start Node Detection` and ` Selected {title} as start node`
 
 **Input Resolution Priority:**
 1. Properties Panel "Agent Rules (NL)" or test prompt (`pickedFrom: "properties-probe"`)
@@ -160,6 +160,32 @@ The Testing Panel enables developers to dry-run canvas flows (Agent → Tool →
 - Fallback: Single tool auto-routes if no capability specified
 - Error handling: Graceful failures with clear explanations
 
+### Agent-Tool Routing Enhancements
+
+The Agent-Tool routing system has been enhanced to make agents smarter when multiple tools are attached:
+
+#### 1. Enhanced Tool Awareness
+Agents collect a structured list of all available tools and their capabilities before making routing decisions, including:
+- ID, Name, Provider, Operation
+- Detailed descriptions
+- Normalized capability identifiers
+- Parameter schemas
+
+#### 2. Intelligent LLM-Based Intent Selection
+Agents ask the LLM to choose tools based on the structured list of available capabilities rather than routing blindly.
+
+#### 3. Multi-Tool Planning
+Agents can plan and execute:
+- Single tools for simple requests
+- Multiple tools in sequence for complex workflows
+- Mixed responses with both natural language and tool calls
+
+#### 4. Robust Fallback Mechanisms
+When the LLM returns an invalid tool name:
+- Uses fuzzy matching against known capabilities
+- Provides clear error messages with connected tool information
+- Prevents silent failures
+
 ### Event Lifecycle
 ```typescript
 type ExecutionEvent =
@@ -171,10 +197,10 @@ type ExecutionEvent =
 
 ### Required Console Logs
 Essential debugging logs to always emit:
-- **Setup:** `🔍 Start Node Detection`, `🎯 Selected node`, `🔄 Flow Execution Debug`
-- **Execution:** `🚀 Starting workflow`, `🔄 Executing node`, `🤖 Agent Node Execution`
-- **Tool Routing:** `🔧 Connected tool nodes`, `Available tools`, `Matched tool`
-- **Results:** `✅ Node execution result`, `🏁 Workflow execution completed`
+- **Setup:** ` Start Node Detection`, ` Selected node`, ` Flow Execution Debug`
+- **Execution:** ` Starting workflow`, ` Executing node`, ` Agent Node Execution`
+- **Tool Routing:** ` Connected tool nodes`, `Available tools`, `Matched tool`
+- **Results:** `✅ Node execution result`, ` Workflow execution completed`
 
 ### UI Layout
 

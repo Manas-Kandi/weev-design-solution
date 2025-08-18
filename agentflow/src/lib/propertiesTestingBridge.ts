@@ -13,7 +13,8 @@
  * 6. Error handling for missing required properties
  */
 
-import { CanvasNode } from "@/types";
+import { CanvasNode } from "@/types/index";
+import { getToolSchema } from "@/lib/nodes/tool/catalog";
 
 export interface PropertiesExecutionResult {
   result: any;
@@ -128,7 +129,7 @@ export async function executeNodeFromProperties(
       
       case 'tool-agent':
       case 'tool':
-        return await executeToolNode(node, nodeData, inputData, llmExecutor, baseResult, delegationContext);
+        return await executeToolNode(node, nodeData, inputData, llmExecutor, baseResult, tools, delegationContext);
       
       case 'knowledge-base':
         return await executeKnowledgeBaseNode(node, nodeData, inputData, llmExecutor, baseResult);
@@ -265,34 +266,66 @@ async function executeAgentNode(
     // Build context from previous nodes if available
     let contextSection = '';
     if (contextFromPreviousNodes?.previousNodes && contextFromPreviousNodes.previousNodes.length > 0) {
-      contextSection = `\n\nCONTEXT FROM PREVIOUS NODES:\n`;
+      contextSection = `
+CONTEXT FROM PREVIOUS NODES:
+`;
       contextFromPreviousNodes.previousNodes.forEach((prevNode, index) => {
-        contextSection += `${index + 1}. Node "${prevNode.id}" (${prevNode.type}):\n`;
+        contextSection += `${index + 1}. Node "${prevNode.id}" (${prevNode.type}):
+`;
         if (typeof prevNode.output === 'string') {
-          contextSection += `   Output: ${prevNode.output.slice(0, 200)}${prevNode.output.length > 200 ? '...' : ''}\n`;
+          contextSection += `   Output: ${prevNode.output.slice(0, 200)}${prevNode.output.length > 200 ? '...' : ''}
+`;
         } else if (prevNode.output && typeof prevNode.output === 'object') {
-          contextSection += `   Output: ${JSON.stringify(prevNode.output).slice(0, 200)}...\n`;
+          contextSection += `   Output: ${JSON.stringify(prevNode.output).slice(0, 200)}...
+`;
         }
-        contextSection += `   Summary: ${prevNode.summary}\n\n`;
+        contextSection += `   Summary: ${prevNode.summary}
+
+`;
       });
-      contextSection += `Use this context to inform your response. Previous nodes have provided relevant information for your task.\n`;
+      contextSection += `Use this context to inform your response. Previous nodes have provided relevant information for your task.
+`;
+    }
+    
+    // Create structured tool list for LLM
+    let toolListSection = '';
+    if (tools && tools.length > 0) {
+      toolListSection = `
+
+AVAILABLE TOOLS:
+`;
+      tools.forEach((tool, index) => {
+        toolListSection += `${index + 1}. ${tool.name} (${tool.provider}.${tool.operation})
+`;
+        toolListSection += `   Description: ${tool.description}
+`;
+        toolListSection += `   Capabilities: ${tool.capabilities.join(', ')}
+`;
+        if (tool.parameters && Object.keys(tool.parameters.properties || {}).length > 0) {
+          toolListSection += `   Parameters: ${JSON.stringify(tool.parameters.properties, null, 2)}
+`;
+        }
+        toolListSection += `
+`;
+      });
+      toolListSection += `Choose the most appropriate tool(s) based on the user's request and the available capabilities.
+`;
     }
     
     if (rulesNl) {
-      // Use natural language rules directly as the primary instruction
-      // Agent intent extraction from natural language.
+      // Enhanced intent extraction with structured tool awareness
       const intentPrompt = `
-Extract exactly one best-fit capability for the user's rule.
+Extract the best-fit capability for the user's rule.
 Return ONLY JSON: {"capability":"<tool_name>.<operation>"} or null.
 
-Valid capabilities include common ones such as:
-- "web_search.search"
-- "calendar.list_events", "calendar.create_event", "calendar.find_free_time"
-- "gmail.list_emails", "gmail.send_email"
-- "sheets.read_range", "sheets.write_range"
+Available tools and their capabilities:
+${tools && tools.length > 0 
+  ? tools.map(tool => `- ${tool.provider}.${tool.operation}: ${tool.description} (capabilities: ${tool.capabilities.join(', ')})`).join('\n')
+  : 'No tools connected'}
 
 Rule: ${rulesNl}
 `.trim();
+      
       // Call the intent extractor using the injected LLM executor (not callGemini)
       const intentResult = await llmExecutor(intentPrompt, undefined, tools);
 
@@ -331,11 +364,50 @@ Rule: ${rulesNl}
         baseResult.trace.intent = { raw: intentResult, parsed: null, error: 'parse-failed' };
       }
 
-      // Build fullPrompt using the rules directly
-      fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}\n\nAGENT RULES:\n${rulesNl}\n\nUser Input: ${userPrompt}${contextSection}\n\nRespond according to the exact rules configured in the Properties Panel. Execute the rules while taking into account any context from previous nodes.\n\nIf the user's request involves both a natural language response and a tool call, respond with a JSON object containing both "natural_language_response" and "tool_call" keys. If only a natural language response is needed, respond with plain text. If only a tool call is needed, respond with a JSON object containing only the "tool_call" key.\n\nJSON format for tool call: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}`.trim();
+      // Enhanced prompt with tool awareness for intelligent tool selection
+      fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}
+
+AGENT RULES:
+${rulesNl}${toolListSection}${contextSection}
+
+User Input: ${userPrompt}
+
+Respond according to the exact rules configured in the Properties Panel. Execute the rules while taking into account any context from previous nodes and the available tools.
+
+INSTRUCTIONS FOR TOOL SELECTION:
+1. Analyze the user's request and match it to the most appropriate tool from the AVAILABLE TOOLS list.
+2. If multiple tools are needed, plan their sequential execution.
+3. If no tool matches, respond with a natural language response.
+4. Respond with either a natural language response, a tool call, or both.
+
+FORMAT OPTIONS:
+1. Natural language only: Plain text response
+2. Tool call only: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}
+3. Both: {"natural_language_response": "TEXT", "tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}
+4. Multiple tools: {"tool_calls": [{"tool_name": "TOOL_NAME_1", "operation": "OPERATION_NAME_1", "args": { ...ARGS_1... }}, {"tool_name": "TOOL_NAME_2", "operation": "OPERATION_NAME_2", "args": { ...ARGS_2... }}]}
+`.trim();
     } else {
-      // Fallback to system prompt + behavior format
-      fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}\n\n${behavior ? `User-Defined Behavior: ${behavior}` : ''}\n\nUser Input: ${userPrompt}${contextSection}\n\nRespond according to the exact behavior and system prompt configured in the Properties Panel.\n\nIf the user's request involves both a natural language response and a tool call, respond with a JSON object containing both "natural_language_response" and "tool_call" keys. If only a natural language response is needed, respond with plain text. If only a tool call is needed, respond with a JSON object containing only the "tool_call" key.\n\nJSON format for tool call: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}`.trim();
+      // Fallback to system prompt + behavior format with tool awareness
+      fullPrompt = `${systemPrompt || 'You are a helpful AI assistant.'}
+
+${behavior ? `User-Defined Behavior: ${behavior}` : ''}${toolListSection}${contextSection}
+
+User Input: ${userPrompt}
+
+Respond according to the exact behavior and system prompt configured in the Properties Panel.
+
+INSTRUCTIONS FOR TOOL SELECTION:
+1. Analyze the user's request and match it to the most appropriate tool from the AVAILABLE TOOLS list.
+2. If multiple tools are needed, plan their sequential execution.
+3. If no tool matches, respond with a natural language response.
+4. Respond with either a natural language response, a tool call, or both.
+
+FORMAT OPTIONS:
+1. Natural language only: Plain text response
+2. Tool call only: {"tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}
+3. Both: {"natural_language_response": "TEXT", "tool_call": {"tool_name": "TOOL_NAME", "operation": "OPERATION_NAME", "args": { ...ARGS... }}}
+4. Multiple tools: {"tool_calls": [{"tool_name": "TOOL_NAME_1", "operation": "OPERATION_NAME_1", "args": { ...ARGS_1... }}, {"tool_name": "TOOL_NAME_2", "operation": "OPERATION_NAME_2", "args": { ...ARGS_2... }}]}
+`.trim();
     }
 
     console.log('🚀 Executing LLM with Properties Panel config:', {
@@ -348,32 +420,32 @@ Rule: ${rulesNl}
 
     try {
       baseResult.result = await llmExecutor(fullPrompt, undefined, tools);
-      console.log('✅ LLM execution successful:', {
-        result: baseResult.result,
-        resultType: typeof baseResult.result,
-        resultLength: baseResult.result?.length
-      });
-    } catch (error) {
-      console.error('❌ LLM execution failed:', error);
-      baseResult.result = `LLM execution failed: ${error}`;
+      baseResult.outputsTab.result = baseResult.result;
+      baseResult.outputsTab.resultType = 'computed';
+      baseResult.outputsTab.source = 'LLM execution with Properties Panel configuration';
+      baseResult.summaryTab.rulesFired = [
+        rulesNl ? 'Agent Rules (NL)' : '',
+        systemPrompt ? 'System Prompt' : '',
+        behavior ? 'Behavior Rules' : ''
+      ].filter(Boolean);
+      baseResult.summaryTab.explanation = `Executed with Properties Panel configuration: ${baseResult.summaryTab.rulesFired.join(' + ')}`;
+      baseResult.executionSummary = `Executed with Properties Panel: ${baseResult.summaryTab.rulesFired.join(', ')}`;
+    } catch (llmError: any) {
+      console.error('❌ LLM execution failed:', llmError);
+      baseResult.result = `LLM execution failed: ${llmError?.message || 'Unknown error'}`;
+      baseResult.outputsTab.result = baseResult.result;
+      baseResult.outputsTab.resultType = 'error';
+      baseResult.outputsTab.source = 'Error during LLM execution';
+      baseResult.summaryTab.explanation = `Execution failed: ${llmError?.message || 'Unknown error'}`;
+      baseResult.executionSummary = 'LLM execution failed';
     }
-
-    baseResult.outputsTab.result = baseResult.result;
-    baseResult.outputsTab.resultType = 'computed';
-    baseResult.outputsTab.source = 'LLM execution with Properties Panel configuration';
-    baseResult.summaryTab.rulesFired = [
-      rulesNl ? 'Agent Rules (NL)' : '',
-      systemPrompt ? 'System Prompt' : '',
-      behavior ? 'Behavior Rules' : ''
-    ].filter(Boolean);
-    baseResult.summaryTab.explanation = `Executed with Properties Panel configuration: ${baseResult.summaryTab.rulesFired.join(' + ')}`;
-    baseResult.executionSummary = `Executed with Properties Panel: ${baseResult.summaryTab.rulesFired.join(', ')}`;
   } else {
-    baseResult.outputsTab.result = 'No info input in properties panel';
+    // Fallback if no specific execution path is determined
+    baseResult.outputsTab.result = 'No executable configuration for agent node.';
     baseResult.outputsTab.resultType = 'error';
-    baseResult.outputsTab.source = 'Insufficient Properties Panel configuration';
-    baseResult.summaryTab.explanation = 'Properties Panel has partial configuration but no execution method available';
-    baseResult.executionSummary = 'Insufficient configuration';
+    baseResult.outputsTab.source = 'No valid agent configuration';
+    baseResult.summaryTab.explanation = 'Agent node has configuration but no valid execution path (e.g., no rules, system prompt, or LLM executor).';
+    baseResult.executionSummary = 'No valid agent configuration';
   }
 
   baseResult.propertiesUsed = {
@@ -400,8 +472,9 @@ async function executeToolNode(
   node: CanvasNode,
   nodeData: any,
   inputData: Record<string, any>,
-  llmExecutor: ((prompt: string) => Promise<string>) | undefined,
+  llmExecutor: ((prompt: string, systemPrompt?: string, tools?: any[]) => Promise<string>) | undefined,
   baseResult: PropertiesExecutionResult,
+  tools?: any[],
   delegationContext?: Record<string, any> // Add delegation context parameter
 ): Promise<PropertiesExecutionResult> {
   const toolBehavior = nodeData?.rules?.nl;
@@ -549,7 +622,8 @@ Provide a realistic response that would come from this tool. Return ONLY the res
     baseResult.executionSummary = 'Used mock response from Properties Panel';
   } else if (llmExecutor) {
     // Use LLM to simulate tool behavior if no mock response or preset is provided
-    const toolPrompt = `Tool: ${providerId || 'Generic Tool'}
+      const toolSchema = getToolSchema(providerId);
+      const toolPrompt = `Tool: ${providerId || 'Generic Tool'}
 Operation: ${operation || 'execute'}
 Behavior: ${toolBehavior || 'No specific behavior defined'}
 
@@ -557,7 +631,14 @@ User Input: ${inputData.input || ''}
 
 Execute according to the exact configuration in the Properties Panel.`;
 
-    baseResult.result = await llmExecutor(toolPrompt);
+      // Pass structured tool information to LLM
+      const toolFunctions = tools ? tools.map(t => ({
+        name: t.operation,
+        description: t.description || `Tool for ${t.provider} with operation ${t.operation}`,
+        parameters: t.parameters || { type: "OBJECT", properties: {} }
+      })) : undefined;
+
+      baseResult.result = await llmExecutor(toolPrompt, undefined, toolFunctions);
     baseResult.outputsTab.result = baseResult.result;
     baseResult.outputsTab.resultType = 'computed';
     baseResult.outputsTab.source = 'Tool execution with Properties Panel configuration';
