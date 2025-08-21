@@ -365,7 +365,8 @@ export function EnhancedTestingPanel({
             latency,
             errorInjection
           },
-        }
+        },
+        'basic' // Hardcoded for testing subscription tier enforcement
       );
     } catch (err) {
       console.error("Test run failed:", err);

@@ -7,6 +7,7 @@
 // - NEXT_PUBLIC_GEMINI_API_KEY (used by geminiClient)
 
 import { callGemini } from "./geminiClient";
+import { canUserAccessModel, getTierRestrictionError, type UserTier } from "./subscriptionTiers";
 
 export type LLMProvider = "nvidia" | "gemini";
 
@@ -21,6 +22,8 @@ export interface CallLLMOptions {
   response_format?: 'json';
   // Optional deterministic seed (NVIDIA/OpenAI-compatible only). Ignored by Gemini.
   seed?: number | string;
+  // User subscription tier for model access control
+  userTier?: UserTier;
 }
 
 function cleanAssistantText(text: string): string {
@@ -68,6 +71,13 @@ function tryExtractJson(input: string): string | null {
 
 export async function callLLM(prompt: string, opts: CallLLMOptions = {}): Promise<LLMResult> {
   const provider: LLMProvider = opts.provider || DEFAULT_PROVIDER;
+  
+  // Check subscription tier access if userTier is provided
+  if (opts.userTier && opts.model) {
+    if (!canUserAccessModel(opts.userTier, opts.model)) {
+      throw new Error(getTierRestrictionError(opts.userTier, opts.model));
+    }
+  }
 
   if (provider === "nvidia") {
     if (!NVIDIA_API_KEY) {

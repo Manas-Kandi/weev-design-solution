@@ -1,6 +1,7 @@
 import { CanvasNode, Connection } from "@/types";
 import { callLLM } from "./llmClient";
 import { executeNodeFromProperties } from "./propertiesTestingBridge";
+import { type UserTier } from "./subscriptionTiers";
 import { defaultToolRule } from "../services/toolsim/toolRules";
 import { normalizeCapability } from "@/lib/nodes/tool/capabilityMap";
 import { getToolSchema } from "@/lib/nodes/tool/catalog";
@@ -196,7 +197,8 @@ export async function runWorkflowWithProperties(
   startNodeId: string | null,
   options?: RunExecutionOptions,
   callbacks?: TestingCallbacks,
-  testingOptions?: TestingOptions
+  testingOptions?: TestingOptions,
+  userTier?: UserTier
 ): Promise<Record<string, unknown>> {
   console.log('🚀 Starting workflow execution:', {
     startNodeId,
@@ -391,7 +393,8 @@ export async function runWorkflowWithProperties(
           provider: defaultProvider as any,
           system: systemPrompt,
           temperature: 0.7,
-          max_tokens: 1024
+          max_tokens: 1024,
+          userTier: userTier || 'basic' // Default to basic tier if not specified
         });
         return result.text;
       };
@@ -449,8 +452,8 @@ export async function runWorkflowWithProperties(
       console.log("Matched tool:", matchedTool?.toolNode?.id);
 
       // --- Enhanced Tool Delegation Logic --- 
-      let delegatedToolResults: any[] = []; // Support for multiple tools
-      let delegatedToolNodes: CanvasNode[] = []; // Support for multiple tools
+      const delegatedToolResults: any[] = []; // Support for multiple tools
+      const delegatedToolNodes: CanvasNode[] = []; // Support for multiple tools
 
       if (
         (currentNode.type === 'agent' || currentNode.subtype === 'agent') &&
