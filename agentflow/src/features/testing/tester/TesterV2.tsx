@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasNode, Connection } from "@/types";
 import { TESTER_V2_ENABLED } from "@/lib/flags";
-import { runWorkflow } from "@/lib/workflowRunner";
+import { runWorkflowWithProperties as runWorkflow } from "@/lib/workflowRunnerPropertiesDriven";
 import ResultCard from "@/features/testing/tester/ResultCard";
 import { SummaryText, JSONBlock, KeyValueList, NodeOutputRenderer, LLMRawBlock } from "@/features/testing/tester/Renderers";
 import type {

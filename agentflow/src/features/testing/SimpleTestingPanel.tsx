@@ -15,7 +15,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { CanvasNode, Connection } from "@/types";
-import { runWorkflow } from "@/lib/workflowRunner";
+import { runWorkflowWithProperties as runWorkflow } from "@/lib/workflowRunnerPropertiesDriven";
 import EnhancedResultCard from "@/components/canvas/EnhancedResultCard";
 
 interface SimpleTestingPanelProps {

@@ -393,6 +393,7 @@ export async function runWorkflowWithProperties(
         // Get model from current node data, default to Llama if not specified
         const selectedModel = (currentNode.data as any)?.model || 'meta/llama-3.1-70b-instruct';
         
+        
         const result = await callLLM(prompt, {
           provider: defaultProvider as any,
           model: selectedModel,

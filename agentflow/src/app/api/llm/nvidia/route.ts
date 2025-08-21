@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "@/lib/utils";
+import { canUserAccessModel, getTierRestrictionError, type UserTier } from "@/lib/subscriptionTiers";
 
 // Prefer server-only env vars if present; fallback to NEXT_PUBLIC_* for now
 const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || process.env.NEXT_PUBLIC_NVIDIA_API_KEY;
@@ -57,6 +58,15 @@ export async function POST(req: NextRequest) {
     // Basic validation
     if (!body || typeof body !== "object" || !body.model || !Array.isArray(body.messages)) {
       return NextResponse.json({ error: "Invalid request body: expected { model, messages, ... }" }, { status: 400 });
+    }
+
+    // Tier enforcement: Check if user can access the requested model
+    const userTier: UserTier = body.userTier || 'basic'; // Default to basic if not specified
+    const requestedModel = body.model;
+    
+    if (!canUserAccessModel(userTier, requestedModel)) {
+      const errorMessage = getTierRestrictionError(userTier, requestedModel);
+      return NextResponse.json({ error: errorMessage }, { status: 403 });
     }
 
     const target = `${NVIDIA_BASE_URL.replace(/\/$/, "")}/chat/completions`;

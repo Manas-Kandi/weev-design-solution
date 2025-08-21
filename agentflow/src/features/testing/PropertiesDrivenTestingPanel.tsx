@@ -86,12 +86,24 @@ export default function FlowExecutionPanel({
         propertiesPanelInput = nodeData.expression; // Router expressions
       }
       
-      // Create an LLM executor that uses the unified LLM client
+      // Create an LLM executor that uses the unified LLM client with tier enforcement
       const llmExecutor = async (prompt: string, systemPrompt?: string, tools?: any[]) => {
+        // Get model from current node data, default to Llama if not specified
+        const selectedModel = (selectedNode.data as any)?.model || 'meta/llama-3.1-70b-instruct';
+        
+        console.log('🔍 PropertiesDrivenTestingPanel - Model Selection:', {
+          nodeId: selectedNode.id,
+          selectedModel,
+          nodeData: selectedNode.data,
+          userTier: 'basic'
+        });
+        
         const result = await callLLM(prompt, {
+          model: selectedModel,
           system: systemPrompt,
           temperature: 0.7,
-          max_tokens: 1024
+          max_tokens: 1024,
+          userTier: 'basic' // Default to basic tier for testing
         });
         return result.text;
       };
@@ -102,9 +114,33 @@ export default function FlowExecutionPanel({
         llmExecutor
       );
       
+      console.log('✅ PropertiesDrivenTestingPanel - Execution result:', {
+        nodeId: selectedNode.id,
+        result,
+        executionSummary: result.executionSummary
+      });
+      
       setExecutionResults(prev => new Map(prev).set(selectedNode.id, result));
     } catch (error) {
-      console.error('Execution failed:', error);
+      console.error('❌ PropertiesDrivenTestingPanel - Execution failed:', error);
+      
+      // Create an error result to display tier enforcement errors
+      const errorResult = {
+        nodeId: selectedNode.id,
+        nodeType: selectedNode.type,
+        result: null,
+        executionSummary: `Error: ${error instanceof Error ? error.message : String(error)}`,
+        outputsTab: {
+          result: null,
+          source: 'Error during execution'
+        },
+        summaryTab: {
+          explanation: `Execution failed: ${error instanceof Error ? error.message : String(error)}`
+        },
+        trace: { error: error instanceof Error ? error.message : String(error) }
+      };
+      
+      setExecutionResults(prev => new Map(prev).set(selectedNode.id, errorResult));
     } finally {
       setIsExecuting(false);
     }

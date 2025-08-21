@@ -24,9 +24,7 @@ import {
   Clock
 } from 'lucide-react';
 import { CanvasNode, Connection, NodeContext } from '@/types';
-import { FlowEngine } from '@/lib/flow/FlowEngine';
-import { executeNodeFromProperties } from '@/lib/propertiesTestingBridge';
-import { callLLM } from '@/lib/llmClient';
+import { runWorkflowWithProperties } from '@/lib/workflowRunnerPropertiesDriven';
 
 interface FlowExecutionPanelProps {
   nodes: CanvasNode[];
@@ -171,23 +169,19 @@ export default function FlowExecutionPanel({
         nodeSubtype: startNode.subtype
       });
 
-      // Create FlowEngine with enhanced context tracking
-      const flowEngine = new FlowEngine(nodes, connections);
-      flowEngine.setStartNode(startNode.id);
+      console.log('🔍 FlowExecutionPanel - Starting workflow with tier enforcement:', {
+        startNodeId: startNode.id,
+        startNodeModel: (startNode.data as any)?.model,
+        userTier: 'basic',
+        nodeCount: nodes.length
+      });
 
-      // Execute workflow with context capture
-      const result = await flowEngine.execute(
-        (nodeId, log, output, error) => {
-          console.log(`📝 [${nodeId}] ${log}`);
-          events.push({
-            type: 'log',
-            nodeId,
-            message: log,
-            output,
-            error,
-            timestamp: Date.now()
-          });
-        },
+      // Use tier-enforced workflow runner instead of FlowEngine
+      const result = await runWorkflowWithProperties(
+        nodes,
+        connections,
+        startNode.id,
+        { inputs: { input: initialInput } },
         {
           emitTesterEvent: (event) => {
             console.log('🔄 Workflow Event:', event);
@@ -214,11 +208,14 @@ export default function FlowExecutionPanel({
             
             console.log('📦 Context packet for node:', {
               nodeId: node.id,
+              nodeModel: (node.data as any)?.model,
               contextPacket,
               totalPreviousNodes: contextPacket.previousNodes.length
             });
           }
-        }
+        },
+        undefined, // testingOptions
+        'basic' // userTier - default to basic for testing
       );
 
       const executionTime = Date.now() - startTime;
@@ -277,6 +274,8 @@ export default function FlowExecutionPanel({
         error: undefined
       });
     } catch (error) {
+      console.error('❌ FlowExecutionPanel - Workflow execution failed:', error);
+      
       const executionTime = Date.now() - startTime;
       setExecutionResult({
         success: false,

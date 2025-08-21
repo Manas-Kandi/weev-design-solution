@@ -109,6 +109,8 @@ export async function callLLM(prompt: string, opts: CallLLMOptions = {}): Promis
       ...(typeof opts.seed !== 'undefined' && Number.isFinite(typeof opts.seed === 'string' ? Number(opts.seed) : (opts.seed as number))
         ? { seed: typeof opts.seed === 'string' ? Number(opts.seed) : opts.seed }
         : {}),
+      // Pass userTier for subscription tier enforcement
+      ...(opts.userTier ? { userTier: opts.userTier } : {}),
     });
     // (seed/response_format handled inside makeBody)
 
