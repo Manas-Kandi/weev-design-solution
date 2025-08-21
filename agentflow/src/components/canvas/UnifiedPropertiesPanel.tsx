@@ -39,6 +39,7 @@ import { ToolNodeData } from "@/types";
 import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
 import { getAvailableTools, getToolSchema, getToolMockPresets, getMockPreset } from "@/lib/nodes/tool/catalog";
 import { TOOL_MODES, MOCK_ERROR_MODES } from "@/lib/nodes/tool/types";
+import { SUBSCRIPTION_TIERS } from "@/lib/subscriptionTiers";
 
 interface UnifiedPropertiesPanelProps {
   selectedNode: CanvasNode | null;
@@ -361,6 +362,25 @@ const RulesPanelContent: React.FC<{
           Natural language rules are compiled into executable logic
         </div>
       </div>
+
+      <FormField label="AI Model">
+        <Select
+          value={(node.data as any)?.model || 'meta/llama-3.1-70b-instruct'}
+          onChange={(value) => {
+            onChange({
+              ...node,
+              data: { ...node.data, model: value }
+            });
+          }}
+          options={[
+            { value: 'meta/llama-3.1-70b-instruct', label: 'Llama 3.1 70B (Basic)' },
+            { value: 'qwen/qwen-2-72b-instruct', label: 'Qwen 2 72B (Basic)' },
+            { value: 'gpt-4', label: 'GPT-4 (Pro)' },
+            { value: 'claude-3', label: 'Claude 3 (Pro)' },
+            { value: 'gemini-pro', label: 'Gemini Pro (Pro)' }
+          ]}
+        />
+      </FormField>
 
       <FormField label="Rule">
         <TextArea

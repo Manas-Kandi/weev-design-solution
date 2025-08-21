@@ -277,6 +277,7 @@ export async function runWorkflowWithProperties(
 
     let output: any;
     let executionError: any = null;
+    let propertiesResult: any = null;
     
     try {
       console.log('🔄 Executing node:', {
@@ -389,8 +390,12 @@ export async function runWorkflowWithProperties(
         // Get the default provider from environment variables
         const defaultProvider = process.env.NEXT_PUBLIC_LLM_PROVIDER || 'nvidia';
         
+        // Get model from current node data, default to Llama if not specified
+        const selectedModel = (currentNode.data as any)?.model || 'meta/llama-3.1-70b-instruct';
+        
         const result = await callLLM(prompt, {
           provider: defaultProvider as any,
+          model: selectedModel,
           system: systemPrompt,
           temperature: 0.7,
           max_tokens: 1024,
@@ -399,7 +404,7 @@ export async function runWorkflowWithProperties(
         return result.text;
       };
 
-      const propertiesResult = await executeNodeFromProperties(
+      propertiesResult = await executeNodeFromProperties(
         modifiedCurrentNode, // Use the potentially modified node
         inputData,
         llmExecutor,
@@ -413,6 +418,11 @@ export async function runWorkflowWithProperties(
         propertiesResult,
         output: propertiesResult.result
       });
+      
+      // Check for tier enforcement errors and throw them to fail the workflow
+      if (propertiesResult.executionSummary && propertiesResult.executionSummary.includes('Upgrade to Pro')) {
+        throw new Error(propertiesResult.executionSummary.replace('Error: ', ''));
+      }
       
       // Extract the result for workflow continuation
       output = propertiesResult.result;
@@ -610,12 +620,12 @@ export async function runWorkflowWithProperties(
         nodeId: currentNode.id,
         output,
         propertiesResult,
-        nodeOutputIds: currentNode.outputs.map(o => o.id)
+        nodeOutputIds: (currentNode.outputs || []).map(o => o.id)
       });
       
       // Create outputs for this node - store both the raw result and structured outputs
       const nodeOutputs: Record<string, any> = {};
-      currentNode.outputs.forEach(o => {
+      (currentNode.outputs || []).forEach(o => {
         nodeOutputs[o.id] = output;
       });
       
@@ -632,12 +642,24 @@ export async function runWorkflowWithProperties(
       executionError = error;
       output = `Error executing ${currentNode.subtype || currentNode.type} node: ${error}`;
       
-      // Still create outputs even on error
+      // Still create outputs even on error and preserve propertiesResult if it exists
       const nodeOutputs: Record<string, any> = {};
-      currentNode.outputs.forEach(o => {
+      (currentNode.outputs || []).forEach(o => {
         nodeOutputs[o.id] = output;
       });
-      executionResults[currentNode.id] = nodeOutputs;
+      
+      // Store propertiesResult if it was captured before the error
+      if (typeof propertiesResult !== 'undefined') {
+        executionResults[currentNode.id] = {
+          ...nodeOutputs,
+          _rawResult: output,
+          _propertiesResult: propertiesResult,
+          _nodeType: currentNode.type,
+          _nodeSubtype: currentNode.subtype,
+        };
+      } else {
+        executionResults[currentNode.id] = nodeOutputs;
+      }
     }
 
     // Emit node finished event
@@ -675,14 +697,35 @@ export async function runWorkflowWithProperties(
     console.warn("Workflow execution stopped to prevent infinite loop.");
   }
 
+  // Check if there was a tier enforcement error during execution
+  let workflowError = null;
+  let finalStatus = 'success';
+  
+  // Look for tier enforcement errors in the execution results
+  for (const [nodeId, nodeResult] of Object.entries(executionResults)) {
+    if (nodeResult && typeof nodeResult === 'object' && '_propertiesResult' in nodeResult) {
+      const propertiesResult = (nodeResult as any)._propertiesResult;
+      if (propertiesResult?.executionSummary?.includes('Upgrade to Pro')) {
+        workflowError = new Error(propertiesResult.executionSummary.replace('Error: ', ''));
+        finalStatus = 'error';
+        break;
+      }
+    }
+  }
+
   // Emit flow finished event
   const flowEndTime = Date.now();
   callbacks?.emitTesterEvent?.({
     type: 'flow-finished',
     at: flowEndTime,
-    status: 'success',
+    status: finalStatus,
     durationMs: flowEndTime - flowStartTime
   });
+  
+  // Throw tier enforcement errors to fail the workflow
+  if (workflowError) {
+    throw workflowError;
+  }
 
   console.log('🏁 Workflow execution completed:', {
     executionResults,

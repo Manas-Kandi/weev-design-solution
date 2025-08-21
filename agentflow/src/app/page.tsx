@@ -500,10 +500,10 @@ export default function AgentFlowPage() {
             type: newNode.type,
             subtype: newNode.subtype,
             position: newNode.position,
-            size: newNode.size,
-            data: newNode.data,
-            inputs: newNode.inputs,
-            outputs: newNode.outputs,
+            size: newNode.size || null,
+            data: newNode.data || {},
+            inputs: newNode.inputs || [],
+            outputs: newNode.outputs || [],
           })
         });
         if (!res.ok) {
@@ -538,10 +538,10 @@ export default function AgentFlowPage() {
             type: updatedNode.type,
             subtype: updatedNode.subtype,
             position: updatedNode.position,
-            size: updatedNode.size,
-            data: updatedNode.data,
-            inputs: updatedNode.inputs,
-            outputs: updatedNode.outputs,
+            size: updatedNode.size || null,
+            data: updatedNode.data || {},
+            inputs: updatedNode.inputs || [],
+            outputs: updatedNode.outputs || [],
           })
         });
         if (!res.ok) {
