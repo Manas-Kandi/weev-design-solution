@@ -3,7 +3,7 @@
 import React from "react";
 import { CanvasNode, Connection } from "@/types";
 import PropertiesPanel from "./PropertiesPanel";
-import FlowExecutionPanel from "@/features/testing/FlowExecutionPanel";
+import ModernTestingPanel from "@/features/testing/ModernTestingPanel";
 
 interface FloatingSidebarContainerProps {
   // Properties Panel props
@@ -55,9 +55,9 @@ export default function FloatingSidebarContainer({
           />
         </div>
 
-        {/* Flow Execution Panel - Bottom Half */}
+        {/* Modern Testing Panel - Bottom Half */}
         <div className="flex-1 min-h-0">
-          <FlowExecutionPanel
+          <ModernTestingPanel
             nodes={nodes}
             connections={connections}
             selectedNode={selectedNode}
@@ -91,7 +91,7 @@ export default function FloatingSidebarContainer({
     return (
       <div className="w-[320px] h-full flex flex-col">
         <div className="flex-1 min-h-0">
-          <FlowExecutionPanel
+          <ModernTestingPanel
             nodes={nodes}
             connections={connections}
             selectedNode={selectedNode}
