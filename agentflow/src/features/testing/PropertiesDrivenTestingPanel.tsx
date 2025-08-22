@@ -28,6 +28,7 @@ import {
 import { CanvasNode, Connection } from '@/types';
 import { executeNodeFromProperties, PropertiesExecutionResult } from '@/lib/propertiesTestingBridge';
 import { callLLM } from '@/lib/llmClient';
+import { type UserTier } from '@/lib/subscriptionTiers';
 
 interface FlowExecutionPanelProps {
   nodes: CanvasNode[];
@@ -60,6 +61,7 @@ export default function FlowExecutionPanel({
   const [executionResults, setExecutionResults] = useState<Map<string, PropertiesExecutionResult>>(new Map());
   const [lastExecutedNodeId, setLastExecutedNodeId] = useState<string | null>(null);
   const [copiedStates, setCopiedStates] = useState<Map<string, boolean>>(new Map());
+  const [userTier, setUserTier] = useState<UserTier>('basic');
 
   // Execute selected node using Properties Panel data ONLY
   const executeSelectedNode = useCallback(async () => {
@@ -95,7 +97,7 @@ export default function FlowExecutionPanel({
           nodeId: selectedNode.id,
           selectedModel,
           nodeData: selectedNode.data,
-          userTier: 'basic'
+          userTier: userTier
         });
         
         const result = await callLLM(prompt, {
@@ -103,7 +105,7 @@ export default function FlowExecutionPanel({
           system: systemPrompt,
           temperature: 0.7,
           max_tokens: 1024,
-          userTier: 'basic' // Default to basic tier for testing
+          userTier: userTier // Use selected user tier for testing
         });
         return result.text;
       };
@@ -225,6 +227,22 @@ ${plainTextOutput}`;
               {selectedNode.subtype || selectedNode.type}
             </span>
           </div>
+          
+          {/* User Tier Selection */}
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-slate-400 mb-1">
+              User Tier
+            </label>
+            <select
+              value={userTier}
+              onChange={(e) => setUserTier(e.target.value as UserTier)}
+              className="w-full px-2 py-1 text-sm bg-slate-700 border border-slate-600 rounded text-slate-200 focus:outline-none focus:border-blue-500"
+            >
+              <option value="basic">Basic ($5/month)</option>
+              <option value="pro">Pro ($25/month)</option>
+            </select>
+          </div>
+          
           <button
             onClick={executeSelectedNode}
             disabled={isExecuting}

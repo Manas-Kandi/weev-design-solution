@@ -373,6 +373,7 @@ const RulesPanelContent: React.FC<{
             });
           }}
           options={[
+            { value: 'free-models', label: 'Free Models (Best available free models)' },
             { value: 'meta/llama-3.1-70b-instruct', label: 'Llama 3.1 70B (Basic)' },
             { value: 'qwen/qwen-2-72b-instruct', label: 'Qwen 2 72B (Basic)' },
             { value: 'gpt-4', label: 'GPT-4 (Pro)' },

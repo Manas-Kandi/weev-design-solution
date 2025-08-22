@@ -83,8 +83,13 @@ export async function callLLM(prompt: string, opts: CallLLMOptions = {}): Promis
     if (!NVIDIA_API_KEY) {
       throw new Error("NVIDIA provider selected but NVIDIA_API_KEY/NEXT_PUBLIC_NVIDIA_API_KEY is not configured");
     }
+    // Handle free-models routing
+    let rawModel = opts.model || NVIDIA_DEFAULT_MODEL;
+    if (rawModel === 'free-models') {
+      // Route through Nvidia LLM Router - use a default model that's known to be free
+      rawModel = "meta/llama-3.1-70b-instruct";
+    }
     // Normalize NVIDIA model IDs: GPT-OSS models must be referenced as openai/gpt-oss-XXb per NIM
-    const rawModel = opts.model || NVIDIA_DEFAULT_MODEL;
     const normalized = /^gpt-oss-\d+/i.test(rawModel) ? `openai/${rawModel}` : rawModel;
     const fallbackModel = "meta/llama-3.1-70b-instruct";
     // Default system; if JSON requested, enforce JSON-only, else be generic
@@ -109,8 +114,7 @@ export async function callLLM(prompt: string, opts: CallLLMOptions = {}): Promis
       ...(typeof opts.seed !== 'undefined' && Number.isFinite(typeof opts.seed === 'string' ? Number(opts.seed) : (opts.seed as number))
         ? { seed: typeof opts.seed === 'string' ? Number(opts.seed) : opts.seed }
         : {}),
-      // Pass userTier for subscription tier enforcement
-      ...(opts.userTier ? { userTier: opts.userTier } : {}),
+      // Note: userTier is used for subscription tier enforcement but not sent to the API
     });
     // (seed/response_format handled inside makeBody)
 

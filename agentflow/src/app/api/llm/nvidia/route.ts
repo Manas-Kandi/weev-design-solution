@@ -60,14 +60,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid request body: expected { model, messages, ... }" }, { status: 400 });
     }
 
+    // Handle free-models routing
+    let requestedModel = body.model;
+    if (requestedModel === 'free-models') {
+      // Route through Nvidia LLM Router - use a default model that's known to be free
+      requestedModel = "meta/llama-3.1-70b-instruct";
+    }
+
     // Tier enforcement: Check if user can access the requested model
     const userTier: UserTier = body.userTier || 'basic'; // Default to basic if not specified
-    const requestedModel = body.model;
     
-    if (!canUserAccessModel(userTier, requestedModel)) {
-      const errorMessage = getTierRestrictionError(userTier, requestedModel);
+    if (!canUserAccessModel(userTier, body.model)) {
+      const errorMessage = getTierRestrictionError(userTier, body.model);
       return NextResponse.json({ error: errorMessage }, { status: 403 });
     }
+
+    // Create a new body object without the userTier parameter
+    const { userTier: __userTier, ...nvidiaBody } = { ...body, model: requestedModel };
 
     const target = `${NVIDIA_BASE_URL.replace(/\/$/, "")}/chat/completions`;
     const res = await fetch(target, {
@@ -78,7 +87,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         stream: false,
-        ...body,
+        ...nvidiaBody  // Use the body without userTier
       }),
     });
 

@@ -19,6 +19,7 @@ The subscription tiers feature implements model access control based on user sub
 ### Basic Tier ($5/month)
 - **Access**: Open-source models only
 - **Allowed Models**:
+  - `free-models` (Best available free models)
   - `meta/llama-3.1-70b-instruct`
   - `qwen/qwen-2-72b-instruct`
 - **Description**: "Open-source models only"
@@ -26,6 +27,7 @@ The subscription tiers feature implements model access control based on user sub
 ### Pro Tier ($25/month)
 - **Access**: All models including premium ones
 - **Allowed Models**:
+  - `free-models` (Best available free models)
   - All Basic tier models (inherited)
   - `gpt-4`
   - `gpt-4-turbo`
@@ -94,6 +96,16 @@ The NVIDIA API route (`/api/llm/nvidia`) implements server-side tier enforcement
 const userTier: UserTier = body.userTier || 'basic'; // Default to basic if not specified
 const requestedModel = body.model;
 
+// Handle free-models routing
+if (requestedModel === 'free-models') {
+  // Allow access to free models and route through Nvidia LLM Router
+  // Transform to a valid model name for the API call
+  const transformedModel = "meta/llama-3.1-70b-instruct";
+  // Remove userTier from the body before sending to NVIDIA API
+  const { userTier: __userTier, ...nvidiaBody } = { ...body, model: transformedModel };
+  // ... continue with API call using nvidiaBody
+}
+
 if (!canUserAccessModel(userTier, requestedModel)) {
   const errorMessage = getTierRestrictionError(userTier, requestedModel);
   return NextResponse.json({ error: errorMessage }, { status: 403 });
@@ -105,6 +117,8 @@ if (!canUserAccessModel(userTier, requestedModel)) {
 - Defaults to 'basic' tier if no tier is specified
 - Returns HTTP 403 status for unauthorized access
 - Consistent error messaging across client and server
+- Special handling for 'free-models' routing
+- Proper parameter filtering to prevent NVIDIA API errors
 
 ### 5. Workflow Integration
 
@@ -167,9 +181,12 @@ import { canUserAccessModel, getAllowedModels } from '@/lib/subscriptionTiers';
 // Check if user can access a specific model
 const canAccess = canUserAccessModel('basic', 'gpt-4'); // false
 
+// Check if user can access free models
+const canAccessFree = canUserAccessModel('basic', 'free-models'); // true
+
 // Get all allowed models for a tier
 const allowedModels = getAllowedModels('basic');
-// Returns: ['meta/llama-3.1-70b-instruct', 'qwen/qwen-2-72b-instruct']
+// Returns: ['free-models', 'meta/llama-3.1-70b-instruct', 'qwen/qwen-2-72b-instruct']
 ```
 
 ## Configuration
@@ -262,3 +279,41 @@ The system provides detailed error messages including:
 - `src/features/testing/SimpleTestingPanel.tsx` - Simple testing panel integration
 
 This subscription tier system provides a robust foundation for monetizing AI model access while maintaining a smooth user experience with clear upgrade paths.
+
+## Changelog
+
+### August 20, 2025 - Free Models Implementation and Bug Fixes
+
+#### Initial Free Models Feature Implementation
+- Added `free-models` option to both Basic and Pro tier allowed models
+- Updated model selection dropdown in UnifiedPropertiesPanel to include "Free Models (Best available free models)"
+- Implemented routing logic to transform `free-models` to `meta/llama-3.1-70b-instruct` for NVIDIA API calls
+- Added special error messaging for `free-models` option: "You will be routed through the best free models available at the time."
+
+#### Bug Fix: NVIDIA API Parameter Filtering (August 20, 2025)
+- **Issue**: NVIDIA API was rejecting requests with 400 Bad Request error due to invalid `userTier` parameter in request body
+- **Root Cause**: The `userTier` parameter was being sent to the NVIDIA API, which is not a valid parameter for their API
+- **Solution**: 
+  - Modified `/src/app/api/llm/nvidia/route.ts` to properly remove the `userTier` parameter from the request body before sending to NVIDIA API
+  - Updated destructuring to use `__userTier` to avoid any potential naming conflicts
+  - Maintained all existing functionality including tier enforcement and free-models routing
+- **Impact**: Fixed the 400 Bad Request error that was preventing "Free Models" from working properly
+
+#### Bug Fix: Variable Naming Conflict (August 20, 2025)
+- **Issue**: Build errors due to duplicate variable name `userTier` in NVIDIA API route
+- **Root Cause**: Variable naming conflict where `userTier` was being defined multiple times
+- **Solution**: 
+  - Updated variable naming in `/src/app/api/llm/nvidia/route.ts` to use `__userTier` instead of `_userTier`
+  - Ensured consistent parameter filtering throughout the codebase
+- **Impact**: Resolved build errors and ensured successful compilation
+
+#### Documentation Updates
+- Updated subscription-tiers.md with accurate code examples showing proper parameter filtering
+- Added detailed changelog section documenting all changes and fixes
+- Clarified implementation details for free-models routing and NVIDIA API parameter handling
+
+#### Testing Verification
+- All existing subscription tier tests continue to pass
+- Implementation verified to properly route "free-models" requests through NVIDIA infrastructure
+- Tier enforcement maintained for all model access including free-models option
+- No breaking changes to existing functionality

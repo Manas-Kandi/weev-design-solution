@@ -34,3 +34,8 @@ The application relies on the following environment variables (e.g. in `.env.loc
 ## Architecture
 
 For details about node contracts and data flow, see [docs/DataFlowContract.md](docs/DataFlowContract.md).
+
+## Documentation
+
+- [Subscription Tiers Feature](subscription-tiers.md) - Complete documentation of the subscription tier system
+- [Changelog](CHANGELOG.md) - Detailed log of all changes and fixes

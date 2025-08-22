@@ -18,6 +18,7 @@ export const SUBSCRIPTION_TIERS: Record<UserTier, SubscriptionTierConfig> = {
   basic: {
     name: 'Basic',
     allowedModels: [
+      'free-models',
       'meta/llama-3.1-70b-instruct',
       'qwen/qwen-2-72b-instruct'
     ],
@@ -26,6 +27,8 @@ export const SUBSCRIPTION_TIERS: Record<UserTier, SubscriptionTierConfig> = {
   pro: {
     name: 'Pro', 
     allowedModels: [
+      // Free models (included from Basic)
+      'free-models',
       // Open-source models (included from Basic)
       'meta/llama-3.1-70b-instruct',
       'qwen/qwen-2-72b-instruct',
@@ -60,7 +63,20 @@ export function getTierRestrictionError(userTier: UserTier, attemptedModel: stri
   const tierConfig = SUBSCRIPTION_TIERS[userTier];
   
   if (userTier === 'basic') {
-    return `Upgrade to Pro to access ${attemptedModel}. You're currently limited to open-source models (${tierConfig.allowedModels.join(', ')}). Upgrade at https://weev.ai/pricing`;
+    // More specific error message for GPT-4
+    if (attemptedModel.includes('gpt-4')) {
+      return "Upgrade to Pro to access GPT-4. You're currently limited to open-source models.";
+    }
+    // Special message for free models
+    if (attemptedModel === 'free-models') {
+      return "You will be routed through the best free models available at the time.";
+    }
+    return `Upgrade to Pro to access ${attemptedModel}. You're currently limited to open-source models (${tierConfig.allowedModels.filter(model => model !== 'free-models').join(', ')}). Upgrade at https://weev.ai/pricing`;
+  }
+  
+  // Special message for free models in Pro tier
+  if (attemptedModel === 'free-models') {
+    return "You will be routed through the best free models available at the time.";
   }
   
   return `Model ${attemptedModel} is not available for your ${tierConfig.name} subscription.`;

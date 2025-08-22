@@ -43,6 +43,7 @@ import type {
 } from "@/features/testing/types/tester";
 import type { ToolEnvironment } from "@/features/testing/types/toolSimulator";
 import type { ToolMockProfile } from "@/features/testing/types/toolSimulator";
+import type { UserTier } from "@/lib/subscriptionTiers";
 
 interface EnhancedTestingPanelProps {
   nodes: CanvasNode[];
@@ -169,6 +170,7 @@ export function EnhancedTestingPanel({
   const [seed, setSeed] = useState<string>("");
   const [latency, setLatency] = useState<number>(500);
   const [errorInjection, setErrorInjection] = useState<boolean>(false);
+  const [userTier, setUserTier] = useState<UserTier>('basic');
   const [events, setEvents] = useState<TesterEvent[]>([]);
   const [artifacts, setArtifacts] = useState<NodeExecutionArtifact[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -366,13 +368,13 @@ export function EnhancedTestingPanel({
             errorInjection
           },
         },
-        'basic' // Hardcoded for testing subscription tier enforcement
+        userTier // Use selected user tier for testing subscription tier enforcement
       );
     } catch (err) {
       console.error("Test run failed:", err);
       setIsRunning(false);
     }
-  }, [connections, nodes, handleTesterEvent, scenario, seed, environment, latency, errorInjection, isRunning, startNodeId]);
+  }, [connections, nodes, handleTesterEvent, scenario, seed, environment, latency, errorInjection, isRunning, startNodeId, userTier]);
 
   const handlePause = useCallback(() => {
     if (!runStartedAt || !isRunning) return;
@@ -714,6 +716,21 @@ export function EnhancedTestingPanel({
                           className="w-full px-2 py-1 text-sm bg-slate-700 border border-slate-600 rounded text-slate-200 focus:outline-none focus:border-blue-500"
                         />
                       </div>
+                    </div>
+                    
+                    {/* User Tier Selection */}
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">
+                        User Tier
+                      </label>
+                      <select
+                        value={userTier}
+                        onChange={(e) => setUserTier(e.target.value as UserTier)}
+                        className="w-full px-2 py-1 text-sm bg-slate-700 border border-slate-600 rounded text-slate-200 focus:outline-none focus:border-blue-500"
+                      >
+                        <option value="basic">Basic ($5/month)</option>
+                        <option value="pro">Pro ($25/month)</option>
+                      </select>
                     </div>
 
                     <label className="flex items-center gap-2 text-sm">
