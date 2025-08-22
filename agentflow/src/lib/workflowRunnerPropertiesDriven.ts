@@ -5,6 +5,7 @@ import { type UserTier } from "./subscriptionTiers";
 import { defaultToolRule } from "../services/toolsim/toolRules";
 import { normalizeCapability } from "@/lib/nodes/tool/capabilityMap";
 import { getToolSchema } from "@/lib/nodes/tool/catalog";
+import { generateExecutionReasoning } from "./testing/reasoningExtractor";
 
 // Shared context for delegation information
 const delegationContext: Record<string, any> = {};
@@ -231,22 +232,16 @@ export async function runWorkflowWithProperties(
       throw new Error(`Node with id ${currentNodeId} not found`);
     }
 
-    // Emit node started event
     const nodeStartTime = Date.now();
-    callbacks?.emitTesterEvent?.({
-      type: 'node-started',
-      nodeId: currentNode.id,
-      title: (currentNode.data as any)?.title || currentNode.id,
-      nodeType: currentNode.type,
-      nodeSubtype: currentNode.subtype,
-      at: nodeStartTime,
-      cause: { kind: 'all-inputs-ready', inputCount: 0 },
-      flowContextBefore: { ...executionResults }
-    });
-
-    // Call beforeNodeExecute callback if provided
-    if (callbacks?.beforeNodeExecute) {
-      await callbacks.beforeNodeExecute(currentNode);
+    // Before node execution
+    if (callbacks?.emitTesterEvent) {
+      callbacks.emitTesterEvent({
+        type: 'node-start',
+        nodeId: currentNode.id,
+        at: nodeStartTime,
+        inputs: executionResults,
+        properties: currentNode.data
+      });
     }
 
     // Prepare input data from connected nodes (support multiple connection shapes)
@@ -280,364 +275,30 @@ export async function runWorkflowWithProperties(
     let propertiesResult: any = null;
     
     try {
-      console.log('🔄 Executing node:', {
-        nodeId: currentNode.id,
-        nodeType: currentNode.type,
-        nodeSubtype: currentNode.subtype,
-        inputData,
-        nodeData: currentNode.data
-      });
-
-      const modifiedCurrentNode = { ...currentNode }; // Create a shallow copy of the node
-    const modifiedNodeData = { ...(currentNode.data as any) }; // Create a shallow copy of node data
-
-    // Logic for injecting tool knowledge into Agent node data
-    if (modifiedCurrentNode.type === 'agent' || modifiedCurrentNode.subtype === 'agent') {
-      const connectedToolNodes = connections.filter((c: any) => {
-        const source = c.sourceNode ?? c.source;
-        const target = c.targetNode ?? c.target;
-        const targetNode = nodes.find(n => n.id === target);
-        return (
-          source === modifiedCurrentNode.id &&
-          (!!targetNode && (((targetNode as any).type === 'tool') || ((targetNode as any).subtype === 'tool')))
-        );
-      }).map((c: any) => nodes.find(n => n.id === (c.targetNode ?? c.target)));
-
-      if (connectedToolNodes.length > 0) {
-        let toolRules = '';
-        connectedToolNodes.forEach(toolNode => {
-          if (toolNode) {
-            const providerId = (toolNode.data as any)?.simulation?.providerId;
-            const operation = (toolNode.data as any)?.simulation?.operation;
-
-            if (providerId && operation) {
-              const toolRule = defaultToolRule(providerId, operation);
-              if (!modifiedNodeData.systemPrompt || !modifiedNodeData.systemPrompt.includes(toolRule)) {
-                toolRules += `\n\n${toolRule}`;
-              }
-            }
-          }
-        });
-
-        if (toolRules) {
-          modifiedNodeData.systemPrompt = (modifiedNodeData.systemPrompt || '') + toolRules;
-          modifiedCurrentNode.data = modifiedNodeData; // Update the data of the modified node
-        }
-      }
-    }
-
-      // Use Properties-Testing Bridge for ALL node execution - PROPERTIES PANEL AS AUTHORITATIVE SOURCE
-      // Collect tool definitions for agent nodes
-      let tools: any[] = [];
-      if (modifiedCurrentNode.type === 'agent' || modifiedCurrentNode.subtype === 'agent') {
-        const connectedToolNodes = connections.filter((c: any) => {
-          const source = c.sourceNode ?? c.source;
-          const target = c.targetNode ?? c.target;
-          const targetNode = nodes.find(n => n.id === target);
-          return (
-            source === modifiedCurrentNode.id &&
-            (!!targetNode && (((targetNode as any).type === 'tool') || ((targetNode as any).subtype === 'tool')))
-          );
-        }).map((c: any) => nodes.find(n => n.id === (c.targetNode ?? c.target)));
-
-        // Create structured tool list with detailed information
-        tools = connectedToolNodes.map(toolNode => {
-          if (toolNode) {
-            const provider = (toolNode.data as any)?.simulation?.providerId;
-            const operation = (toolNode.data as any)?.simulation?.operation;
-            const schema = provider ? getToolSchema(provider) : null;
-            const title = (toolNode.data as any)?.title || provider || 'Untitled Tool';
-
-            // Start with schema-declared capabilities (if any)
-            let capabilities = [...(schema?.capabilities ?? [])];
-
-            // Fallback: if schema has none, derive one from the node's configured provider/op
-            if (capabilities.length === 0 && provider && operation) {
-              capabilities.push(`${provider}.${operation}`);
-            }
-
-            // Normalize all caps (aliases / legacy)
-            capabilities = capabilities.map(normalizeCapability);
-
-            const toolKey = `${provider}.${operation}`;
-            const parameters = toolParameterSchemas[toolKey] || { type: "OBJECT", properties: {} };
-
-            // Create detailed tool description
-            const description = schema?.description || `Tool for ${provider} with operation ${operation}`;
-
-            return {
-              toolNode: toolNode, // Include the actual tool node
-              id: toolNode.id,
-              name: title,
-              provider: provider,
-              operation: operation,
-              description: description,
-              capabilities: capabilities, // Include capabilities
-              parameters: parameters,
-              functionDeclarations: [{
-                name: operation, // Use operation as the function name
-                description: description,
-                parameters: parameters,
-              }],
-            };
-          }
-          return null;
-        }).filter(Boolean);
-      }
-
-      // Create an llmExecutor that uses the unified LLM client with proper provider configuration
-      const llmExecutor = async (prompt: string, systemPrompt?: string, toolsParam?: any[]) => {
-        // Get the default provider from environment variables
-        const defaultProvider = process.env.NEXT_PUBLIC_LLM_PROVIDER || 'nvidia';
-        
-        // Get model from current node data, default to Llama if not specified
-        const selectedModel = (currentNode.data as any)?.model || 'meta/llama-3.1-70b-instruct';
-        
-        
-        const result = await callLLM(prompt, {
-          provider: defaultProvider as any,
-          model: selectedModel,
-          system: systemPrompt,
-          temperature: 0.7,
-          max_tokens: 1024,
-          userTier: userTier || 'basic' // Default to basic tier if not specified
-        });
-        return result.text;
-      };
-
-      propertiesResult = await executeNodeFromProperties(
-        modifiedCurrentNode, // Use the potentially modified node
-        inputData,
-        llmExecutor,
-        tools, // Pass the collected tools to executeNodeFromProperties
-        undefined, // contextFromPreviousNodes
-        delegationContext // Pass delegation context
-      );
-      
-      console.log('✅ Node execution result:', {
-        nodeId: currentNode.id,
-        propertiesResult,
-        output: propertiesResult.result
-      });
-      
-      // Check for tier enforcement errors and throw them to fail the workflow
-      if (propertiesResult.executionSummary && propertiesResult.executionSummary.includes('Upgrade to Pro')) {
-        throw new Error(propertiesResult.executionSummary.replace('Error: ', ''));
-      }
-      
-      // Extract the result for workflow continuation
-      output = propertiesResult.result;
-
-      // --- Decide whether to delegate to a tool -------------------------------
-      // Enhanced tool delegation with multi-tool planning and better fallbacks
-      const agentIntent = propertiesResult.parsedIntent as
-        | { capability?: string }
-        | null
-        | undefined;
-
-      const agentCapability =
-        agentIntent?.capability ? normalizeCapability(agentIntent.capability) : undefined;
-
-      let matchedTool: any = null; // will be chosen only if we discover a capability
-      // -----------------------------------------------------------------------
-
-      // Enhanced tool matching with fuzzy matching and better error handling
-      matchedTool = agentCapability
-        ? tools.find(t => (t.capabilities ?? []).includes(agentCapability)) || 
-          // Try fuzzy matching if exact match fails
-          tools.find(t => (t.capabilities ?? []).some((cap: string) => {
-            // Simple fuzzy matching - check if capability is contained in tool capabilities
-            return cap.toLowerCase().includes(agentCapability.toLowerCase()) ||
-                   agentCapability.toLowerCase().includes(cap.toLowerCase());
-          }))
-        : null;
-
-      // Debugging agent-to-tool routing logic.
-      console.log("Agent parsed intent:", agentIntent);
-      console.log("Available tools:", tools.map(t => ({ 
-        id: t.toolNode?.id, 
-        provider: t.provider, 
-        operation: t.operation, 
-        capabilities: t.capabilities 
-      })));
-      console.log("Matched tool:", matchedTool?.toolNode?.id);
-
-      // --- Enhanced Tool Delegation Logic --- 
-      const delegatedToolResults: any[] = []; // Support for multiple tools
-      const delegatedToolNodes: CanvasNode[] = []; // Support for multiple tools
-
-      if (
-        (currentNode.type === 'agent' || currentNode.subtype === 'agent') &&
-        typeof output === 'string'
-      ) {
-        try {
-          const parsedOutput = JSON.parse(output);
-
-          console.log('DEBUG >> output (raw):', output);
-          console.log('DEBUG >> parsedIntent:', agentIntent);
-          console.log('DEBUG >> parsedOutput:', parsedOutput);
-          console.log(
-            'DEBUG >> availableTools:',
-            tools.map(t => ({
-              id: t.toolNode?.id,
-              provider: t.provider,
-              op: t.operation,
-              caps: t.capabilities,
-              description: t.description
-            }))
-          );
-          console.log('DEBUG >> matchedTool:', matchedTool?.toolNode?.id);
-
-          // --- Enhanced Tool Selection Logic ---
-          // 1) Handle multiple tool calls
-          let toolCallsToExecute: Array<{tool_name: string, operation: string, args: any}> = [];
+      // Execute node with reasoning capture
+      const nodeResult = await executeNodeFromProperties(
+        currentNode,
+        executionResults,
+        async (prompt: string, systemPrompt?: string) => {
+          const result = await callLLM(prompt, 'basic', {
+            systemPrompt,
+            temperature: 0.7
+          });
           
-          if (parsedOutput?.tool_calls && Array.isArray(parsedOutput.tool_calls)) {
-            // Multiple tools planned
-            toolCallsToExecute = parsedOutput.tool_calls.map((tc: any) => ({
-              tool_name: tc.tool_name,
-              operation: tc.operation,
-              args: tc.args || {}
-            }));
-          } else if (parsedOutput?.tool_call) {
-            // Single tool call
-            toolCallsToExecute = [{
-              tool_name: parsedOutput.tool_call.tool_name,
-              operation: parsedOutput.tool_call.operation,
-              args: parsedOutput.tool_call.args || {}
-            }];
-          } else if (agentCapability) {
-            // Use intent capability for tool selection
-            toolCallsToExecute = [{
-              tool_name: agentCapability.split('.')[0],
-              operation: agentCapability.split('.')[1],
-              args: {}
-            }];
-          }
-
-          // Debug chosen tool calls
-          console.log('DEBUG >> toolCallsToExecute:', toolCallsToExecute);
-
-          // 2) Execute planned tools
-          if (toolCallsToExecute.length > 0) {
-            for (const toolCall of toolCallsToExecute) {
-              const toolIdentifier = `${toolCall.tool_name}.${toolCall.operation}`;
-              const normalizedIdentifier = normalizeCapability(toolIdentifier);
-              
-              // Find matching tool with enhanced matching
-              let selectedTool = tools.find(t => 
-                (t.capabilities ?? []).includes(normalizedIdentifier) ||
-                t.provider === toolCall.tool_name && t.operation === toolCall.operation
-              );
-              
-              // If not found, try fuzzy matching
-              if (!selectedTool) {
-                selectedTool = tools.find(t => 
-                  (t.capabilities ?? []).some((cap: string) => 
-                    cap.toLowerCase().includes(normalizedIdentifier.toLowerCase()) ||
-                    normalizedIdentifier.toLowerCase().includes(cap.toLowerCase())
-                  )
-                );
-              }
-              
-              if (selectedTool) {
-                // Execute the tool
-                const delegatedToolResult = await executeNodeFromProperties(
-                  selectedTool.toolNode,
-                  { inputs: { args: toolCall.args || {} } } as any,
-                  llmExecutor,
-                  tools,
-                  undefined, // contextFromPreviousNodes
-                  delegationContext // Pass delegation context
-                );
-                
-                delegatedToolResults.push(delegatedToolResult);
-                delegatedToolNodes.push(selectedTool.toolNode);
-              } else {
-                // Tool not found - log error but continue with other tools
-                console.warn(`No matching tool found for: ${toolIdentifier}`);
-                propertiesResult.executionSummary = 
-                  `Warning: No matching tool found for ${toolIdentifier}. Connected tools: [${tools.map(t => `${t.provider}.${t.operation}`).join(', ')}]`;
-              }
-            }
-            
-            // Update agent's properties result with delegation information
-            if (delegatedToolResults.length > 0) {
-              if (delegatedToolResults.length === 1) {
-                // Single tool result
-                propertiesResult.executionSummary =
-                  `Agent delegated request to Tool: ${(delegatedToolNodes[0].data as any)?.simulation?.providerId || 'Unknown'} → operation: ${(delegatedToolNodes[0].data as any)?.simulation?.operation || 'Unknown'}`;
-                propertiesResult.outputsTab.result = delegatedToolResults[0];
-                propertiesResult.outputsTab.source =
-                  `Delegated to Tool: ${(delegatedToolNodes[0].data as any)?.simulation?.providerId || 'Unknown'}: ${(delegatedToolNodes[0].data as any)?.simulation?.operation || 'Unknown'}`;
-                propertiesResult.summaryTab.explanation =
-                  `Agent delegated to tool ${(delegatedToolNodes[0].data as any)?.simulation?.providerId || 'Unknown'}:${(delegatedToolNodes[0].data as any)?.simulation?.operation || 'Unknown'}.`;
-                propertiesResult.trace.delegatedToTool = {
-                  toolName: (delegatedToolNodes[0].data as any)?.simulation?.providerId || 'Unknown',
-                  operation: (delegatedToolNodes[0].data as any)?.simulation?.operation || 'Unknown',
-                  args: {},
-                  toolNodeId: delegatedToolNodes[0].id,
-                  toolResult: delegatedToolResults[0],
-                };
-                
-                // Agent's output becomes the tool output
-                output = delegatedToolResults[0];
-              } else {
-                // Multiple tool results
-                propertiesResult.executionSummary =
-                  `Agent delegated requests to ${delegatedToolResults.length} tools`;
-                propertiesResult.outputsTab.result = delegatedToolResults;
-                propertiesResult.outputsTab.source =
-                  `Delegated to ${delegatedToolResults.length} tools`;
-                propertiesResult.summaryTab.explanation =
-                  `Agent delegated to ${delegatedToolResults.length} tools.`;
-                propertiesResult.trace.delegatedToTools = delegatedToolResults.map((result, index) => ({
-                  toolName: (delegatedToolNodes[index].data as any)?.simulation?.providerId || 'Unknown',
-                  operation: (delegatedToolNodes[index].data as any)?.simulation?.operation || 'Unknown',
-                  args: {},
-                  toolNodeId: delegatedToolNodes[index].id,
-                  toolResult: result,
-                }));
-                
-                // Agent's output becomes the combined tool outputs
-                output = delegatedToolResults;
-              }
-            }
-          } else {
-            // No tool calls planned - keep agent's text output
-            propertiesResult.executionSummary =
-              'Agent returned text response (no tool delegation).';
-          }
-        } catch (parseError) {
-          // Not JSON (plain text agent reply) — keep NL output as-is.
-          console.log('Could not parse agent output as JSON, keeping as text response');
-          propertiesResult.executionSummary =
-            'Agent returned text response (no tool delegation).';
+          // Generate reasoning for this LLM call
+          const reasoning = await generateExecutionReasoning(
+            currentNode,
+            prompt,
+            result,
+            callLLM
+          );
+          
+          return { result, reasoning };
         }
-      }
-      // --- End Enhanced Tool Delegation Logic ---
-      
-      console.log('📦 Creating node outputs:', {
-        nodeId: currentNode.id,
-        output,
-        propertiesResult,
-        nodeOutputIds: (currentNode.outputs || []).map(o => o.id)
-      });
-      
-      // Create outputs for this node - store both the raw result and structured outputs
-      const nodeOutputs: Record<string, any> = {};
-      (currentNode.outputs || []).forEach(o => {
-        nodeOutputs[o.id] = output;
-      });
-      
-      // Store the complete result structure for this node
-      executionResults[currentNode.id] = {
-        ...nodeOutputs,
-        _rawResult: output,
-        _propertiesResult: propertiesResult,
-        _nodeType: currentNode.type,
-        _nodeSubtype: currentNode.subtype
-      };
+      );
+
+      output = nodeResult.result;
+      propertiesResult = nodeResult;
 
     } catch (error) {
       executionError = error;
@@ -661,6 +322,25 @@ export async function runWorkflowWithProperties(
       } else {
         executionResults[currentNode.id] = nodeOutputs;
       }
+    }
+
+    // After node execution with enhanced event
+    if (callbacks?.emitTesterEvent) {
+      callbacks.emitTesterEvent({
+        type: 'node-complete',
+        nodeId: currentNode.id,
+        at: Date.now(),
+        duration: Date.now() - nodeStartTime,
+        output: nodeResult.result,
+        reasoning: nodeResult.reasoning,
+        properties: currentNode.data,
+        inputs: executionResults,
+        technicalDetails: {
+          model: currentNode.data.model || 'default',
+          tokensUsed: nodeResult.propertiesUsed?.tokensUsed,
+          confidence: nodeResult.propertiesUsed?.confidence
+        }
+      });
     }
 
     // Emit node finished event

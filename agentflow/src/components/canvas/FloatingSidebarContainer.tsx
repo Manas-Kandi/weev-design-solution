@@ -3,7 +3,7 @@
 import React from "react";
 import { CanvasNode, Connection } from "@/types";
 import PropertiesPanel from "./PropertiesPanel";
-import ModernTestingPanel from "@/features/testing/ModernTestingPanel";
+import { ModernTestingPanel } from "@/features/testing/ModernTestingPanel";
 
 interface FloatingSidebarContainerProps {
   // Properties Panel props

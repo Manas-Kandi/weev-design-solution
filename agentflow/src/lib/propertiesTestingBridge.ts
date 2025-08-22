@@ -193,6 +193,9 @@ async function executeAgentNode(
   const mockResponse = pick('mockResponse', 'properties.mockResponse', 'config.mockResponse');
   const userPrompt = (inputData && (inputData.input ?? inputData.text ?? inputData.content)) || '';
 
+  // Add to executeAgentNode function
+  const reasoning = await generateAgentReasoning(nodeData, inputData, llmExecutor);
+
   console.log('🤖 Agent Node Execution:', {
     nodeId: node.id,
     systemPrompt,
@@ -786,6 +789,9 @@ async function executeRouterNode(
   const llmRule = nodeData?.llmRule;
   const mockResponse = nodeData?.mockResponse;
 
+  // TODO: Implement generateRoutingReasoning
+  // const routingReasoning = await generateRoutingReasoning(nodeData, inputData, availableTools);
+
   baseResult.inputsTab.properties = [
     {
       key: 'mode',
@@ -1032,4 +1038,26 @@ Process according to the configuration in Properties Panel.`;
   };
 
   return baseResult;
+}
+
+// New function for LLM-powered reasoning extraction
+async function generateAgentReasoning(
+  nodeData: any, 
+  inputData: any, 
+  llmExecutor: Function
+): Promise<string> {
+  const reasoningPrompt = `
+Explain your reasoning for handling this request:
+
+Node Configuration:
+- Type: ${nodeData.type}
+- Rules: ${nodeData.rules?.nl || 'None'}
+- System Prompt: ${nodeData.systemPrompt || 'None'}
+
+Input Received: ${JSON.stringify(inputData)}
+
+Provide a 1-2 sentence explanation of your approach and decision-making process.
+`;
+  
+  return await llmExecutor(reasoningPrompt);
 }
