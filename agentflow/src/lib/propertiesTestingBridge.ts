@@ -73,6 +73,10 @@ export async function executeNodeFromProperties(
   },
   delegationContext?: Record<string, any> // Add delegation context parameter
 ): Promise<PropertiesExecutionResult> {
+  // Defensive check to ensure llmExecutor is actually a function
+  if (typeof llmExecutor !== 'function') {
+    throw new Error(`executeNodeFromProperties: llmExecutor must be a function, received: ${typeof llmExecutor} (${JSON.stringify(llmExecutor)})`);
+  }
   const nodeData = node.data as any;
   
   console.log('🔍 Properties Testing Bridge - Node Execution Start:', {
@@ -557,7 +561,7 @@ ${JSON.stringify({ input: inputData.input || '' }, null, 2)}
 
 Provide a realistic response that would come from this tool. Return ONLY the result data as JSON, without any explanations or markdown.`;
 
-    baseResult.result = await llmExecutor(toolPrompt, `You are a tool simulator. Return ONLY the result data as JSON, without any explanations or markdown.`);
+    baseResult.result = await llmExecutor!(toolPrompt, `You are a tool simulator. Return ONLY the result data as JSON, without any explanations or markdown.`);
     baseResult.outputsTab.result = baseResult.result;
     baseResult.outputsTab.resultType = 'computed';
     baseResult.outputsTab.source = 'Live tool execution with LLM';

@@ -111,11 +111,17 @@ export async function runWorkflowWithProperties(
     let executionError: any = null;
     
     try {
+      // Create LLM executor function for the properties testing bridge
+      const llmExecutor = async (prompt: string, systemPrompt?: string, tools?: any[]) => {
+        const result = await callGemini(prompt);
+        return result; // callGemini already returns a string
+      };
+
       // Use Properties-Testing Bridge for ALL node execution - PROPERTIES PANEL AS AUTHORITATIVE SOURCE
       const propertiesResult = await executeNodeFromProperties(
         currentNode,
         inputData,
-        callGemini
+        llmExecutor
       );
       
       // Extract the result for workflow continuation
