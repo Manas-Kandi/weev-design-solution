@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { ArrowLeft, FolderPlus } from 'lucide-react';
-import FolderTree from './FolderTree';
 import type { Project } from '@/types';
 
 interface FolderManagementViewProps {
@@ -79,17 +78,6 @@ export default function FolderManagementView({
             <h1 className="text-2xl font-medium text-white">Your Folders</h1>
             <p className="text-sm text-gray-400">Organize your projects into folders</p>
           </div>
-        </div>
-
-        {/* Folder Management Content */}
-        <div className="bg-black/20 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
-          <FolderTree
-            projects={projects}
-            onSelectProject={onSelectProject}
-            onSelectFolder={(folderId, folderName) => {
-              console.log('Selected folder:', folderId, folderName);
-            }}
-          />
         </div>
       </div>
     </div>

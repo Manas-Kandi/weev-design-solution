@@ -41,9 +41,17 @@ type RateRecord = {
 }
 
 const rateStore = new Map<string, RateRecord>()
+let lastSweep = 0
 
 export function checkRateLimit(key: string, limit = 60, windowMs = 60_000): boolean {
   const now = Date.now()
+  // Periodically sweep expired entries to prevent unbounded growth
+  if (now - lastSweep > windowMs) {
+    for (const [k, rec] of rateStore.entries()) {
+      if (rec.reset <= now) rateStore.delete(k)
+    }
+    lastSweep = now
+  }
   const record = rateStore.get(key)
   if (!record || record.reset <= now) {
     rateStore.set(key, { count: 1, reset: now + windowMs })

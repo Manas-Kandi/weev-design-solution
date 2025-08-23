@@ -1,6 +1,5 @@
 import { DocumentChunk, IngestedDocument, VectorStoreEntry } from './types';
 import { vectorStore } from '@/services/vector/VectorStore';
-import { callLLM } from '@/lib/llmClient';
 
 export class DocumentIngestor {
   /**
@@ -153,49 +152,11 @@ export class DocumentIngestor {
    * Generate summary and keywords for a text chunk using LLM
    */
   private async summarizeChunk(text: string): Promise<{ summary: string; keywords: string[] }> {
-    try {
-      const prompt = `Analyze the following text and provide:
-1. A brief summary (1-2 sentences)
-2. Key keywords/phrases (3-5 important terms)
-
-Text:
-${text}
-
-Respond in JSON format:
-{
-  "summary": "brief summary here",
-  "keywords": ["keyword1", "keyword2", "keyword3"]
-}`;
-
-      const result = await callLLM(prompt, {
-        provider: "nvidia",
-        model: process.env.NEXT_PUBLIC_NVIDIA_MODEL || "openai/gpt-oss-120b",
-        temperature: 0.3,
-        max_tokens: 200
-      });
-
-      // Try to parse JSON response
-      try {
-        const parsed = JSON.parse(result.text);
-        return {
-          summary: parsed.summary || this.extractSummary(text),
-          keywords: Array.isArray(parsed.keywords) ? parsed.keywords : this.extractKeywords(text)
-        };
-      } catch (parseError) {
-        // Fallback to simple extraction if JSON parsing fails
-        return {
-          summary: this.extractSummary(text),
-          keywords: this.extractKeywords(text)
-        };
-      }
-    } catch (error) {
-      console.error('Error generating summary:', error);
-      // Fallback to simple extraction
-      return {
-        summary: this.extractSummary(text),
-        keywords: this.extractKeywords(text)
-      };
-    }
+    // LLM removed: use simple local extraction
+    return {
+      summary: this.extractSummary(text),
+      keywords: this.extractKeywords(text)
+    };
   }
 
   /**

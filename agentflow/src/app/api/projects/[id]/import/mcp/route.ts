@@ -1,6 +1,8 @@
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { validateMcpExport } from "@/types/mcp.types";
 import { mapFromMcpExport } from "@/lib/mcp/mapFromMcpExport";
+
+const supabaseAdmin = getSupabaseAdmin();
 
 function json(res: unknown, status = 200) {
   return new Response(JSON.stringify(res), {

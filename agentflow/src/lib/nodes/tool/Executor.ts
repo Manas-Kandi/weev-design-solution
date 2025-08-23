@@ -7,7 +7,7 @@ import { CanvasNode, NodeOutput } from '@/types';
 import { ToolNodeData } from './types';
 import { toolSimulator } from '@/features/testing/lib/toolSimulator';
 import type { ToolError, ToolSimulatorInput } from '@/features/testing/types/toolSimulator';
-import { callLLM } from '@/lib/llmClient';
+// LLM logic removed
 import { getToolSchema } from './catalog';
 
 export class ToolNode extends BaseNode {
@@ -65,36 +65,7 @@ export class ToolNode extends BaseNode {
         }
         return result.error?.message ?? 'Tool execution failed';
       } else {
-        // Live mode - use LLM to simulate the tool
-        const toolSchema = getToolSchema(this.toolName);
-        const operation = this.operation || '';
-        
-        // Build a prompt for the LLM to simulate the tool
-        const toolPrompt = `You are a ${this.toolName} tool simulator. Simulate the result of a ${operation} operation with the following arguments:
-${JSON.stringify(args, null, 2)}
-
-Provide a realistic response that would come from this tool. Return ONLY the result data as JSON, without any explanations or markdown.`;
-
-        const llmResult = await callLLM(toolPrompt, {
-          provider: process.env.NEXT_PUBLIC_LLM_PROVIDER as any || 'nvidia',
-          temperature: 0.3,
-          max_tokens: 1024,
-          system: `You are a tool simulator. Return ONLY the result data as JSON, without any explanations or markdown.`
-        });
-
-        // Clean the response
-        let cleanText = llmResult.text.trim();
-        // Remove markdown code fences if present
-        cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
-        
-        try {
-          // Try to parse as JSON
-          const parsedResult = JSON.parse(cleanText);
-          return parsedResult;
-        } catch {
-          // If not valid JSON, return as string
-          return cleanText;
-        }
+        return 'Live tool mode is disabled (LLM removed)';
       }
     } catch (error) {
       return error instanceof Error ? error.message : 'Unknown error';

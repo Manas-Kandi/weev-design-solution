@@ -1,7 +1,7 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput } from "@/types";
 import { ThinkingNodeData, ThinkingOutput, ThinkingMeta, THINKING_STYLE_PRESETS, ToolIntent } from "./types";
-import { callLLM } from "@/lib/llmClient";
+// LLM logic removed
 
 export class ThinkingNode extends BaseNode {
   async execute(context: NodeContext): Promise<NodeOutput> {
@@ -28,15 +28,8 @@ ${data.schemaHint ? `Expected output format: ${data.schemaHint}` : ''}
 
 ${data.allowToolCalls ? 'If you need to call tools, include them in your response as a "toolIntents" array with objects containing "name" and "args" properties.' : ''}`;
 
-      // Call LLM with NVIDIA provider
-      const llmResult = await callLLM(userPrompt, {
-        provider: "nvidia",
-        model: process.env.NEXT_PUBLIC_NVIDIA_MODEL || "openai/gpt-oss-120b",
-        temperature: stylePreset.temperature,
-        max_tokens: stylePreset.maxTokens,
-        system: systemPrompt,
-        response_format: 'json'
-      });
+      // LLM disabled; return error result
+      throw new Error('LLM is disabled in this build');
 
       // Parse the response
       let parsedResponse: any;
@@ -47,7 +40,7 @@ ${data.allowToolCalls ? 'If you need to call tools, include them in your respons
       } catch (e) {
         // Fallback: treat as plain text response
         parsedResponse = {
-          answer: llmResult.text,
+          answer: '',
           structured: null
         };
       }
@@ -73,14 +66,14 @@ ${data.allowToolCalls ? 'If you need to call tools, include them in your respons
 
       // Build the output
       const thinkingOutput: ThinkingOutput = {
-        answer: parsedResponse.answer || llmResult.text,
+        answer: parsedResponse.answer || '',
         structured: parsedResponse.structured || parsedResponse
       };
 
       const meta: ThinkingMeta = {
         nodeType: 'thinking',
         model: process.env.NEXT_PUBLIC_NVIDIA_MODEL || "openai/gpt-oss-120b",
-        tokens: llmResult.raw?.usage?.total_tokens,
+        tokens: 0,
         ...(toolIntents && { toolIntents }),
         ...(data.schemaHint && {
           validation: {

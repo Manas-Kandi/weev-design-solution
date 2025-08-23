@@ -2,16 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Project, CanvasNode, Connection, NodeType } from "@/types";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import CleanDashboard from "@/components/dashboard/CleanDashboard";
 import DesignerLayout from "@/components/layout/DesignerLayout";
 import ChatPanel from "@/components/chat/ChatPanel";
 
 import { ComponentLibrary } from "@/components/canvas/ComponentLibrary";
 import DesignerCanvas from "@/components/canvas/DesignerCanvas";
-import { nodeCategories } from "@/data/nodeDefinitions";
+import { simplifiedNodeCategories as nodeCategories } from "@/data/simplifiedNodeDefinitions";
 import { runWorkflow } from "@/lib/workflowRunner";
-import { TESTER_V2_ENABLED } from "@/lib/flags";
 
 const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -20,7 +19,7 @@ async function buildHeaders(json: boolean = true): Promise<Record<string, string
   const headers: Record<string, string> = {};
   if (json) headers["Content-Type"] = "application/json";
   try {
-    const { data } = await supabase.auth.getSession();
+    const { data } = await getSupabaseClient().auth.getSession();
     const token = data?.session?.access_token;
     if (token) headers["Authorization"] = `Bearer ${token}`;
   } catch {
@@ -59,12 +58,6 @@ export default function AgentFlowPage() {
   );
   const [selectedNode, setSelectedNode] = useState<CanvasNode | null>(null);
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
-  const [showTester, setShowTester] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testFlowResult, setTestFlowResult] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
   const [history, setHistory] = useState<CanvasNode[][]>([]);
   const [future, setFuture] = useState<CanvasNode[][]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -441,6 +434,8 @@ export default function AgentFlowPage() {
         color,
         icon,
       };
+      // Allow subtype-specific size overrides
+      let nodeSize = { width: 250, height: 120 };
 
       // Add type-specific data
       if (subtype === "agent" || subtype === "generic") {
@@ -450,7 +445,7 @@ export default function AgentFlowPage() {
           personality: nodeDef?.personality || "",
           escalationLogic: nodeDef?.escalationLogic || "",
           confidenceThreshold: nodeDef?.confidenceThreshold || 0.7,
-          model: "gemini-pro",
+          model: "disabled",
           prompt: "",
         };
       } else if (subtype === "tool-agent") {
@@ -474,6 +469,15 @@ export default function AgentFlowPage() {
           content: "Enter your message here...",
           messageType: "user",
         };
+      } else if (subtype === "external-apps") {
+        nodeSpecificData = {
+          ...nodeSpecificData,
+          tool: null,
+          accessMode: 'read',
+          toolSearch: '',
+        };
+        // Resize node for richer UI
+        nodeSize = { width: 320, height: 220 };
       }
 
       const newNode: CanvasNode = {
@@ -483,7 +487,7 @@ export default function AgentFlowPage() {
         type: nodeDef?.type || nodeData.type || "conversation",
         subtype: subtype,
         position: { x: baseX, y: baseY },
-        size: { width: 250, height: 120 },
+        size: nodeSize,
         data: nodeSpecificData,
         inputs: defaultInputs,
         outputs: defaultOutputs,
@@ -555,8 +559,7 @@ export default function AgentFlowPage() {
   }, [nodes, currentProject]);
 
   const handleTestFlow = async () => {
-    // Show the SimpleTestingPanel (our liquid glassmorphism testing panel)
-    setShowTester(true);
+    // Testing functionality removed
     return;
   };
 
@@ -686,7 +689,7 @@ export default function AgentFlowPage() {
             onAddNode={handleAddNode}
             onBackToProjects={() => setCurrentView("projects")}
             onTest={handleTestFlow}
-            testButtonDisabled={isTesting}
+            testButtonDisabled={false}
             projectName={currentProject?.name || 'Untitled Project'}
             onProjectNameChange={async (newName) => {
               if (currentProject) {
@@ -737,12 +740,12 @@ export default function AgentFlowPage() {
                 console.error("Error creating connection:", err);
               }
             }}
-            showTester={showTester}
-            testFlowResult={testFlowResult}
-            setShowTester={setShowTester}
-            setTestFlowResult={setTestFlowResult}
+            showTester={false}
+            testFlowResult={null}
+            setShowTester={() => {}}
+            setTestFlowResult={() => {}}
             onTestFlow={handleTestFlow}
-            testButtonDisabled={isTesting}
+            testButtonDisabled={false}
             startNodeId={startNodeId}
             onStartNodeChange={handleStartNodeChange}
             projectId={currentProject ? currentProject.id : null}

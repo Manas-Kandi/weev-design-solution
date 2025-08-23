@@ -1,6 +1,5 @@
 import { adaptCanvasToMcpFlow, McpExport, McpToolDefinition, validateMcpExport, MCP_SCHEMA_VERSION } from "@/types/mcp.types";
 import type { CanvasNode, Connection } from "@/types";
-import { TOOL_MOCKS } from "@/features/testing/types/toolSimulator";
 
 export interface EnvOverrides {
   mode?: "mock" | "mixed" | "live";
@@ -17,33 +16,11 @@ export interface EnvOverrides {
 }
 
 /**
- * Build MCP ToolDefinitions from the TOOL_MOCKS registry by flattening each tool operation
- * as a separate tool entry named `${toolName}.${operation}`.
+ * Build MCP ToolDefinitions from the available tools.
  */
 export function buildMcpToolsFromMocks(): McpToolDefinition[] {
-  const out: McpToolDefinition[] = [];
-  for (const [toolName, cfg] of Object.entries(TOOL_MOCKS)) {
-    for (const op of cfg.operations) {
-      const args: Record<string, unknown> = { type: "object", required: [], properties: {} } as any;
-      for (const p of op.parameters) {
-        (args as any).properties[p.name] = {
-          type: p.type,
-          description: p.description,
-          ...(p.enum ? { enum: p.enum } : {}),
-          ...(p.default !== undefined ? { default: p.default } : {}),
-        };
-        if (p.required) (args as any).required.push(p.name);
-      }
-      const returns = op.responseSchema ?? { type: "object" };
-      out.push({
-        name: `${toolName}.${op.name}`,
-        schema: { args, returns },
-        description: op.description,
-        category: cfg.category,
-      });
-    }
-  }
-  return out;
+  // Tool mocks have been removed
+  return [];
 }
 
 export interface MapToMcpParams {

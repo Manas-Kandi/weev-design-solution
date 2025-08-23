@@ -1,6 +1,6 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput } from "@/types";
-import { callLLM } from "@/lib/llmClient";
+// LLM logic removed
 import { getRuleText } from "../util/rules";
 
 export class IfElseNode extends BaseNode {
@@ -19,11 +19,7 @@ export class IfElseNode extends BaseNode {
         if (typeof (val as any).output === "string") return (val as any).output;
         if (typeof (val as any).message === "string") return (val as any).message;
         // Gemini extraction
-        if ("gemini" in val && val.gemini) {
-          const g: any = (val as any).gemini;
-          const t = g?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (typeof t === "string") return t;
-        }
+        // LLM-specific extraction removed
       }
       try {
         return JSON.stringify(val);
@@ -39,36 +35,9 @@ export class IfElseNode extends BaseNode {
       return { error: "No condition specified" };
     }
 
-    // Compose a robust system prompt for natural language rule evaluation
-    const systemPrompt = `You are a deterministic flow router. Return only TRUE or FALSE. No explanation. Favor clear substring/intent matches. Empty/unknown inputs → FALSE.`;
-    const userPrompt = `Condition: ${condition}\nInput: ${typeof input === "string" ? input : JSON.stringify(input)}\nContext: ${JSON.stringify(nodeContext)}`;
-
-    try {
-      const overrides = context.runOptions?.overrides || {};
-      const llm = await callLLM(userPrompt, { temperature: 0, provider: overrides.provider as any, model: overrides.model });
-      const resultText = (llm.text || "").trim().toUpperCase();
-      const isTrue = resultText === "TRUE";
-      return {
-        output: isTrue ? "true" : "false",
-        llm: llm.raw,
-        provider: llm.provider,
-        info: JSON.stringify({
-          condition,
-          input,
-          context: nodeContext,
-          result: resultText,
-          value: input, // included in info for downstream use
-        }),
-      };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : "Unknown error",
-        info: JSON.stringify({
-          condition,
-          input,
-          context: nodeContext,
-        }),
-      };
-    }
+    // LLM disabled; perform a simple non-LLM check: substring match
+    const hay = typeof input === 'string' ? input : JSON.stringify(input);
+    const truthy = condition && hay.includes(condition);
+    return { output: truthy ? 'true' : 'false' } as any;
   }
 }

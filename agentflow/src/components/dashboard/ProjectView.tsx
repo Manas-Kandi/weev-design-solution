@@ -4,7 +4,7 @@ import { Card } from '@/components/primitives/card';
 import { Button } from '@/components/primitives/button';
 import { Share2 } from 'lucide-react';
 import FileManager from './components/FileManager';
-import MCPModal from './components/MCPModal';
+// import MCPModal from './components/MCPModal'; // Commented out due to missing file
 
 interface ProjectViewProps {
   project: {

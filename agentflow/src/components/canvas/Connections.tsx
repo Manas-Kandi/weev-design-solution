@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useImperativeHandle, forwardRef } from "react";
+import React, { useCallback, useEffect, useState, useImperativeHandle, forwardRef, useRef } from "react";
 import { CanvasNode, Connection } from "@/types";
 import { theme as defaultTheme } from "@/data/theme";
 
@@ -17,6 +17,7 @@ export interface ConnectionsHandle {
   handlePortMouseDown: (
     e: React.MouseEvent,
     nodeId: string,
+    portType: "input" | "output",
     outputId: string,
     portIndex: number
   ) => void;
@@ -69,18 +70,24 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
       currentPos: { x: number; y: number };
     } | null>(null);
 
+    const [snapTarget, setSnapTarget] = useState<
+      { nodeId: string; inputId: string; pos: { x: number; y: number } } | null
+    >(null);
+
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; connectionId: string } | null>(null);
+    const menuRef = useRef<HTMLDivElement | null>(null);
     const [hoveredConnection, setHoveredConnection] = useState<string | null>(null);
 
     const handlePortMouseDown = useCallback(
       (
         e: React.MouseEvent,
         nodeId: string,
+        portType: "input" | "output",
         outputId: string,
         portIndex: number
       ) => {
         e.stopPropagation();
-        const portPos = getPortPosition(nodeId, "output", portIndex);
+        const portPos = getPortPosition(nodeId, portType, portIndex);
         const canvasPos = screenToCanvas(e.clientX, e.clientY);
         setDragConnection({
           from: { nodeId, outputId, pos: portPos },
@@ -107,17 +114,9 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
             sourceOutput: dragConnection.from.outputId,
             targetNode: nodeId,
             targetInput: inputId,
+            direction: 'uni',
           };
-          const src = nodes.find((n) => n.id === connectionData.sourceNode);
-          const tgt = nodes.find((n) => n.id === connectionData.targetNode);
-          const srcPort = src?.outputs?.find((p) => p.id === connectionData.sourceOutput);
-          const tgtPort = tgt?.inputs?.find((p) => p.id === connectionData.targetInput);
-          if (!src || !tgt || !srcPort || !tgtPort) {
-            setDragConnection(null);
-            return;
-          }
-          // Allow all node types to connect to each other
-          // Removed type restriction to enable universal connectivity
+          // Allow all node types to connect regardless of declared port lists
           onConnectionsChange([...connections, connectionData]);
           try {
             await onCreateConnection(connectionData);
@@ -127,29 +126,71 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
           setDragConnection(null);
         }
       },
-      [dragConnection, nodes, connections, onConnectionsChange, onCreateConnection]
+      [dragConnection, connections, onConnectionsChange, onCreateConnection]
     );
 
     const handleCanvasMouseMove = useCallback(
       (e: React.MouseEvent) => {
         if (dragConnection) {
           const canvasPos = screenToCanvas(e.clientX, e.clientY);
-          setDragConnection((prev) =>
-            prev ? { ...prev, currentPos: canvasPos } : null
-          );
+
+          // Find nearest input port on other nodes using SCREEN distance for consistent UX across zoom levels
+          const thresholdScreen = 28; // pixels on screen
+          let closest: { nodeId: string; inputId: string; pos: { x: number; y: number }; distScreen: number } | null = null;
+          for (const n of nodes) {
+            if (n.id === dragConnection.from.nodeId) continue;
+            const inPosCanvas = getPortPosition(n.id, 'input', 0);
+            const inPosScreen = canvasToScreen(inPosCanvas.x, inPosCanvas.y);
+            const dx = inPosScreen.x - e.clientX;
+            const dy = inPosScreen.y - e.clientY;
+            const distScreen = Math.hypot(dx, dy);
+            const inputId = (n.inputs && n.inputs[0]?.id) || 'input-1';
+            if (!closest || distScreen < closest.distScreen) {
+              closest = { nodeId: n.id, inputId, pos: inPosCanvas, distScreen };
+            }
+          }
+
+          if (closest && closest.distScreen <= thresholdScreen) {
+            setSnapTarget({ nodeId: closest.nodeId, inputId: closest.inputId, pos: closest.pos });
+            setDragConnection((prev) => (prev ? { ...prev, currentPos: closest!.pos } : null));
+          } else {
+            setSnapTarget(null);
+            setDragConnection((prev) => (prev ? { ...prev, currentPos: canvasPos } : null));
+          }
         }
       },
-      [dragConnection, screenToCanvas]
+      [dragConnection, screenToCanvas, canvasToScreen, nodes, getPortPosition]
     );
 
     const handleCanvasMouseUp = useCallback(() => {
+      if (dragConnection && snapTarget) {
+        const connectionData: Connection = {
+          id:
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+              ? crypto.randomUUID()
+              : `conn-${Date.now()}`,
+          sourceNode: dragConnection.from.nodeId,
+          sourceOutput: dragConnection.from.outputId || 'out',
+          targetNode: snapTarget.nodeId,
+          targetInput: snapTarget.inputId,
+          direction: 'uni',
+        };
+        onConnectionsChange([...connections, connectionData]);
+        onCreateConnection(connectionData).catch((err) =>
+          console.error('Failed to save connection', err)
+        );
+      }
+      setSnapTarget(null);
       setDragConnection(null);
-    }, []);
+    }, [dragConnection, snapTarget, connections, onConnectionsChange, onCreateConnection]);
 
-    const handleContextMenu = useCallback((e: React.MouseEvent, connectionId: string) => {
+    const openMenuAtEvent = useCallback((e: React.MouseEvent, connectionId: string) => {
       e.preventDefault();
       e.stopPropagation();
-      setContextMenu({ x: e.clientX, y: e.clientY, connectionId });
+      // Position relative to the SVG so absolute menu aligns correctly
+      const svgEl = (e.currentTarget as SVGPathElement).ownerSVGElement;
+      const rect = svgEl ? svgEl.getBoundingClientRect() : { left: 0, top: 0 } as DOMRect;
+      setContextMenu({ x: e.clientX - rect.left, y: e.clientY - rect.top, connectionId });
     }, []);
 
     const handleDeleteConnection = useCallback((connectionId: string) => {
@@ -174,7 +215,16 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
     }, [onUndo]);
 
     useEffect(() => {
-      const handleClickOutside = () => setContextMenu(null);
+      const handleClickOutside = (evt: MouseEvent) => {
+        if (!contextMenu) return;
+        if (menuRef.current && evt.target instanceof Node) {
+          if (!menuRef.current.contains(evt.target)) {
+            setContextMenu(null);
+          }
+        } else {
+          setContextMenu(null);
+        }
+      };
       const handleKeyDown = (e: KeyboardEvent) => {
         if (contextMenu) {
           if (e.key === "Delete" || e.key === "Backspace") {
@@ -184,10 +234,10 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
           }
         }
       };
-      window.addEventListener("click", handleClickOutside);
+      window.addEventListener("mousedown", handleClickOutside);
       window.addEventListener("keydown", handleKeyDown);
       return () => {
-        window.removeEventListener("click", handleClickOutside);
+        window.removeEventListener("mousedown", handleClickOutside);
         window.removeEventListener("keydown", handleKeyDown);
       };
     }, [contextMenu, handleDeleteConnection]);
@@ -207,6 +257,10 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
         const isPulsing = pulsingConnectionIds.includes(connection.id);
         const isHovered = hoveredConnection === connection.id;
         const isContextMenuOpen = contextMenu?.connectionId === connection.id;
+        const dir = connection.direction || 'uni';
+        const markerStart = dir === 'bi' ? 'url(#arrow-start)' : undefined;
+        const markerEnd = 'url(#arrow-end)';
+        const dash = dir === 'request-response' ? '6 4' : undefined;
 
         return (
           <g key={connection.id} className="pointer-events-auto">
@@ -216,11 +270,16 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
               stroke={isPulsing ? "#60a5fa" : theme.accent}
               strokeWidth={isHovered || isContextMenuOpen ? 2 : 1.5}
               strokeOpacity={isHovered || isContextMenuOpen ? 0.8 : 0.6}
+              strokeDasharray={dash}
               style={{
                 cursor: "context-menu",
                 transition: "stroke-width 0.2s, stroke-opacity 0.2s",
+                color: isPulsing ? "#60a5fa" : theme.accent,
               }}
-              onContextMenu={(e) => handleContextMenu(e, connection.id)}
+              markerStart={markerStart}
+              markerEnd={markerEnd}
+              onContextMenu={(e) => openMenuAtEvent(e, connection.id)}
+              onClick={(e) => openMenuAtEvent(e, connection.id)}
               onMouseEnter={() => setHoveredConnection(connection.id)}
               onMouseLeave={() => setHoveredConnection(null)}
               role="button"
@@ -232,14 +291,15 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
               fill="none"
               stroke="transparent"
               strokeWidth={10}
-              onContextMenu={(e) => handleContextMenu(e, connection.id)}
+              onContextMenu={(e) => openMenuAtEvent(e, connection.id)}
+              onClick={(e) => openMenuAtEvent(e, connection.id)}
               onMouseEnter={() => setHoveredConnection(connection.id)}
               onMouseLeave={() => setHoveredConnection(null)}
             />
           </g>
         );
       },
-      [getPortPosition, canvasToScreen, pulsingConnectionIds, theme, hoveredConnection, contextMenu]
+      [getPortPosition, canvasToScreen, pulsingConnectionIds, theme, hoveredConnection, contextMenu, openMenuAtEvent]
     );
 
     useImperativeHandle(ref, () => ({
@@ -252,49 +312,117 @@ const Connections = forwardRef<ConnectionsHandle, ConnectionsProps>(
     return (
       <>
         <svg
-          className="absolute inset-0 w-full h-full pointer-events-none"
-          style={{ zIndex: 0 }}
+          className="absolute inset-0 w-full h-full"
+          style={{ zIndex: 0, pointerEvents: 'auto' }}
         >
+          <defs>
+            <marker id="arrow-end" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+            </marker>
+            <marker id="arrow-start" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 10 0 L 0 5 L 10 10 z" fill="currentColor" />
+            </marker>
+          </defs>
           <g>
             {connections.map((connection) => renderConnection(connection))}
-            {dragConnection && dragConnection.from && dragConnection.currentPos && (
-              <path
-                d={`M ${dragConnection.from.pos.x} ${dragConnection.from.pos.y} L ${dragConnection.currentPos.x} ${dragConnection.currentPos.y}`}
-                stroke={theme.accent}
-                strokeWidth="2"
-                fill="none"
-                strokeDasharray="5 5"
-              />
-            )}
+            {/* Snap target highlight */}
+            {dragConnection && snapTarget && (() => {
+              const s = canvasToScreen(snapTarget.pos.x, snapTarget.pos.y);
+              return (
+                <g>
+                  <circle cx={s.x} cy={s.y} r={8} fill="rgba(59,130,246,0.15)" stroke="rgba(59,130,246,0.4)" strokeWidth={2} />
+                  <circle cx={s.x} cy={s.y} r={3} fill="#3b82f6" />
+                </g>
+              );
+            })()}
+            {dragConnection && dragConnection.from && dragConnection.currentPos && (() => {
+              const fromScreen = canvasToScreen(
+                dragConnection.from.pos.x,
+                dragConnection.from.pos.y
+              );
+              const curScreen = canvasToScreen(
+                dragConnection.currentPos.x,
+                dragConnection.currentPos.y
+              );
+              return (
+                <path
+                  d={`M ${fromScreen.x} ${fromScreen.y} L ${curScreen.x} ${curScreen.y}`}
+                  stroke={theme.accent}
+                  strokeWidth="2"
+                  fill="none"
+                  strokeDasharray="5 5"
+                  markerEnd="url(#arrow-end)"
+                  style={{ color: theme.accent }}
+                />
+              );
+            })()}
           </g>
         </svg>
 
         {/* Context Menu for Deleting Connections */}
-        {contextMenu && (
-          <div
-            className="absolute bg-[rgba(30,30,32,0.95)] backdrop-blur-md border border-[rgba(255,255,255,0.1)] rounded-md shadow-lg z-50 py-1 px-2 min-w-[120px]"
-            style={{ top: contextMenu.y, left: contextMenu.x }}
-            role="menu"
-            aria-label="Connection context menu"
-          >
-            <button
-              className="w-full text-left px-2 py-1 text-white hover:bg-[rgba(255,255,255,0.1)] rounded text-sm font-medium"
-              onClick={() => handleDeleteConnection(contextMenu.connectionId)}
-              role="menuitem"
-              aria-label="Delete connection"
+        {contextMenu && (() => {
+          const conn = connections.find(c => c.id === contextMenu.connectionId);
+          const current = conn?.direction || 'uni';
+          const setDirection = (dir: 'uni' | 'request-response' | 'bi') => {
+            const idx = connections.findIndex(c => c.id === contextMenu.connectionId);
+            if (idx >= 0) {
+              const next = connections.slice();
+              next[idx] = { ...next[idx], direction: dir } as Connection;
+              onConnectionsChange(next);
+            }
+            setContextMenu(null);
+          };
+          return (
+            <div
+              className="absolute bg-[rgba(30,30,32,0.95)] backdrop-blur-md border border-[rgba(255,255,255,0.1)] rounded-md shadow-lg z-50 py-1 px-2 min-w-[220px]"
+              style={{ top: contextMenu.y, left: contextMenu.x }}
+              role="menu"
+              aria-label="Connection context menu"
+              ref={menuRef}
+              onMouseDown={(e) => e.stopPropagation()}
             >
-              Delete connection
-            </button>
-            <button
-              className="w-full text-left px-2 py-1 text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.1)] rounded text-sm"
-              onClick={() => setContextMenu(null)}
-              role="menuitem"
-              aria-label="Cancel"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+              <div className="px-2 py-1 text-[rgba(255,255,255,0.7)] text-xs">Direction</div>
+              <button
+                className={`w-full text-left px-2 py-1 rounded text-sm ${current === 'uni' ? 'text-white' : 'text-[rgba(255,255,255,0.8)]'} hover:bg-[rgba(255,255,255,0.1)]`}
+                onClick={() => setDirection('uni')}
+                role="menuitem"
+              >
+                {current === 'uni' ? '• ' : ''}Unidirectional (send only)
+              </button>
+              <button
+                className={`w-full text-left px-2 py-1 rounded text-sm ${current === 'request-response' ? 'text-white' : 'text-[rgba(255,255,255,0.8)]'} hover:bg-[rgba(255,255,255,0.1)]`}
+                onClick={() => setDirection('request-response')}
+                role="menuitem"
+              >
+                {current === 'request-response' ? '• ' : ''}Request & response back
+              </button>
+              <button
+                className={`w-full text-left px-2 py-1 rounded text-sm ${current === 'bi' ? 'text-white' : 'text-[rgba(255,255,255,0.8)]'} hover:bg-[rgba(255,255,255,0.1)]`}
+                onClick={() => setDirection('bi')}
+                role="menuitem"
+              >
+                {current === 'bi' ? '• ' : ''}Bidirectional (sync)
+              </button>
+              <div className="h-px my-1 bg-[rgba(255,255,255,0.08)]" />
+              <button
+                className="w-full text-left px-2 py-1 text-white hover:bg-[rgba(255,255,255,0.1)] rounded text-sm font-medium"
+                onClick={() => handleDeleteConnection(contextMenu.connectionId)}
+                role="menuitem"
+                aria-label="Delete connection"
+              >
+                Delete connection
+              </button>
+              <button
+                className="w-full text-left px-2 py-1 text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.1)] rounded text-sm"
+                onClick={() => setContextMenu(null)}
+                role="menuitem"
+                aria-label="Cancel"
+              >
+                Cancel
+              </button>
+            </div>
+          );
+        })()}
       </>
     );
   }

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { z } from 'zod';
 
 const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
@@ -33,14 +33,14 @@ export async function PATCH(
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
       try {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        const { data: userData } = await getSupabaseAdmin().auth.getUser(token);
         if (userData?.user?.id) userId = userData.user.id;
       } catch {}
     }
 
     // Optional ownership check (no-op if user_id not present)
     try {
-      await supabaseAdmin.from('projects').select('id').eq('id', id).eq('user_id', userId).maybeSingle();
+      await getSupabaseAdmin().from('projects').select('id').eq('id', id).eq('user_id', userId).maybeSingle();
     } catch {}
 
     const update = {
@@ -53,7 +53,7 @@ export async function PATCH(
     // Remove undefined keys
     Object.keys(update).forEach((k) => update[k] === undefined && delete update[k]);
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('projects')
       .update(update)
       .eq('id', id)

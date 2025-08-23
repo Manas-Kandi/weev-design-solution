@@ -2,10 +2,10 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { CanvasNode, Connection } from "@/types";
 import { theme } from "@/data/theme";
-import { nodeCategories } from "@/data/nodeDefinitions";
-import ChatBoxNode from "@/components/canvas/ChatBoxNode";
+import { simplifiedNodeCategories as nodeCategories } from "@/data/simplifiedNodeDefinitions";
 import Ports from "./Ports";
 import Connections, { ConnectionsHandle } from "./Connections";
+import { externalToolsCatalog, ExternalTool, getExternalToolIcon } from "@/data/externalTools";
 import TrackpadController, { type Transform } from "@/canvas/input/TrackpadController";
 
 const canvasStyle: React.CSSProperties = {
@@ -23,24 +23,23 @@ const rulerStyle: React.CSSProperties = {
   zIndex: 30,
 };
 
-interface Props {
+interface CanvasProps {
   nodes: CanvasNode[];
   connections: Connection[];
-  onNodeSelect: (n: CanvasNode | null) => void;
-  onNodeDrag: (id: string, pos: { x: number; y: number }) => void;
-  onConnectionsChange: (c: Connection[]) => void;
-  onCreateConnection: (connectionData: Connection) => Promise<void>;
-  selectedNodeId: string | null;
+  onNodeSelect: (node: CanvasNode | null) => void;
   onNodeUpdate: (node: CanvasNode) => void;
-  startNodeId: string | null; // NEW: controlled start node
-  onStartNodeChange: (id: string | null) => void; // NEW: propagate up
-  onNodeDelete?: (nodeId: string) => void; // <-- Add this line
-  // Tester visualization props
+  onConnectionsChange: (connections: Connection[]) => void;
+  onCreateConnection: (connectionData: Connection) => void;
+  onNodeDrag?: (nodeId: string, position: { x: number; y: number }) => void;
+  selectedNodeId?: string | null;
+  startNodeId?: string | null;
+  onStartNodeChange?: (nodeId: string | null) => void;
+  onNodeDelete?: (nodeId: string) => void;
   nodeStatuses?: Record<string, "running" | "success" | "error">;
   pulsingConnectionIds?: string[];
 }
 
-export default function CanvasEngine(props: Props) {
+export default function CanvasEngine(props: CanvasProps) {
   const {
     nodes,
     connections,
@@ -83,6 +82,8 @@ export default function CanvasEngine(props: Props) {
     nodeId: string;
   } | null>(null);
   const [pulsingNodeId, setPulsingNodeId] = useState<string | null>(null);
+  const [expandedToolPicker, setExpandedToolPicker] = useState<string | null>(null);
+  const [toolSearch, setToolSearch] = useState<Record<string, string>>({});
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const connectionsRef = useRef<ConnectionsHandle>(null);
@@ -151,17 +152,23 @@ export default function CanvasEngine(props: Props) {
 
   const getPortPosition = useCallback(
     (nodeId: string, portType: "input" | "output", portIndex: number) => {
-      const node = nodes.find((n) => n.id === nodeId);
+      const node = nodes.find((n: CanvasNode) => n.id === nodeId);
       if (!node) return { x: 0, y: 0 };
 
-      const ports = portType === "input" ? node.inputs : node.outputs;
-      const portCount = ports.length;
-      const spacing = node.size.height / (portCount + 1);
-
-      return {
-        x: node.position.x + (portType === "input" ? 0 : node.size.width),
-        y: node.position.y + spacing * (portIndex + 1),
-      };
+      // Our Ports UI renders floating 24x24 circles offset by 15px from edges.
+      // The connector should originate from the CENTER of those circles.
+      const actualNodeHeight = Math.max(46, node.size.height * 0.7);
+      if (portType === "input") {
+        return {
+          x: node.position.x - 3, // -15 + 12 (center of 24px)
+          y: node.position.y + actualNodeHeight / 2,
+        };
+      } else {
+        return {
+          x: node.position.x + node.size.width + 3, // +15 - 12 (center of 24px)
+          y: node.position.y + actualNodeHeight / 2,
+        };
+      }
     },
     [nodes]
   );
@@ -296,20 +303,24 @@ export default function CanvasEngine(props: Props) {
     (e: React.MouseEvent, nodeId: string) => {
       e.stopPropagation();
       if (isPanning) return;
-      const node = nodes.find((n) => n.id === nodeId);
+      const node = nodes.find((n: CanvasNode) => n.id === nodeId);
       if (!node) return;
-      onNodeSelect(node);
+
+      // For external-apps nodes, allow dragging but don't open properties panel
+      if (node.subtype !== 'external-apps') {
+        onNodeSelect(node);
+      }
+
       setIsDragging(true);
       setDraggedNode(nodeId);
-      
+
       // Calculate precise drag offset for cursor lock
-      const rect = e.currentTarget.getBoundingClientRect();
       const canvasPos = screenToCanvas(e.clientX, e.clientY);
       setDragOffset({
         x: canvasPos.x - node.position.x,
         y: canvasPos.y - node.position.y,
       });
-      
+
       // Set cursor to grabbing for visual feedback
       document.body.style.cursor = 'grabbing';
       document.body.style.userSelect = 'none';
@@ -452,10 +463,10 @@ export default function CanvasEngine(props: Props) {
   // Zoom to fit
   const zoomToFit = () => {
     if (nodes.length === 0) return;
-    const minX = Math.min(...nodes.map((n) => n.position.x));
-    const minY = Math.min(...nodes.map((n) => n.position.y));
-    const maxX = Math.max(...nodes.map((n) => n.position.x + n.size.width));
-    const maxY = Math.max(...nodes.map((n) => n.position.y + n.size.height));
+    const minX = Math.min(...nodes.map((n: CanvasNode) => n.position.x));
+    const minY = Math.min(...nodes.map((n: CanvasNode) => n.position.y));
+    const maxX = Math.max(...nodes.map((n: CanvasNode) => n.position.x + n.size.width));
+    const maxY = Math.max(...nodes.map((n: CanvasNode) => n.position.y + n.size.height));
     const padding = 40;
     const canvasW = canvasRef.current?.offsetWidth || 800;
     const canvasH = canvasRef.current?.offsetHeight || 600;
@@ -498,7 +509,7 @@ export default function CanvasEngine(props: Props) {
     (sourceNodeId: string, outputPortId: string, targetNodeId: string, inputPortId: string) => {
       // Check if a connection already exists between these nodes
       const existingConnection = connections.find(
-        (c) => c.sourceNodeId === sourceNodeId && c.targetNodeId === targetNodeId
+        (c: Connection) => c.sourceNodeId === sourceNodeId && c.targetNodeId === targetNodeId
       );
 
       if (!existingConnection) {
@@ -511,12 +522,12 @@ export default function CanvasEngine(props: Props) {
           targetPortId: inputPortId,
           createdAt: Date.now(),
         };
-        onConnectionsChange((prev) => [...prev, newConnection]);
+        onConnectionsChange((prev: Connection[]) => [...prev, newConnection]);
         onCreateConnection?.(newConnection);
       }
       // If a connection exists, we allow multiple connections on the same ports (fan-in/fan-out)
       // So we still clear the active connection state to reset the UI
-      connectionsRef.current?.setActiveConnection(null);
+      // connectionsRef.current?.setActiveConnection(null); // Commented out as setActiveConnection is not defined
     },
     [connections, onCreateConnection]
   );
@@ -565,7 +576,6 @@ export default function CanvasEngine(props: Props) {
         onCreateConnection={onCreateConnection}
         pulsingConnectionIds={pulsingConnectionIds}
         theme={theme}
-        onConnect={handleConnect}
       />
 
       {/* Context Menu */}
@@ -606,10 +616,11 @@ export default function CanvasEngine(props: Props) {
           zIndex: 2,
           transform: `translate(${viewportTransform.x}px, ${viewportTransform.y}px) scale(${viewportTransform.scale})`,
           transformOrigin: "0 0",
+          pointerEvents: 'none',
         }}
       >
-        {nodes.map((node) => {
-          const IconComponent = getNodeIcon(node);
+        {nodes.map((node: CanvasNode) => {
+          let IconComponent = getNodeIcon(node);
           const isSelected = selectedNodeIds.includes(node.id);
           const isStart = node.id === startNodeId;
           const status = nodeStatuses[node.id];
@@ -622,32 +633,7 @@ export default function CanvasEngine(props: Props) {
               ? "0 0 0 3px rgba(239,68,68,0.5), 0 0 14px rgba(239,68,68,0.7)"
               : undefined;
 
-          // Chat Interface Node Rendering
-          if (node.type === "ui" && node.subtype === "chat") {
-            return (
-              <ChatBoxNode
-                key={node.id}
-                node={node}
-                isSelected={isSelected}
-                onNodeMouseDown={handleNodeMouseDown}
-                onNodeClick={handleNodeClick}
-                onNodeContextMenu={handleNodeContextMenu}
-                onNodeUpdate={handleNodeUpdateWithPulse}
-                nodes={nodes}
-                connections={connections}
-                theme={theme}
-                onOutputPortMouseDown={(e, nodeId, outputId, index) =>
-                  connectionsRef.current?.handlePortMouseDown(
-                    e,
-                    nodeId,
-                    outputId,
-                    index
-                  )
-                }
-                isPulsing={pulsingNodeId === node.id}
-              />
-            );
-          }
+          // Chat Interface Node Rendering (removed)
 
           return (
             <div
@@ -661,15 +647,13 @@ export default function CanvasEngine(props: Props) {
                 height: Math.max(46, node.size.height * 0.7),
                 backgroundColor: "rgba(20, 20, 22, 0.32)",
                 backdropFilter: "blur(16px) saturate(160%)",
-                border: "1px solid rgba(255, 255, 255, 0.01)",
-                borderRadius: "22px",
+                border: "1px solid rgba(255, 255, 255, 0.025)", // Very subtle
+                borderRadius: "6px", // Less rounded than current 8px
                 boxShadow:
                   glowShadow ||
                   (isSelected
-                    ? `0 0 0 1.5px ${getNodeAccentColor(node)}70, 0 0 22px ${getNodeAccentColor(node)}38, 0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255,255,255,0.1), inset 0 -1px 1.5px rgba(255,255,255,0.04)`
-                    : isStart
-                    ? `0 0 0 1.5px #30d15870, 0 0 22px #30d15838, 0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255,255,255,0.1), inset 0 -1px 1.5px rgba(255,255,255,0.04)`
-                    : "0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255, 255, 255, 0.1), inset 0 -1px 1.5px rgba(255,255,255,0.04)"),
+                    ? `0 0 16px 1px ${getNodeAccentColor(node)}25, 0 2px 8px rgba(0,0,0,0.12)`
+                    : "0 1px 4px rgba(0, 0, 0, 0.08)"), // Much softer
                 backgroundImage: "linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01))",
                 zIndex: isSelected ? 10 : isStart ? 9 : 1,
                 transition:
@@ -686,8 +670,8 @@ export default function CanvasEngine(props: Props) {
                 // Skip hover effects during drag for better performance
                 if (!isSelected && !isStart && draggedNode !== node.id) {
                   e.currentTarget.style.backgroundColor = "rgba(22, 22, 24, 0.42)";
-                  e.currentTarget.style.boxShadow = `0 0 14px ${getNodeAccentColor(node)}60, 0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255, 255, 255, 0.12), inset 0 -1px 1.5px rgba(255,255,255,0.06)`;
-                  e.currentTarget.style.borderColor = `${getNodeAccentColor(node)}40`;
+                  e.currentTarget.style.boxShadow = `0 0 14px ${getNodeAccentColor(node)}45, 0 2px 8px rgba(0,0,0,0.12)`;
+                  e.currentTarget.style.borderColor = `${getNodeAccentColor(node)}35`;
                   (e.currentTarget as HTMLElement).style.filter = "brightness(1.1) saturate(1.05)";
                 }
               }}
@@ -695,8 +679,8 @@ export default function CanvasEngine(props: Props) {
                 // Skip hover effects during drag for better performance
                 if (!isSelected && !isStart && draggedNode !== node.id) {
                   e.currentTarget.style.backgroundColor = "rgba(20, 20, 22, 0.32)";
-                  e.currentTarget.style.boxShadow = "0 5px 18px rgba(0,0,0,0.42), inset 0 1px 1.5px rgba(255, 255, 255, 0.1), inset 0 -1px 1.5px rgba(255,255,255,0.04)";
-                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.01)";
+                  e.currentTarget.style.boxShadow = "0 1px 4px rgba(0, 0, 0, 0.08)";
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.025)";
                   (e.currentTarget as HTMLElement).style.filter = "";
                 }
               }}
@@ -730,52 +714,199 @@ export default function CanvasEngine(props: Props) {
                 </div>
               )}
               {/* Node Content */}
-              <div 
-                className="w-full h-full flex flex-col justify-center"
-                style={{ padding: "8px 14px" }}
-              >
-                {/* Compact Header Row */}
-                <div className="flex items-center gap-2">
-                  {IconComponent && (
-                    <IconComponent
-                      size={18}
-                      style={{ 
-                        color: `${getNodeAccentColor(node)}CC`, // 80% opacity for toned down look
-                        flexShrink: 0,
-                        filter: `drop-shadow(0 0 4px ${getNodeAccentColor(node)}40)`
+              <div className="w-full h-full" style={{ padding: "8px 12px" }}>
+                {/* Header Row */}
+                <div className="flex items-center gap-2 mb-2">
+                  {(() => {
+                    if (node.subtype === 'external-apps' && (node.data as any)?.tool?.id) {
+                      IconComponent = getExternalToolIcon((node.data as any).tool.id);
+                    }
+                    return IconComponent ? (
+                      <IconComponent size={16} style={{ color: `${getNodeAccentColor(node)}CC` }} />
+                    ) : null;
+                  })()}
+                  <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getNodeTitle(node)}</div>
+                  {node.subtype === 'external-apps' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setExpandedToolPicker(expandedToolPicker === node.id ? null : node.id); }}
+                      style={{ padding: '4px 8px', fontSize: 11, borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.85)' }}
+                    >
+                      {expandedToolPicker === node.id ? 'Close' : 'Browse'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Special UI for External Apps */}
+                {node.subtype === 'external-apps' ? (
+                  <div className="flex flex-col gap-6" style={{ color: '#e5e7eb' }}>
+                    {/* Selected Tool Summary (no duplicate title/icon) */}
+                    {(node.data as any)?.tool ? (
+                      <div>
+                        <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 2 }}>
+                          {(node.data as any).tool.category}
+                        </div>
+                        <div style={{ fontSize: 11.5, opacity: 0.8, lineHeight: 1.3 }}>
+                          {(node.data as any).tool.description}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, opacity: 0.7 }}>No tool selected. Click Browse.</div>
+                    )}
+
+                    {/* Access Mode - Simplified & Small */}
+                    {(node.data as any)?.tool && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                        <span style={{ fontSize: 10, opacity: 0.6 }}>Access:</span>
+                        <div style={{ display: 'flex', gap: 2 }}>
+                          {(['read', 'write', 'both'] as const).map((mode) => (
+                            <button
+                              key={mode}
+                              onClick={() => {
+                                const nd = { ...node, data: { ...(node.data as any), accessMode: mode } } as any;
+                                onNodeUpdate(nd);
+                              }}
+                              style={{
+                                padding: '1px 6px',
+                                borderRadius: 3,
+                                fontSize: 9,
+                                fontWeight: 500,
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                background: (node.data as any)?.accessMode === mode 
+                                  ? 'rgba(59,130,246,0.25)' 
+                                  : 'rgba(255,255,255,0.02)',
+                                color: (node.data as any)?.accessMode === mode 
+                                  ? 'white' : 'rgba(255,255,255,0.65)',
+                                cursor: 'pointer',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.3px'
+                              }}
+                            >
+                              {mode.charAt(0)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center" style={{ height: '100%' }} />
+                )}
+              </div>
+
+              {/* Floating Tool Picker */}
+              {node.subtype === 'external-apps' && expandedToolPicker === node.id && (
+                <div
+                  className="absolute"
+                  style={{
+                    top: 36,
+                    right: -12,
+                    width: 320,
+                    maxHeight: 360,
+                    background: 'rgba(10,10,12,0.92)',
+                    backdropFilter: 'blur(16px) saturate(140%)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 14,
+                    padding: 12,
+                    zIndex: 50,
+                    boxShadow: '0 12px 48px rgba(0,0,0,0.5)'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <input
+                      type="text"
+                      placeholder="Search tools…"
+                      value={toolSearch[node.id] || ''}
+                      onChange={(e) => setToolSearch({ ...toolSearch, [node.id]: e.target.value })}
+                      style={{
+                        flex: 1,
+                        height: 32,
+                        borderRadius: 8,
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        padding: '0 10px',
+                        fontSize: 12,
+                        color: 'white',
+                        outline: 'none',
                       }}
                     />
-                  )}
-                  <div
-                    style={{
-                      color: "rgba(255, 255, 255, 0.9)",
-                      fontSize: "13px",
-                      fontWeight: "600",
-                      lineHeight: "1.2",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {getNodeTitle(node)}
+                    <button
+                      onClick={() => setExpandedToolPicker(null)}
+                      style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.85)', fontSize: 11 }}
+                    >
+                      Done
+                    </button>
                   </div>
+                  <ExternalToolsList
+                    search={toolSearch[node.id] || ''}
+                    selectedId={(node.data as any)?.tool?.id || ''}
+                    onSelect={(tool) => {
+                      const nd = { ...node, data: { ...(node.data as any), tool, title: tool.name } } as any;
+                      onNodeUpdate(nd);
+                      // store recent
+                      try {
+                        const key = 'af_recent_tools';
+                        const prev = JSON.parse(localStorage.getItem(key) || '[]');
+                        const next = [tool.id, ...prev.filter((id: string) => id !== tool.id)].slice(0, 8);
+                        localStorage.setItem(key, JSON.stringify(next));
+                      } catch {}
+                      setExpandedToolPicker(null);
+                    }}
+                    withFilter
+                  />
                 </div>
-                {/* Description intentionally removed for minimal design */}
-              </div>
+              )}
 
               <Ports
                 node={node}
-                theme={theme}
-                accentColor={getNodeAccentColor(node)}
-                onInputPortMouseUp={(e, nodeId, inputId) =>
-                  connectionsRef.current?.handlePortMouseUp(e, nodeId, inputId)
+                onInputPortMouseUp={(e, nodeId) =>
+                  connectionsRef.current?.handlePortMouseUp(
+                    e,
+                    nodeId,
+                    (node.inputs && node.inputs[0]?.id) || 'input-1'
+                  )
                 }
-                onOutputPortMouseDown={(e, nodeId, outputId, index) =>
+                onOutputPortMouseDown={(e, nodeId) =>
                   connectionsRef.current?.handlePortMouseDown(
                     e,
                     nodeId,
-                    outputId,
-                    index
+                    'output',
+                    (node.outputs && node.outputs[0]?.id) || 'output-1',
+                    0
+                  )
+                }
+                onInputPortMouseDown={(e, nodeId) =>
+                  connectionsRef.current?.handlePortMouseDown(
+                    e,
+                    nodeId,
+                    'input',
+                    (node.inputs && node.inputs[0]?.id) || 'input-1',
+                    0
+                  )
+                }
+                onOutputPortMouseUp={(e, nodeId) =>
+                  connectionsRef.current?.handlePortMouseUp(
+                    e,
+                    nodeId,
+                    (node.inputs && node.inputs[0]?.id) || 'input-1'
+                  )
+                }
+                onContextInputPortMouseDown={(e, nodeId) =>
+                  connectionsRef.current?.handlePortMouseDown(
+                    e,
+                    nodeId,
+                    'input',
+                    (node.inputs && node.inputs[0]?.id) || 'input-1',
+                    0
+                  )
+                }
+                onContextOutputPortMouseDown={(e, nodeId) =>
+                  connectionsRef.current?.handlePortMouseDown(
+                    e,
+                    nodeId,
+                    'output',
+                    (node.outputs && node.outputs[0]?.id) || 'output-1',
+                    0
                   )
                 }
               />
@@ -824,6 +955,161 @@ export default function CanvasEngine(props: Props) {
         }}
       >
         {Math.round(viewportTransform.scale * 100)}%
+      </div>
+    </div>
+  );
+}
+
+function ExternalToolsList({
+  search,
+  selectedId,
+  onSelect,
+  withFilter = false,
+}: {
+  search: string;
+  selectedId: string;
+  onSelect: (tool: ExternalTool) => void;
+  withFilter?: boolean;
+}) {
+  const q = search.trim().toLowerCase();
+  const keyRecent = 'af_recent_tools';
+  let recent: string[] = [];
+  try { recent = JSON.parse(localStorage.getItem(keyRecent) || '[]'); } catch {}
+
+  const match = (t: ExternalTool) => {
+    const hay = [t.name, t.category, ...(t.aliases || []), ...(t.capabilities || [])]
+      .join(' ') 
+      .toLowerCase();
+    return hay.includes(q);
+  };
+
+  const filtered = (q ? externalToolsCatalog.filter(match) : externalToolsCatalog);
+
+  const categories = Array.from(new Set(filtered.map(t => t.category)));
+
+  const [expanded, setExpanded] = React.useState<Record<string, boolean>>(
+    Object.fromEntries(categories.map(c => [c, true]))
+  );
+  const [selectedCategory, setSelectedCategory] = React.useState<string>('All');
+
+  const visibleCategories = selectedCategory === 'All' ? categories : categories.filter(c => c === selectedCategory);
+
+  const toolsByCategory = (cat: string) => filtered.filter(t => t.category === cat);
+
+  return (
+    <div style={{ marginTop: 8, maxHeight: 260, overflowY: 'auto' }} className="figma-scrollbar">
+      {withFilter && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            style={{
+              height: 28,
+              borderRadius: 6,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'white',
+              fontSize: 12,
+              padding: '0 8px',
+            }}
+          >
+            <option>All</option>
+            {categories.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Recently Used */}
+      {recent.length > 0 && !q && selectedCategory === 'All' && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 11, opacity: 0.75, margin: '6px 0' }}>Recently Used</div>
+          {recent
+            .map(id => externalToolsCatalog.find(t => t.id === id))
+            .filter(Boolean)
+            .slice(0, 6)
+            .map((t) => (
+              <ToolCard key={(t as ExternalTool).id} tool={t as ExternalTool} selected={selectedId === (t as ExternalTool).id} onSelect={onSelect} />
+            ))}
+        </div>
+      )}
+
+      {/* Grouped Categories */}
+      {visibleCategories.map((cat) => (
+        <div key={cat} style={{ marginBottom: 12 }}>
+          <button
+            onClick={() => setExpanded({ ...expanded, [cat]: !expanded[cat] })}
+            style={{
+              width: '100%',
+              textAlign: 'left',
+              fontSize: 11,
+              letterSpacing: '0.3px',
+              color: 'rgba(255,255,255,0.75)',
+              padding: '4px 0',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer'
+            }}
+          >
+            {expanded[cat] ? '▾' : '▸'} {cat}
+          </button>
+          {expanded[cat] && (
+            <div>
+              {toolsByCategory(cat).map((t) => (
+                <ToolCard key={t.id} tool={t} selected={selectedId === t.id} onSelect={onSelect} />
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {filtered.length === 0 && (
+        <div style={{ fontSize: 11, opacity: 0.7 }}>No tools match “{search}”.</div>
+      )}
+    </div>
+  );
+}
+
+function ToolCard({ tool, selected, onSelect }: { tool: ExternalTool; selected: boolean; onSelect: (t: ExternalTool) => void }) {
+  const Icon = getExternalToolIcon(tool.id);
+  const complexity = tool.complexity || 'simple';
+  const complexityChip = complexity === 'simple' ? '🟢 Simple' : complexity === 'medium' ? '🟡 Medium' : '🔴 Complex';
+  const usage = tool.usage ? `• Used by ${Math.round(tool.usage / 100000)/10}M+ workflows` : '';
+  const isSelected = selected;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '8px 10px',
+        marginBottom: 6,
+        borderRadius: 10,
+        background: isSelected ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        color: 'rgba(255,255,255,0.9)',
+        fontSize: 12,
+      }}
+    >
+      {Icon && <Icon size={16} style={{ color: 'rgba(255,255,255,0.85)' }} />}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tool.name}</div>
+          <div style={{ fontSize: 10, opacity: 0.75 }}>{complexityChip}</div>
+        </div>
+        <div style={{ fontSize: 11, opacity: 0.7 }}>{tool.category} {usage}</div>
+        <div style={{ fontSize: 11, opacity: 0.6, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tool.description}</div>
+      </div>
+      <div>
+        {!isSelected ? (
+          <button
+            onClick={() => onSelect(tool)}
+            style={{ padding: '4px 8px', fontSize: 11, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.9)' }}
+          >
+            [+]
+          </button>
+        ) : (
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>✓ Added</span>
+        )}
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ import type {
   CanvasNode,
   Connection,
 } from './index';
-import type { ToolEnvironment } from '@/features/testing/types/toolSimulator';
+import type { NodeTestScenario } from "./tester";
 
 // Re-export ToolEnvironment for external consumers
 export type { ToolEnvironment };
@@ -154,7 +154,7 @@ export interface McpToolDefinition {
 }
 
 /**
- * Error injection configuration for reproducible testing.
+ // Error injection configuration for reproducible testing.
  */
 export interface McpErrorInjection {
   /** Error kind identifier; up to the consumer/tooling. */
@@ -203,7 +203,7 @@ export interface McpExport {
  * Alias to the app's RunManifest for test history persistence, exposed for MCP consumers.
  * This keeps a single source of truth while satisfying the MCP acceptance criteria.
  */
-export type McpRunManifest = import('@/features/testing/types/tester').RunManifest;
+export type McpRunManifest = any; // import("../features/testing/types/tester").RunManifest;
 
 /**
  * Minimal runtime validation result.

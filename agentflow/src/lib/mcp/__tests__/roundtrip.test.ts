@@ -75,7 +75,8 @@ describe('MCP round-trip', () => {
 
     expect(validation.valid).toBe(true);
     expect(doc.flows[0].nodes.length).toBe(2);
-    expect(doc.tools.length).toBeGreaterThan(0);
+    // Tool mocks have been removed, so we expect 0 tools
+    expect(doc.tools.length).toBe(0);
 
     const back = mapFromMcpExport(doc);
     // Compare normalized shapes (ports default to input-1/output-1 on import)

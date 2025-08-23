@@ -2,7 +2,7 @@ import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutputObject } from "@/types";
 import { MessageNodeData } from "./types";
 import { getPresetTemplate } from "./presets";
-import { callLLM } from "@/lib/llmClient";
+// LLM logic removed
 
 export class MessageNode extends BaseNode {
   async execute(context: NodeContext): Promise<NodeOutputObject> {
@@ -24,17 +24,8 @@ export class MessageNode extends BaseNode {
       // Build prompt using preset and configuration
       const prompt = this.buildPrompt(preset, tone, formatHint, audience, data.customTemplate, mergedContext);
       
-      // Call LLM with deterministic settings for consistent output
-      const llmResult = await callLLM(prompt, {
-        provider: "nvidia",
-        model: process.env.NEXT_PUBLIC_NVIDIA_MODEL || "openai/gpt-oss-120b",
-        temperature: 0.1, // Low temperature for deterministic output
-        max_tokens: 2000,
-        seed: this.generateDeterministicSeed(mergedContext, preset, tone, formatHint, audience)
-      });
-
-      // Clean and format the output
-      const cleanedContent = this.cleanOutput(llmResult.text, formatHint);
+      // LLM disabled; return prompt merged context directly
+      const cleanedContent = this.cleanOutput(mergedContext, formatHint);
 
       // Return NodeOutput compatible format
       return {
@@ -46,8 +37,8 @@ export class MessageNode extends BaseNode {
           tone,
           formatHint,
           ...(audience && { audience }),
-          model: process.env.NEXT_PUBLIC_NVIDIA_MODEL || "openai/gpt-oss-120b",
-          tokens: llmResult.raw?.usage?.total_tokens
+          model: 'disabled',
+          tokens: 0
         }
       };
 

@@ -17,5 +17,9 @@ export interface RunExecutionOptions {
     seed?: string;
   };
   // Optional assertions to evaluate after flow completes
-  assertions?: import("@/lib/assertions").AssertionSpec[];
+  assertions?: import("../lib/assertions").AssertionSpec[];
+  // Performance/UX controls
+  enableVisualDelay?: boolean; // when true, apply visual delay per node
+  visualDelayMs?: number; // delay duration; defaults to 500ms when enabled
+  captureContextDiff?: boolean; // when true, compute flowContext snapshots and diffs
 }

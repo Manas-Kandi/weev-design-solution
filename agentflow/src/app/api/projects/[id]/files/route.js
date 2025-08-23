@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -20,14 +20,14 @@ export async function GET(req, { params }) {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
       try {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        const { data: userData } = await getSupabaseAdmin().auth.getUser(token);
         if (userData?.user?.id) userId = userData.user.id;
       } catch {}
     }
 
     // Ownership check (enforce if user_id column exists)
     try {
-      const { data: proj, error: projErr } = await supabaseAdmin
+      const { data: proj, error: projErr } = await getSupabaseAdmin()
         .from('projects')
         .select('id, user_id')
         .eq('id', projectId)
@@ -51,7 +51,7 @@ export async function GET(req, { params }) {
           { status: 400, headers: { 'Content-Type': 'application/json' } }
         );
       }
-      const { data: fileRow, error: fileErr } = await supabaseAdmin
+      const { data: fileRow, error: fileErr } = await getSupabaseAdmin()
         .from('project_files')
         .select('id, file_path, project_id, name, file_type')
         .eq('id', fileId)
@@ -64,7 +64,7 @@ export async function GET(req, { params }) {
       }
       // Double-check ownership (if projects.user_id exists)
       try {
-        const { data: proj, error: projErr } = await supabaseAdmin
+        const { data: proj, error: projErr } = await getSupabaseAdmin()
           .from('projects')
           .select('id, user_id')
           .eq('id', projectId)
@@ -77,7 +77,7 @@ export async function GET(req, { params }) {
           );
         }
       } catch {}
-      const { data: signed, error: signedErr } = await supabaseAdmin.storage
+      const { data: signed, error: signedErr } = await getSupabaseAdmin().storage
         .from('project-files')
         .createSignedUrl(fileRow.file_path, 60 * 10); // 10 minutes
       if (signedErr) {
@@ -91,7 +91,7 @@ export async function GET(req, { params }) {
       });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('project_files')
       .select('*')
       .eq('project_id', projectId)
@@ -130,14 +130,14 @@ export async function POST(req, { params }) {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
       try {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        const { data: userData } = await getSupabaseAdmin().auth.getUser(token);
         if (userData?.user?.id) userId = userData.user.id;
       } catch {}
     }
 
     // Ownership check (enforce if user_id column exists)
     try {
-      const { data: proj, error: projErr } = await supabaseAdmin
+      const { data: proj, error: projErr } = await getSupabaseAdmin()
         .from('projects')
         .select('id, user_id')
         .eq('id', projectId)
@@ -163,7 +163,7 @@ export async function POST(req, { params }) {
     const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
     const path = `${projectId}/${Date.now()}-${safeName}`;
 
-    const { data: uploaded, error: uploadErr } = await supabaseAdmin.storage
+    const { data: uploaded, error: uploadErr } = await getSupabaseAdmin().storage
       .from('project-files')
       .upload(path, file, { cacheControl: '3600', upsert: false });
     if (uploadErr) {
@@ -182,7 +182,7 @@ export async function POST(req, { params }) {
       size_bytes: file.size ?? null,
     };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('project_files')
       .insert(record)
       .select()
@@ -190,7 +190,7 @@ export async function POST(req, { params }) {
 
     if (error) {
       // best-effort cleanup storage if DB insert fails
-      try { await supabaseAdmin.storage.from('project-files').remove([path]); } catch {}
+      try { await getSupabaseAdmin().storage.from('project-files').remove([path]); } catch {}
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
@@ -225,14 +225,14 @@ export async function DELETE(req, { params }) {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
       try {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        const { data: userData } = await getSupabaseAdmin().auth.getUser(token);
         if (userData?.user?.id) userId = userData.user.id;
       } catch {}
     }
 
     // Ownership check (enforce if user_id column exists)
     try {
-      const { data: proj, error: projErr } = await supabaseAdmin
+      const { data: proj, error: projErr } = await getSupabaseAdmin()
         .from('projects')
         .select('id, user_id')
         .eq('id', projectId)
@@ -247,7 +247,7 @@ export async function DELETE(req, { params }) {
     } catch {}
 
     // Load file to get path and ensure it belongs to project
-    const { data: fileRow, error: fileErr } = await supabaseAdmin
+    const { data: fileRow, error: fileErr } = await getSupabaseAdmin()
       .from('project_files')
       .select('id, file_path, project_id')
       .eq('id', fileId)
@@ -260,7 +260,7 @@ export async function DELETE(req, { params }) {
     }
 
     const filePath = fileRow.file_path;
-    const { error: storageErr } = await supabaseAdmin.storage
+    const { error: storageErr } = await getSupabaseAdmin().storage
       .from('project-files')
       .remove([filePath]);
     if (storageErr) {
@@ -270,7 +270,7 @@ export async function DELETE(req, { params }) {
       );
     }
 
-    const { error: dbErr } = await supabaseAdmin
+    const { error: dbErr } = await getSupabaseAdmin()
       .from('project_files')
       .delete()
       .eq('id', fileId);

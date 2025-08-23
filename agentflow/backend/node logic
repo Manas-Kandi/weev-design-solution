@@ -1,0 +1,369 @@
+/*
+  Node Logic (prototype)
+  ----------------------
+  This file defines a minimal, framework‑agnostic runtime shape for nodes.
+  It starts with the Brain node, which consumes three inputs:
+    1) presetRules: Hardcoded, system‑level rules for the node
+    2) userRules: A free‑form prompt or structured rules set by the user
+    3) contextSummary: Summarized context of prior nodes with extra weight for the immediate previous node
+
+  The Brain node is special: It can inspect the list of connected tools and decide which tool(s)
+  to invoke based on the combined intent inferred from presetRules, userRules, and context.
+*/
+
+// ----------------------------
+// Lightweight type annotations
+// ----------------------------
+
+/** @typedef {{ id: string, name: string, capabilities: string[], meta?: Record<string, any> }} Tool */
+
+/**
+ * @typedef {Object} NodeExecutionInputs
+ * @property {Record<string, any>} presetRules     Hardcoded system rules for the node
+ * @property {string | Record<string, any>} userRules  User prompt or structured rules
+ * @property {{
+ *   immediatePrevious?: Record<string, any>,
+ *   previousChain?: Record<string, any>[],
+ *   globals?: Record<string, any>
+ * }} contextSummary  Summaries from previous nodes, with emphasis on immediatePrevious
+ * @property {Tool[]} [connectedTools]            For Brain, the tools connected to this node
+ */
+
+/**
+ * @typedef {Object} NodeExecutionResult
+ * @property {string} nodeId
+ * @property {string} nodeType
+ * @property {Record<string, any>} decision  High‑level reasoning outcome
+ * @property {{ toolId: string, reason: string, args?: Record<string, any> }[]} plannedToolInvocations
+ * @property {Record<string, any>} output    The node's primary output/payload
+ */
+
+// ----------------------------
+// LLM Adapter (NVIDIA Integrate API via OpenAI-compatible schema)
+// ----------------------------
+
+const LLM_BASE_URL = process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1';
+const LLM_MODEL = process.env.NVIDIA_MODEL || 'moonshotai/kimi-k2-instruct';
+const LLM_API_KEY = process.env.NVIDIA_API_KEY; // DO NOT hardcode keys
+
+/**
+ * Call the LLM with instructions and return raw text.
+ * Non-streaming for simplicity; can be extended to streaming if needed.
+ * @param {string} system
+ * @param {string} user
+ * @param {object} [opts]
+ * @returns {Promise<string>}
+ */
+async function llmComplete(system, user, opts = {}) {
+  const body = {
+    model: LLM_MODEL,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+    temperature: opts.temperature ?? 0.4,
+    top_p: opts.top_p ?? 0.9,
+    max_tokens: opts.max_tokens ?? 1200,
+    stream: false,
+  };
+
+  if (!LLM_API_KEY) {
+    throw new Error('NVIDIA_API_KEY is not set');
+  }
+
+  const res = await fetch(`${LLM_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${LLM_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`LLM error: ${res.status} ${t}`);
+  }
+  const data = await res.json();
+  const content = data?.choices?.[0]?.message?.content ?? '';
+  return content;
+}
+
+/**
+ * Parse a JSON object reliably from a model response.
+ * Accepts raw JSON or fenced code blocks.
+ * @param {string} text
+ */
+function safeParseJson(text) {
+  if (!text) return null;
+  const match = text.match(/```(?:json)?\n([\s\S]*?)\n```/i);
+  const payload = match ? match[1] : text;
+  try {
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+}
+
+// ----------------------------
+// Shared helpers
+// ----------------------------
+
+/**
+ * Heavily weight the immediate previous context, then blend with prior chain and globals.
+ * @param {NodeExecutionInputs['contextSummary']} ctx
+ */
+function buildWeightedContext(ctx) {
+  const immediate = ctx?.immediatePrevious || {};
+  const chain = Array.isArray(ctx?.previousChain) ? ctx.previousChain : [];
+  const globals = ctx?.globals || {};
+
+  // Very simple weighted merge: immediate (0.7), chain (0.2), globals (0.1)
+  const weighted = {
+    emphasis: 0.7,
+    ...immediate,
+  };
+
+  const chainBlend = chain.reduce((acc, item) => Object.assign(acc, item), {});
+  const combined = {
+    ...weighted,
+    _chain: chainBlend,
+    _globals: globals,
+    _weights: { immediate: 0.7, chain: 0.2, globals: 0.1 },
+  };
+  return combined;
+}
+
+/**
+ * Extract a naive intent signature from userRules + context.
+ * In a real system, this would use an LLM or robust parser.
+ * @param {string|Record<string, any>} userRules
+ * @param {Record<string, any>} combinedContext
+ */
+function deriveIntent(userRules, combinedContext) {
+  const text =
+    (typeof userRules === 'string' ? userRules : JSON.stringify(userRules || {})) +
+    ' ' + JSON.stringify(combinedContext || {});
+  const lower = text.toLowerCase();
+
+  /** @type {string[]} */
+  const intents = [];
+  if (/(search|find|lookup)/.test(lower)) intents.push('search');
+  if (/(calc|compute|sum|average|math)/.test(lower)) intents.push('calculate');
+  if (/(email|send mail|gmail|outlook)/.test(lower)) intents.push('email');
+  if (/(calendar|schedule|meeting|event)/.test(lower)) intents.push('calendar');
+  if (/(db|database|query|sql)/.test(lower)) intents.push('database');
+  if (/(summari[sz]e|summary|report)/.test(lower)) intents.push('summarize');
+  if (/(translate|language|locali[sz]e)/.test(lower)) intents.push('translate');
+
+  return intents.length ? intents : ['analyze'];
+}
+
+/**
+ * Choose tools whose capabilities intersect with the derived intent(s).
+ * @param {Tool[]} tools
+ * @param {string[]} intents
+ */
+function selectTools(tools, intents) {
+  if (!Array.isArray(tools) || tools.length === 0) return [];
+  const chosen = [];
+  for (const tool of tools) {
+    const caps = (tool.capabilities || []).map((c) => c.toLowerCase());
+    const match = intents.some((i) => caps.includes(i));
+    if (match) {
+      chosen.push({ toolId: tool.id, reason: `Matches intents: ${intents.join(', ')}` });
+    }
+  }
+  return chosen;
+}
+
+// ----------------------------
+// Generic LLM-driven Node Executor
+// ----------------------------
+
+/**
+ * @typedef {Object} NodeSpec
+ * @property {string} id
+ * @property {string} type
+ * @property {string} [subtype]
+ * @property {string} description
+ * @property {Record<string, any>} presetRules
+ * @property {string} prompt  Natural language operating rules for this node
+ */
+
+/**
+ * Build the LLM messages for a node execution.
+ * @param {NodeSpec} nodeSpec
+ * @param {NodeExecutionInputs} inputs
+ */
+function buildNodeMessages(nodeSpec, inputs) {
+  const system = `You are a Node in a workflow canvas.
+Your job: follow the node's natural-language rules, merge system preset rules, user rules, and weighted context, then decide what to do next.
+
+Strict requirements:
+- Only use tools that are explicitly provided in connectedTools.
+- Select the minimal set of tools that satisfy the intent; avoid unnecessary calls.
+- Always return STRICT JSON, no commentary, matching the schema provided below.
+- If you cannot act, return a safe analyze-only plan explaining the next step.
+
+JSON schema (return exactly this shape):
+{
+  "intents": string[],
+  "selectedTools": {"toolId": string, "reason": string, "args"?: object}[],
+  "rationale": string,
+  "nextActions": {"type": "invokeTool" | "analyzeOnly", "toolId"?: string, "args"?: object}[],
+  "output": object
+}`;
+
+  const user = JSON.stringify({
+    node: {
+      id: nodeSpec.id,
+      type: nodeSpec.type,
+      subtype: nodeSpec.subtype || nodeSpec.type,
+      description: nodeSpec.description,
+      naturalLanguageRules: nodeSpec.prompt,
+      presetRules: nodeSpec.presetRules,
+    },
+    inputs: {
+      userRules: inputs.userRules,
+      context: buildWeightedContext(inputs.contextSummary || {}),
+    },
+    connectedTools: (inputs.connectedTools || []).map(t => ({
+      id: t.id,
+      name: t.name,
+      capabilities: t.capabilities,
+      meta: t.meta || {},
+    })),
+  });
+
+  return { system, user };
+}
+
+/**
+ * Execute any node via the LLM with a natural-language operating prompt.
+ * Falls back to local heuristics if parsing fails.
+ * @param {NodeSpec} nodeSpec
+ * @param {string} nodeId
+ * @param {NodeExecutionInputs} inputs
+ * @returns {Promise<NodeExecutionResult>}
+ */
+async function executeNodeViaLLM(nodeSpec, nodeId, inputs) {
+  const { system, user } = buildNodeMessages(nodeSpec, inputs);
+  try {
+    const content = await llmComplete(system, user, { temperature: 0.35, max_tokens: 1600 });
+    const parsed = safeParseJson(content);
+    const combinedContext = buildWeightedContext(inputs.contextSummary || {});
+    const intents = parsed?.intents && Array.isArray(parsed.intents) && parsed.intents.length
+      ? parsed.intents
+      : deriveIntent(inputs.userRules || '', combinedContext);
+    const planned = parsed?.selectedTools && Array.isArray(parsed.selectedTools)
+      ? parsed.selectedTools
+      : selectTools(inputs.connectedTools || [], intents);
+    return {
+      nodeId,
+      nodeType: nodeSpec.type,
+      decision: {
+        node: nodeSpec.type,
+        intents,
+        usedTools: planned.map(p => p.toolId),
+        rationale: parsed?.rationale || 'LLM selection with fallback',
+      },
+      plannedToolInvocations: planned,
+      output: parsed?.output || { nextActions: parsed?.nextActions || [] },
+    };
+  } catch (err) {
+    // Fallback
+    const combinedContext = buildWeightedContext(inputs.contextSummary || {});
+    const intents = deriveIntent(inputs.userRules || '', combinedContext);
+    const planned = selectTools(inputs.connectedTools || [], intents);
+    return {
+      nodeId,
+      nodeType: nodeSpec.type,
+      decision: {
+        node: nodeSpec.type,
+        intents,
+        usedTools: planned.map(p => p.toolId),
+        rationale: `Fallback heuristics due to LLM error: ${err?.message || err}`,
+      },
+      plannedToolInvocations: planned,
+      output: { nextActions: planned.length ? planned.map(p => ({ type: 'invokeTool', toolId: p.toolId })) : [{ type: 'analyzeOnly' }] },
+    };
+  }
+}
+
+// ----------------------------
+// Brain Node
+// ----------------------------
+
+/**
+ * Hardcoded rules for the Brain node.
+ * In a real system, keep these versioned and auditable.
+ */
+const BRAIN_PRESET_RULES = {
+  role: 'orchestrator',
+  priorities: [
+    'understand user intent',
+    'use minimal necessary tools',
+    'explain decisions in outputs',
+  ],
+  safeguards: {
+    avoidDangerousActions: true,
+    requireToolJustification: true,
+  },
+};
+
+/**
+ * Execute the Brain node.
+ * @param {string} nodeId
+ * @param {NodeExecutionInputs} inputs
+ * @returns {NodeExecutionResult}
+ */
+function executeBrainNode(nodeId, inputs) {
+  const nodeSpec = /** @type {NodeSpec} */({
+    id: 'brain',
+    type: 'brain',
+    description: 'The Brain node performs high-quality reasoning, planning, and tool selection.',
+    presetRules: inputs.presetRules || BRAIN_PRESET_RULES,
+    prompt: [
+      'You are the orchestrator and decision-maker.',
+      'Weigh the immediate previous context heavily, but consider the full chain and globals.',
+      'If multiple tools could satisfy the request, choose the minimal set that yields a complete answer.',
+      'If sequential tool calls are needed, plan them in order with brief reasons and args.',
+      'Respect user rules unless they conflict with system safeguards.',
+    ].join(' '),
+  });
+
+  return executeNodeViaLLM(nodeSpec, nodeId, inputs);
+}
+
+// -----------------------------------
+// Export a simple registry‑style facade
+// -----------------------------------
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   type: 'brain' | string,
+ *   execute: (inputs: NodeExecutionInputs) => NodeExecutionResult
+ * }} NodeDefinition
+ */
+
+/** @type {Record<string, NodeDefinition>} */
+const NodeRegistry = {
+  brain: {
+    id: 'brain',
+    type: 'brain',
+    execute: (inputs) => executeBrainNode('brain', inputs),
+  },
+};
+
+module.exports = {
+  // Types (JSDoc only), helpers, and Brain node
+  buildWeightedContext,
+  deriveIntent,
+  selectTools,
+  executeBrainNode,
+  NodeRegistry,
+  BRAIN_PRESET_RULES,
+  executeNodeViaLLM,
+  buildNodeMessages,
+};

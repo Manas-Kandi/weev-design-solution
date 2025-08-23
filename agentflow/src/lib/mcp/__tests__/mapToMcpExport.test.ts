@@ -22,12 +22,11 @@ const conn = (id: string, from: string, to: string): Connection => ({
 });
 
 describe('buildMcpToolsFromMocks', () => {
-  it('flattens TOOL_MOCKS operations to tool definitions', () => {
+  it('returns an array of tool definitions', () => {
     const tools = buildMcpToolsFromMocks();
     expect(Array.isArray(tools)).toBe(true);
-    // Expect at least one known tool like calendar.listEvents to exist
-    const hasCalendarList = tools.some(t => t.name === 'calendar.listEvents');
-    expect(hasCalendarList).toBe(true);
+    // Tool mocks have been removed, so we expect an empty array
+    expect(tools.length).toBe(0);
   });
 });
 
@@ -53,7 +52,8 @@ describe('mapToMcpExport', () => {
     expect(doc.version).toBeTypeOf('string');
     expect(doc.flows.length).toBe(1);
     expect(doc.flows[0].nodes.length).toBe(2);
-    expect(doc.tools.length).toBeGreaterThan(0);
+    // Tool mocks have been removed, so we expect 0 tools
+    expect(doc.tools.length).toBe(0);
     expect(doc.environment.mode).toBe('mock');
   });
 });

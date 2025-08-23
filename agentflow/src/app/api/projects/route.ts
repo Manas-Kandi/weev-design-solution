@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { getAuthedUser } from '@/lib/auth';
 
 const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
 
     // If we have a valid user, try to scope by user_id. If column missing, fall back to unscoped.
     if (authedUserId) {
-      const scoped = await supabaseAdmin
+      const scoped = await getSupabaseAdmin()
         .from('projects')
         .select('*')
         .eq('user_id', authedUserId);
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       // fall through to unscoped on error (e.g., missing column)
     }
 
-    const unscoped = await supabaseAdmin.from('projects').select('*');
+    const unscoped = await getSupabaseAdmin().from('projects').select('*');
     if (unscoped.error) {
       return new Response(
         JSON.stringify({ error: unscoped.error.message }),
@@ -58,11 +58,11 @@ export async function POST(req: Request) {
     // 2) Else, try with DEFAULT_USER_ID (supports schemas requiring user_id)
     // 3) Fallback to insert without user_id (supports schemas without that column)
     if (authedUserId) {
-      const first = await supabaseAdmin
-        .from('projects')
-        .insert({ ...baseInsert, user_id: authedUserId })
-        .select()
-        .single();
+    const first = await getSupabaseAdmin()
+      .from('projects')
+      .insert({ ...baseInsert, user_id: authedUserId })
+      .select()
+      .single();
       if (!first.error) {
         return new Response(JSON.stringify(first.data), {
           headers: { 'Content-Type': 'application/json' },
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
       }
       // fall through to try without user_id
     } else {
-      const withDefault = await supabaseAdmin
+      const withDefault = await getSupabaseAdmin()
         .from('projects')
         .insert({ ...baseInsert, user_id: DEFAULT_USER_ID })
         .select()
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       // fall through to try without user_id (covers schemas where user_id column doesn't exist)
     }
 
-    const fallback = await supabaseAdmin
+    const fallback = await getSupabaseAdmin()
       .from('projects')
       .insert(baseInsert)
       .select()

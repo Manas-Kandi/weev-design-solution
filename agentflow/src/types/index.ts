@@ -2,7 +2,7 @@ import React from "react";
 import { ToolAgentRules, ToolAgentSimulationConfig } from "./simulation";
 import type { FlowContextBag, FlowMode } from "./flow-io";
 import type { RunExecutionOptions } from "./run";
-import type { RouterNodeData } from "@/lib/nodes/router/types";
+import type { RouterNodeData } from "../lib/nodes/router/types";
 
 // Shared I/O envelope used by all nodes
 export type FlowIO = {
@@ -119,7 +119,7 @@ export interface ComplexIfElseNodeData {
   falsePath: { label: string; description: string };
   testData?: Record<string, unknown>;
   evaluationMode: "strict" | "fuzzy" | "llm_assisted";
-  llmModel: "gemini-pro" | "gemini-2.5-flash-lite";
+  llmModel: string;
 }
 
 export interface IfElseNodeData {
@@ -166,7 +166,7 @@ export interface AgentNodeData {
   config?: Record<string, unknown>;
   prompt?: string;
   model?: string;
-  provider?: "nvidia" | "gemini";
+  provider?: string;
   condition?: string;
   systemPrompt?: string;
   behavior?: string;  // User-defined behavior from UI text box
@@ -179,8 +179,7 @@ export interface AgentNodeData {
   behaviorRules?: BehaviorRule[];
   knowledge?: string;
   expression?: string;
-  mode?: 'expression' | 'llm';
-  llmRule?: string;
+  mode?: 'expression';
   [key: string]: unknown;
 }
 
@@ -278,6 +277,10 @@ export interface Connection {
   sourceOutput: string;
   targetNode: string;
   targetInput: string;
+  // Directionality of the connection's data flow
+  // 'uni' = sends only; 'request-response' = sends and expects a response back once;
+  // 'bi' = bidirectional/continuous exchange
+  direction?: 'uni' | 'request-response' | 'bi';
 }
 
 export interface Project {
@@ -343,9 +346,9 @@ export interface NodeType {
   tone?: "neutral" | "friendly" | "formal"; // Message tone
   formatHint?: "markdown" | "plain" | "html"; // Output format hint
   // Router node specific properties
-  mode?: "expression" | "llm" | "mock" | "live"; // Router or Tool modes
+  mode?: "expression" | "mock" | "live"; // Router or Tool modes
   expression?: string; // JavaScript expression for expression mode
-  llmRule?: string; // LLM rule for llm mode
+  // LLM rule removed
   // Memory node specific properties
   indexName?: string; // Memory index name
   ingestMode?: "full" | "summary-only"; // Document ingest mode
@@ -377,15 +380,6 @@ export interface Colors {
   green: string;
 }
 
-export interface LLMOutput {
-  choices?: { message?: { content?: string } }[];
-  candidates?: { content?: { parts?: { text?: string }[] } }[];
-}
-
-export interface GeminiOutput {
-  candidates?: { content?: { parts?: { text?: string }[] } }[];
-}
-
 export type NodeOutputObject = {
   // Discriminator for common output kinds (observed across nodes)
   type?: 'text' | 'json' | 'error' | string;
@@ -409,10 +403,6 @@ export type NodeOutputObject = {
   info?: unknown;
   timestamp?: number;
   nodeId?: string;
-
-  // Raw LLM outputs
-  llm?: LLMOutput;
-  gemini?: GeminiOutput;
 
   // Provider identifier (string id)
   provider?: string;

@@ -4,7 +4,6 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, ChevronLeft, User, Play, Home } from 'lucide-react';
 import { simplifiedNodeCategories, nodeTypeMapping } from '@/data/simplifiedNodeDefinitions';
-import { nodeCategories as allNodeCategories } from '@/data/nodeDefinitions';
 import { NodeType, NodeCategory } from '@/types';
 
 interface ComponentLibraryProps {
@@ -41,15 +40,7 @@ export function ComponentLibrary({ onAddNode, onBackToProjects, onTest, testButt
   };
 
   // Get all nodes for search functionality (including hidden ones)
-  const allNodes = useMemo(() => {
-    const nodes: NodeType[] = [];
-    allNodeCategories.forEach(category => {
-      category.nodes.forEach(node => {
-        nodes.push(node);
-      });
-    });
-    return nodes;
-  }, []);
+  const allNodes = useMemo(() => simplifiedNodeCategories.flatMap(c => c.nodes), []);
 
   // Filter nodes based on search term
   const filteredCategories: NodeCategory[] = useMemo(() => {

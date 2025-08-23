@@ -1,7 +1,9 @@
 import { featureFlags } from "@/config/featureFlags";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { mapToMcpExport } from "@/lib/mcp/mapToMcpExport";
 import type { CanvasNode, Connection } from "@/types";
+
+const supabaseAdmin = getSupabaseAdmin();
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { File, Upload, Trash2, Download } from 'lucide-react';
 import { Button } from '@/components/primitives/button';
 import { Card } from '@/components/primitives/card';
-import { supabase } from '@/lib/supabaseClient';
+import { getSupabaseClient } from '@/lib/supabaseClient';
 import type { ProjectFile } from '@/types';
 
 // Build Authorization header from Supabase session
@@ -10,7 +10,7 @@ async function buildHeaders(json: boolean = true): Promise<Record<string, string
   const headers: Record<string, string> = {};
   if (json) headers['Content-Type'] = 'application/json';
   try {
-    const { data } = await supabase.auth.getSession();
+    const { data } = await getSupabaseClient().auth.getSession();
     const token = data?.session?.access_token;
     if (token) headers['Authorization'] = `Bearer ${token}`;
   } catch {

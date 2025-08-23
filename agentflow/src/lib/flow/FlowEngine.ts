@@ -1,5 +1,6 @@
 import { CanvasNode, Connection, NodeOutput } from "@/types";
 import type { RunExecutionOptions } from "@/types/run";
+import { logger } from "../logger";
 import { AgentNode } from "../nodes/agent/AgentNode";
 import { ToolAgentNode } from "../nodes/agent/ToolAgentNode";
 import { ThinkingNode } from "../nodes/thinking/ThinkingNode";
@@ -23,14 +24,6 @@ import {
   snapshotNodeForFlowContext,
   diffFlowContext,
 } from "./flowContext";
-import type {
-  TesterEvent,
-  NodeStartEvent,
-  NodeFinishEvent,
-  FlowStartedEvent,
-  FlowFinishedEvent,
-  CauseOfExecution,
-} from "@/features/testing/types/tester";
 
 export class FlowEngine {
   private nodes: CanvasNode[];
@@ -39,6 +32,7 @@ export class FlowEngine {
   private executionOrder: CanvasNode[] = [];
   private startNodeId: string | null = null;
   private options?: RunExecutionOptions;
+  private executorCache: Map<string, BaseNode> = new Map();
 
   constructor(nodes: CanvasNode[], connections: Connection[], options?: RunExecutionOptions) {
     this.nodes = nodes;
@@ -53,44 +47,48 @@ export class FlowEngine {
   private getNodeExecutor(node: CanvasNode): BaseNode | null {
     // Check subtype first, then fall back to type
     const nodeType = node.subtype || node.type;
+    if (this.executorCache.has(node.id)) return this.executorCache.get(node.id)!;
+    let exec: BaseNode | null = null;
     switch (nodeType) {
       case "agent":
       case "generic":
-        return new AgentNode(node);
+        exec = new AgentNode(node); break;
       case "tool-agent":
-        return new ToolAgentNode(node);
+        exec = new ToolAgentNode(node); break;
       case "thinking":
-        return new ThinkingNode(node);
+        exec = new ThinkingNode(node); break;
       case "if-else":
-        return new IfElseNode(node);
+        exec = new IfElseNode(node); break;
       case "knowledge-base":
-        return new KnowledgeBaseNode(node);
+        exec = new KnowledgeBaseNode(node); break;
       case "message":
-        return new MessageNode(node);
+        exec = new MessageNode(node); break;
       case "message-formatter":
-        return new MessageFormatterNode(node);
+        exec = new MessageFormatterNode(node); break;
       case "router":
-        return new RouterNode(node);
+        exec = new RouterNode(node); break;
       case "memory":
-        return new MemoryNode(node);
+        exec = new MemoryNode(node); break;
       case "tool":
-        return new ToolNode(node);
+        exec = new ToolNode(node); break;
       case "prompt-template":
       case "template":
-        return new PromptTemplateNode(node);
+        exec = new PromptTemplateNode(node); break;
       case "decision-tree":
-        return new DecisionTreeNode(node);
+        exec = new DecisionTreeNode(node); break;
       case "state-machine":
-        return new StateMachineNode(node);
+        exec = new StateMachineNode(node); break;
       case "ui":
         // For UI nodes (like chat interface), we don't execute them
-        return null;
+        exec = null; break;
       default:
-        console.warn(
+        logger.warn(
           `No executor found for node type: ${nodeType} (type: ${node.type}, subtype: ${node.subtype})`
         );
-        return null;
+        exec = null;
     }
+    if (exec) this.executorCache.set(node.id, exec);
+    return exec;
   }
 
   // Validate connections before execution and return only valid ones
@@ -176,12 +174,27 @@ export class FlowEngine {
       beforeNodeExecute?: (node: CanvasNode) => Promise<void>;
     }
   ): Promise<Record<string, NodeOutput>> {
-    const VISUAL_DELAY_MS = 500; // enforced per product rule
+    const visualDelayEnabled = !!this.options?.enableVisualDelay;
+    const VISUAL_DELAY_MS = visualDelayEnabled
+      ? (typeof this.options?.visualDelayMs === 'number' ? this.options!.visualDelayMs! : 500)
+      : 0;
+    const captureContext = !!this.options?.captureContextDiff;
     const emitTester = hooks?.emitTesterEvent;
     const beforeNodeExecute = hooks?.beforeNodeExecute;
     // Validate connections and use only the valid set for this run
     const { validConnections } = this.validateConnections(emitLog);
     const connections = validConnections;
+
+    // Precompute adjacency maps for performance
+    const incomingByTarget = new Map<string, Connection[]>();
+    const outgoingBySource = new Map<string, Connection[]>();
+    const nodeById = new Map(this.nodes.map((n) => [n.id, n] as const));
+    for (const c of connections) {
+      const inArr = incomingByTarget.get(c.targetNode);
+      if (inArr) inArr.push(c); else incomingByTarget.set(c.targetNode, [c]);
+      const outArr = outgoingBySource.get(c.sourceNode);
+      if (outArr) outArr.push(c); else outgoingBySource.set(c.sourceNode, [c]);
+    }
     // Map: nodeId -> set of input nodeIds that have completed
     const inputReady: Record<string, Set<string>> = {};
     // Map: nodeId -> number of required inputs
@@ -195,7 +208,7 @@ export class FlowEngine {
     const queue: string[] = [];
     // Build input counts and inputReady for each node (comprehensive fix)
     for (const node of this.nodes) {
-      const incoming = connections.filter((c) => c.targetNode === node.id);
+      const incoming = incomingByTarget.get(node.id) || [];
       inputCounts[node.id] = incoming.length;
       inputReady[node.id] = new Set();
     }
@@ -238,9 +251,7 @@ export class FlowEngine {
         }
         this.nodeOutputs[node.id] = uiOutput;
         executed.add(node.id);
-        const outgoing = connections.filter(
-          (c) => c.sourceNode === node.id
-        );
+        const outgoing = outgoingBySource.get(node.id) || [];
         for (const conn of outgoing) {
           if (inputReady[conn.targetNode]) {
             inputReady[conn.targetNode].add(node.id);
@@ -264,7 +275,7 @@ export class FlowEngine {
       startNodeIds = [this.startNodeId];
     } else {
       startNodeIds = this.nodes
-        .filter((node) => !connections.some((c) => c.targetNode === node.id))
+        .filter((node) => !(incomingByTarget.get(node.id)?.length))
         .map((n) => n.id);
     }
     const runStartedAt = Date.now();
@@ -335,7 +346,7 @@ export class FlowEngine {
 
       // Build context
       // Build V2 inputs map with per-edge controls
-      const incoming = connections.filter((c) => c.targetNode === node.id);
+      const incoming = incomingByTarget.get(node.id) || [];
       const inputs: Record<string, NodeOutput> = {};
       for (const conn of incoming) {
         const upstreamOutput = this.nodeOutputs[conn.sourceNode];
@@ -353,20 +364,22 @@ export class FlowEngine {
       }
 
       // Build transitive, namespaced flowContext (respect blocked edges)
-      const upstreamIds = this.getUpstreamNodeIds(node.id, connections);
+      const upstreamIds = captureContext ? this.getUpstreamNodeIds(node.id, connections) : [];
       const flowContext: Record<string, ReturnType<typeof snapshotNodeForFlowContext>> = {} as any;
-      for (const uid of upstreamIds) {
-        const upNode = this.nodes.find((n) => n.id === uid);
-        if (!upNode) continue;
-        const upOut = this.nodeOutputs[uid];
-        // If there's a direct edge from uid → node.id, capture advisory weight
-        const direct = incoming.find((c) => c.sourceNode === uid);
-        const weight = (direct as any)?.contextControls?.weight as number | undefined;
-        flowContext[uid] = snapshotNodeForFlowContext({
-          node: { id: upNode.id, type: upNode.type, subtype: upNode.subtype, data: upNode.data },
-          output: upOut,
-          weight,
-        });
+      if (captureContext) {
+        for (const uid of upstreamIds) {
+          const upNode = nodeById.get(uid);
+          if (!upNode) continue;
+          const upOut = this.nodeOutputs[uid];
+          // If there's a direct edge from uid → node.id, capture advisory weight
+          const direct = incoming.find((c) => c.sourceNode === uid);
+          const weight = (direct as any)?.contextControls?.weight as number | undefined;
+          flowContext[uid] = snapshotNodeForFlowContext({
+            node: { id: upNode.id, type: upNode.type, subtype: upNode.subtype, data: upNode.data },
+            output: upOut,
+            weight,
+          });
+        }
       }
 
       // Emit node-started tester event
@@ -395,7 +408,9 @@ export class FlowEngine {
       }
 
       // Add delay for visual feedback (must occur before execution)
-      await new Promise((resolve) => setTimeout(resolve, VISUAL_DELAY_MS));
+      if (VISUAL_DELAY_MS > 0) {
+        await new Promise((resolve) => setTimeout(resolve, VISUAL_DELAY_MS));
+      }
 
       const context = {
         // Legacy fields (back-compat)
@@ -433,14 +448,18 @@ export class FlowEngine {
           : ("success" as const);
 
       // Build flowContextAfter by adding this node's snapshot
-      const flowContextAfter: typeof flowContext = {
-        ...flowContext,
-        [node.id]: snapshotNodeForFlowContext({
-          node: { id: node.id, type: node.type, subtype: node.subtype, data: node.data },
-          output,
-        }),
-      };
-      const fcDiff = diffFlowContext(flowContext as any, flowContextAfter as any);
+      let flowContextAfter: typeof flowContext | undefined = undefined;
+      let fcDiff: ReturnType<typeof diffFlowContext> | undefined = undefined;
+      if (captureContext) {
+        flowContextAfter = {
+          ...flowContext,
+          [node.id]: snapshotNodeForFlowContext({
+            node: { id: node.id, type: node.type, subtype: node.subtype, data: node.data },
+            output,
+          }),
+        } as any;
+        fcDiff = diffFlowContext(flowContext as any, flowContextAfter as any);
+      }
 
       // Generate a compact human-readable summary
       const summary = this.generateSummary(node, output);
@@ -458,7 +477,7 @@ export class FlowEngine {
       }
 
       // Find outgoing connections
-      const outgoing = connections.filter((c) => c.sourceNode === node.id);
+      const outgoing = outgoingBySource.get(node.id) || [];
 
       // Determine which branch(es) to follow
       let nextConnections: typeof outgoing;
@@ -608,9 +627,7 @@ export class FlowEngine {
       else v = asJSON(output);
       return `Branch → ${v}`;
     }
-    if (output && typeof output === "object" && "gemini" in output) {
-      return "LLM response"; // details shown in inspector tab
-    }
+    // LLM-specific handling removed
     // Fallback for structured tool/agent outputs
     return asJSON(output);
   }

@@ -1,4 +1,4 @@
-import type { Connection, NodeOutput } from "@/types";
+import type { Connection, NodeOutput } from "../types";
 
 export type AssertionOp =
   | "exists"

@@ -1,7 +1,6 @@
 export interface RouterNodeData {
-  mode: "expression" | "llm";
+  mode?: "expression";
   expression?: string;
-  llmRule?: string;
 }
 
 export interface RouterNodeOutput {
@@ -11,9 +10,8 @@ export interface RouterNodeOutput {
   };
   meta: {
     nodeType: 'router';
-    mode: "expression" | "llm";
+    mode: "expression";
     error?: string;
     evaluationResult?: any;
-    llmResponse?: string;
   };
 }

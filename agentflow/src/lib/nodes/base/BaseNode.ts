@@ -60,19 +60,7 @@ export abstract class BaseNode implements NodeExecutor {
           ) {
             return (val as { message: string }).message;
           }
-          // Unified LLM wrapper
-          if ('llm' in (val as NodeOutputObject) && (val as NodeOutputObject).llm) {
-            const raw = (val as NodeOutputObject).llm;
-            const nvidiaText: string | undefined = raw?.choices?.[0]?.message?.content;
-            if (typeof nvidiaText === 'string') return nvidiaText;
-            const gemText: string | undefined = raw?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (typeof gemText === 'string') return gemText;
-          }
-          if ('gemini' in (val as NodeOutputObject) && (val as NodeOutputObject).gemini) {
-            const g = (val as NodeOutputObject).gemini;
-            const t = g?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (typeof t === 'string') return t;
-          }
+          // LLM output extraction removed
         }
         try {
           return JSON.stringify(val);
@@ -114,24 +102,7 @@ export abstract class BaseNode implements NodeExecutor {
         if (output && typeof output === 'object') {
           if (typeof (output as any).output === 'string')
             return (output as any).output as string;
-          if ('llm' in (output as NodeOutputObject) && (output as NodeOutputObject).llm) {
-            const raw = (output as NodeOutputObject).llm;
-            const nvidiaText: string | undefined = raw?.choices?.[0]?.message?.content;
-            if (typeof nvidiaText === 'string') return nvidiaText;
-            const gemText: string | undefined = raw?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (typeof gemText === 'string') return gemText;
-          }
-          if ('gemini' in (output as NodeOutputObject) && (output as NodeOutputObject).gemini) {
-            const geminiOutput = (output as NodeOutputObject).gemini as any;
-            const text =
-              geminiOutput?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (typeof text === 'string') return text;
-          }
-          if ('provider' in (output as any) && (output as any).provider) {
-            const provider: any = (output as any).provider;
-            const text = provider?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (typeof text === 'string') return text;
-          }
+          // LLM output extraction removed
         }
         try {
           return JSON.stringify(output);

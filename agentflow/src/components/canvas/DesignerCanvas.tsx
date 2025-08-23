@@ -2,15 +2,9 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import CanvasEngine from "@/components/canvas/Canvas";
 import { CanvasNode, Connection } from "@/types";
 import { runWorkflow } from "@/lib/workflowRunner";
-import FloatingSidebarContainer from "@/components/canvas/FloatingSidebarContainer";
 import { KnowledgeBaseNode } from "@/lib/nodes/knowledge/KnowledgeBaseNode";
 import { validateMcpExport, McpExport } from "@/types/mcp.types";
 import { mapFromMcpExport } from "@/lib/mcp/mapFromMcpExport";
-import type {
-  TesterEvent,
-  NodeStartEvent,
-  NodeFinishEvent,
-} from "@/features/testing/types/tester";
 
 interface DesignerCanvasProps {
   nodes: CanvasNode[];
@@ -19,13 +13,7 @@ interface DesignerCanvasProps {
   onNodeUpdate: (updated: CanvasNode) => void;
   onConnectionsChange: (c: Connection[]) => void;
   onCreateConnection: (connectionData: Connection) => Promise<void>;
-  showTester: boolean;
-  testFlowResult: Record<string, unknown> | null;
-  setShowTester: (show: boolean) => void;
-  setTestFlowResult: (result: Record<string, unknown> | null) => void;
   selectedNode: CanvasNode | null;
-  onTestFlow: () => void;
-  testButtonDisabled?: boolean;
   startNodeId: string | null;
   onStartNodeChange: (id: string | null) => void;
   onDeleteNode: (nodeId: string) => void;
@@ -42,13 +30,7 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
     onNodeUpdate,
     onConnectionsChange,
     onCreateConnection,
-    showTester,
-    testFlowResult,
-    setShowTester,
-    setTestFlowResult,
     selectedNode,
-    onTestFlow,
-    testButtonDisabled = false,
     startNodeId,
     onStartNodeChange,
     onDeleteNode,
@@ -56,25 +38,12 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
   } = props;
 
   // --- Local state for test logs and testing status ---
-  const [testLogs, setTestLogs] = useState<{
-    nodeId: string;
-    title: string;
-    type: string;
-    log: string;
-    output?: unknown;
-    error?: string;
-  }[]>([]);
-  const [isTesting, setIsTestingState] = useState(false);
+  // Testing functionality removed
 
 
 
   // Live tester visualization state
-  const [nodeStatuses, setNodeStatuses] = useState<
-    Record<string, "running" | "success" | "error">
-  >({});
-  const [pulsingConnectionIds, setPulsingConnectionIds] = useState<string[]>(
-    []
-  );
+  // Testing functionality removed
 
   const handleNodeDelete = (nodeId: string) => {
     const node = nodes.find((n) => n.id === nodeId);
@@ -95,79 +64,10 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
   };
 
   // Mirror TesterV2 events into live canvas visuals
-  const handleTesterEvent = useCallback((evt: TesterEvent) => {
-    switch (evt.type) {
-      case "flow-started": {
-        // Reset transient visuals at the beginning of a run
-        setPulsingConnectionIds([]);
-        setNodeStatuses({});
-        break;
-      }
-      case "node-started": {
-        const e = evt as NodeStartEvent;
-        setNodeStatuses((prev) => ({ ...prev, [e.nodeId]: "running" }));
-        break;
-      }
-      case "node-finished": {
-        const e = evt as NodeFinishEvent;
-        setNodeStatuses((prev) => {
-          const next = { ...prev } as Record<
-            string,
-            "running" | "success" | "error"
-          >;
-          if (e.status === "success" || e.status === "error") {
-            next[e.nodeId] = e.status;
-          } else {
-            // skipped → remove glow
-            delete next[e.nodeId];
-          }
-          return next;
-        });
-        if (Array.isArray(e.forwardedConnectionIds) && e.forwardedConnectionIds.length) {
-          const ids = e.forwardedConnectionIds;
-          setPulsingConnectionIds((prev) => Array.from(new Set([...prev, ...ids])));
-          // Clear these pulses after one animation cycle
-          setTimeout(() => {
-            setPulsingConnectionIds((prev) => prev.filter((id) => !ids.includes(id)));
-          }, 600);
-        }
-        break;
-      }
-      case "flow-finished": {
-        // Ensure no lingering pulses
-        setTimeout(() => setPulsingConnectionIds([]), 200);
-        break;
-      }
-    }
-  }, []);
+  // Testing functionality removed
 
   // --- Real-time Test Flow Execution ---
-  // --- Real-time Test Flow Execution ---
-  // (Note: This is not used directly in the UI, but kept for completeness. The onTestFlow prop is used for the test button.)
-  const handleTestFlow = async () => {
-    if (typeof window === "undefined") return;
-    if (typeof document === "undefined") return;
-    if (!nodes || !connections) return;
-    setTestLogs([]);
-    setTestFlowResult(null);
-    setIsTestingState(true);
-    try {
-      const result = await runWorkflow(
-        nodes,
-        connections,
-        startNodeId,
-        {},
-        { emitTesterEvent: handleTesterEvent }
-      );
-      setTestFlowResult(result);
-    } catch (err) {
-      setTestFlowResult({
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
-    } finally {
-      setIsTestingState(false);
-    }
-  };
+  // Testing functionality removed
 
   // Provide a default handleNodeDrag implementation
   const handleNodeDrag = (id: string, pos: { x: number; y: number }) => {
@@ -266,26 +166,8 @@ export default function DesignerCanvas(props: DesignerCanvasProps) {
           startNodeId={startNodeId}
           onStartNodeChange={onStartNodeChange}
           onNodeDelete={handleNodeDelete}
-          nodeStatuses={nodeStatuses}
-          pulsingConnectionIds={pulsingConnectionIds}
         />
       </div>
-      {/* Inline right sidebar (properties/testing) */}
-      <FloatingSidebarContainer
-        selectedNode={selectedNode}
-        onNodeChange={onNodeUpdate}
-        nodes={nodes}
-        connections={connections}
-        showTesting={showTester}
-        onTestingClose={() => {
-          setShowTester(false);
-          setTestFlowResult(null);
-        }}
-        onTesterEvent={handleTesterEvent}
-        onConnectionsChange={onConnectionsChange}
-        onPropertiesClose={() => onNodeSelect(null)}
-      />
-      {/* Pass the selected node id here if available */}
     </div>
   );
 }

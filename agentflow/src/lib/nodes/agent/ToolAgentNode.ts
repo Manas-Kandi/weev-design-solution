@@ -1,6 +1,6 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput, ToolAgentNodeData } from "@/types";
-import { callLLM } from "@/lib/llmClient";
+// LLM logic removed
 import { getProvider } from "@/lib/simulation/providers";
 
 export interface ToolConfig {
@@ -94,76 +94,7 @@ export class ToolAgentNode extends BaseNode {
       userInput: data.prompt || "",
     });
 
-    try {
-      const llm = await callLLM(toolPrompt, {
-        // Rely on global defaults for provider/model (NVIDIA). Only honor explicit overrides.
-        model: overrides.model,
-        provider: overrides.provider as any,
-        // Tool agent expects structured data; ask NVIDIA (OpenAI-compatible) for JSON content
-        response_format: 'json',
-        // Strong system to enforce simulation output instead of errors
-        system: this.buildSystemPrompt({ toolType: toolConfig.toolType, rulesNl: rules?.nl || "", userInput: data.prompt || "" }),
-        // Slightly lower temperature for consistent structured outputs
-        temperature: typeof overrides.temperature === 'number' ? overrides.temperature : 0.3,
-        seed: overrides.seed,
-      });
-
-      // Clean artifacts like control tokens and code fences
-      const clean = (s: string) => s
-        .trim()
-        .replace(/^```(?:json)?\s*\n?/i, "")
-        .replace(/```\s*$/i, "")
-        .replace(/<\|[^>]+\|>/g, "")
-        .trim();
-
-      const tryExtractJson = (input: string): string | null => {
-        try {
-          const start = input.indexOf("{");
-          const end = input.lastIndexOf("}");
-          if (start === -1 || end === -1 || end <= start) return null;
-          const candidate = input.slice(start, end + 1).trim();
-          JSON.parse(candidate);
-          return candidate;
-        } catch {
-          return null;
-        }
-      };
-
-      const text = clean(llm.text || "");
-      let parsed: any | null = null;
-      if (text) {
-        try { parsed = JSON.parse(text); } catch {}
-      }
-      if (!parsed && text) {
-        const candidate = tryExtractJson(text);
-        if (candidate) {
-          try { parsed = JSON.parse(clean(candidate)); } catch {}
-        }
-      }
-
-      if (parsed) {
-        // Calendar-specific post-processing: ensure useful result
-        const looksCalendar = /calendar/i.test(rules?.nl || "") || /calendar/i.test(data.prompt || "");
-        if (looksCalendar) {
-          const needsFallback =
-            (typeof parsed === 'object' && parsed !== null && 'error' in (parsed as any)) ||
-            !(typeof parsed === 'object' && parsed !== null && 'free_timeslots' in (parsed as any)) ||
-            (Array.isArray((parsed as any).free_timeslots) && (parsed as any).free_timeslots.length === 0);
-          if (needsFallback) {
-            const fallback = this.buildCalendarFallback();
-            return { data: fallback, metadata: { provider: llm.provider, format: 'json', mode: 'live', fallback: true }, llm: llm.raw } as unknown as NodeOutput;
-          }
-        }
-        return { data: parsed, metadata: { provider: llm.provider, format: 'json', mode: 'live' }, llm: llm.raw } as unknown as NodeOutput;
-      }
-
-      // Fall back to string output
-      return { output: text, llm: llm.raw, provider: llm.provider } as unknown as NodeOutput;
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
+    return { error: 'LLM is disabled in this build' } as unknown as NodeOutput;
   }
 
   private buildToolPromptFromRules(args: {

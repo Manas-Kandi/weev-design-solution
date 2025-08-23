@@ -1,6 +1,6 @@
-import { CanvasNode, Connection } from "@/types";
-import { callGemini } from "./geminiClient";
-import { executeNodeFromProperties } from "./propertiesTestingBridge";
+import { CanvasNode, Connection, NodeOutput } from "@/types";
+import { FlowEngine } from "@/lib/flow/FlowEngine";
+import { logger } from "@/lib/logger";
 
 // Local type definitions to make the file self-contained and avoid import issues.
 interface Assertion {
@@ -17,8 +17,13 @@ interface RunExecutionOptions {
 }
 
 // Enhanced testing panel callback types
-interface TestingCallbacks {
-  emitTesterEvent?: (event: any) => void;
+interface WorkflowRunnerCallbacks {
+  emitLog?: (
+    nodeId: string,
+    log: string,
+    output?: NodeOutput,
+    error?: string
+  ) => void;
   beforeNodeExecute?: (node: CanvasNode) => Promise<void>;
 }
 
@@ -53,11 +58,6 @@ export async function runWorkflowWithProperties(
 
   // Emit flow started event
   const flowStartTime = Date.now();
-  callbacks?.emitTesterEvent?.({
-    type: 'flow-started',
-    at: flowStartTime,
-    startNodeId
-  });
 
   const executionResults: Record<string, any> = { ...(options?.inputs ?? {}) };
   let currentNodeId: string | null = startNodeId;
@@ -72,16 +72,6 @@ export async function runWorkflowWithProperties(
 
     // Emit node started event
     const nodeStartTime = Date.now();
-    callbacks?.emitTesterEvent?.({
-      type: 'node-started',
-      nodeId: currentNode.id,
-      title: (currentNode.data as any)?.title || currentNode.id,
-      nodeType: currentNode.type,
-      nodeSubtype: currentNode.subtype,
-      at: nodeStartTime,
-      cause: { kind: 'all-inputs-ready', inputCount: 0 },
-      flowContextBefore: { ...executionResults }
-    });
 
     // Call beforeNodeExecute callback if provided
     if (callbacks?.beforeNodeExecute) {
@@ -112,10 +102,7 @@ export async function runWorkflowWithProperties(
     
     try {
       // Create LLM executor function for the properties testing bridge
-      const llmExecutor = async (prompt: string, systemPrompt?: string, tools?: any[]) => {
-        const result = await callGemini(prompt);
-        return result; // callGemini already returns a string
-      };
+      const llmExecutor = async () => { throw new Error('LLM is disabled in this build'); };
 
       // Use Properties-Testing Bridge for ALL node execution - PROPERTIES PANEL AS AUTHORITATIVE SOURCE
       const propertiesResult = await executeNodeFromProperties(
@@ -151,21 +138,6 @@ export async function runWorkflowWithProperties(
 
     // Emit node finished event
     const nodeEndTime = Date.now();
-    callbacks?.emitTesterEvent?.({
-      type: 'node-finished',
-      nodeId: currentNode.id,
-      title: (currentNode.data as any)?.title || currentNode.id,
-      nodeType: currentNode.type,
-      nodeSubtype: currentNode.subtype,
-      at: nodeEndTime,
-      durationMs: nodeEndTime - nodeStartTime,
-      output,
-      summary: `Executed ${currentNode.subtype || currentNode.type} node using Properties Panel configuration`,
-      error: executionError,
-      flowContextBefore: { ...executionResults },
-      flowContextAfter: { ...executionResults },
-      flowContextDiff: {}
-    });
 
     const nextConnection = connections.find((c) => c.sourceNode === currentNodeId);
     currentNodeId = nextConnection ? nextConnection.targetNode : null;
@@ -178,12 +150,6 @@ export async function runWorkflowWithProperties(
 
   // Emit flow finished event
   const flowEndTime = Date.now();
-  callbacks?.emitTesterEvent?.({
-    type: 'flow-finished',
-    at: flowEndTime,
-    status: 'success',
-    durationMs: flowEndTime - flowStartTime
-  });
 
   return executionResults;
 }

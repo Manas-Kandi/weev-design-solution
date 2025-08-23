@@ -1,7 +1,8 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput } from "@/types";
 import { RouterNodeData, RouterNodeOutput } from "./types";
-import { callLLM } from "@/lib/llmClient";
+// LLM logic removed
+import { logger } from "@/lib/logger";
 
 export class RouterNode extends BaseNode {
   async execute(context: NodeContext): Promise<NodeOutput> {
@@ -23,24 +24,12 @@ export class RouterNode extends BaseNode {
         // Expression-based evaluation
         const expression = data.expression || 'false';
         // Debugging router expression evaluation for test parity.
-        console.log('Router Expression Evaluation Debug:', { expression, inputs });
+        logger.debug('Router Expression Evaluation Debug:', { expression, inputs });
         try {
           decision = this.evaluateExpression(expression, inputs);
           evaluationResult = decision;
         } catch (err) {
-          console.error('Router expression evaluation error:', err);
-          decision = false; // Default to false on error
-          error = err instanceof Error ? err.message : String(err);
-        }
-      } else if (mode === 'llm') {
-        // LLM-based evaluation
-        const llmRule = data.llmRule || 'Return true or false based on the input.';
-        try {
-          const result = await this.evaluateWithLLM(llmRule, inputs);
-          decision = result.decision;
-          llmResponse = result.response;
-        } catch (err) {
-          console.error('Router LLM evaluation error:', err);
+          logger.error('Router expression evaluation error:', err);
           decision = false; // Default to false on error
           error = err instanceof Error ? err.message : String(err);
         }
@@ -62,7 +51,7 @@ export class RouterNode extends BaseNode {
       } as NodeOutput;
 
     } catch (error) {
-      console.error('RouterNode execution error:', error);
+      logger.error('RouterNode execution error:', error);
       
       return {
         type: 'json',
@@ -170,51 +159,7 @@ export class RouterNode extends BaseNode {
     return unsafePatterns.some(pattern => pattern.test(expression));
   }
 
-  private async evaluateWithLLM(llmRule: string, inputs: Record<string, any>): Promise<{ decision: boolean; response: string }> {
-    // Convert inputs to a readable format for the LLM
-    const inputsText = this.formatInputsForLLM(inputs);
-    
-    const systemPrompt = `You are a decision-making assistant. You must respond with ONLY "true" or "false" - no other text, explanation, or formatting. 
-
-Rule: ${llmRule}
-
-Analyze the provided inputs and respond with exactly "true" or "false" based on the rule.`;
-
-    const userPrompt = `Inputs to evaluate:
-${inputsText}
-
-Based on the rule provided, respond with exactly "true" or "false":`;
-
-    const llmResult = await callLLM(userPrompt, {
-      provider: "nvidia",
-      model: process.env.NEXT_PUBLIC_NVIDIA_MODEL || "openai/gpt-oss-120b",
-      temperature: 0.1, // Low temperature for consistent output
-      max_tokens: 10, // Very short response
-      system: systemPrompt
-    });
-
-    const response = llmResult.text.trim().toLowerCase();
-    
-    // Parse the response strictly
-    let decision = false;
-    if (response === 'true') {
-      decision = true;
-    } else if (response === 'false') {
-      decision = false;
-    } else {
-      // If response is not exactly "true" or "false", try to parse it
-      if (response.includes('true')) {
-        decision = true;
-      } else {
-        decision = false; // Default to false for unclear responses
-      }
-    }
-
-    return {
-      decision,
-      response: llmResult.text
-    };
-  }
+  // Removed LLM evaluation helper
 
   private formatInputsForLLM(inputs: Record<string, any>): string {
     const parts: string[] = [];

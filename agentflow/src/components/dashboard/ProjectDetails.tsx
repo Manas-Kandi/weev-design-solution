@@ -6,7 +6,7 @@ import { Badge } from '@/components/primitives/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/primitives/tabs';
 import { Share2, ArrowLeft } from 'lucide-react';
 import FileManager from './components/FileManager';
-import MCPModal from '@/components/export/MCPModal';
+// import MCPModal from '@/components/export/MCPModal'; // Commented out due to missing file
 
 interface ProjectDetailsProps {
   project: Project;

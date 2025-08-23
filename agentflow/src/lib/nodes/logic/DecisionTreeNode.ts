@@ -1,6 +1,6 @@
 import { BaseNode, NodeContext } from "../base/BaseNode";
 import { NodeOutput } from "@/types";
-import { callLLM } from "@/lib/llmClient";
+// LLM logic removed
 
 interface DecisionRule {
   condition: string;
@@ -11,7 +11,7 @@ interface DecisionRule {
 export interface DecisionTreeNodeData {
   rules?: DecisionRule[];
   defaultPath?: string;
-  evaluationMode?: "sequential" | "priority" | "llm";
+  evaluationMode?: "sequential" | "priority";
 }
 
 export class DecisionTreeNode extends BaseNode {
@@ -32,10 +32,7 @@ export class DecisionTreeNode extends BaseNode {
         ? [...rules].sort((a, b) => (b.priority || 0) - (a.priority || 0))
         : rules;
 
-    if (evaluationMode === "llm") {
-      // Use LLM to evaluate all rules at once
-      return this.evaluateWithLLM(sortedRules, inputContext, defaultPath);
-    }
+    // Ignore LLM evaluation mode since LLM is disabled
 
     // Sequential or priority evaluation
     for (const rule of sortedRules) {
@@ -52,55 +49,8 @@ export class DecisionTreeNode extends BaseNode {
     condition: string,
     context: string
   ): Promise<boolean> {
-    const evalPrompt = `
-Given the following context, determine if this condition is TRUE or FALSE.
-Respond with only "TRUE" or "FALSE".
-
-Context: ${context}
-Condition: ${condition}
-`;
-
-    try {
-      const llm = await callLLM(evalPrompt, { temperature: 0 });
-      const result = (llm.text || "").trim().toUpperCase();
-      return result === "TRUE";
-    } catch {
-      return false;
-    }
+    const hay = context || '';
+    return !!(condition && hay.includes(condition));
   }
-
-  private async evaluateWithLLM(
-    rules: DecisionRule[],
-    context: string,
-    defaultPath: string
-  ): Promise<NodeOutput> {
-    const rulesText = rules
-      .map(
-        (r, i) => `${i + 1}. If "${r.condition}" then output "${r.outputPath}"`
-      )
-      .join("\n");
-
-    const evalPrompt = `
-Given the context below, evaluate which rule applies and return ONLY the output path.
-
-Context: ${context}
-
-Rules:
-${rulesText}
-
-If no rules apply, return: ${defaultPath}
-
-Return only the output path, nothing else.
-`;
-
-    try {
-      const llm = await callLLM(evalPrompt, { temperature: 0 });
-      const result = (llm.text || "").trim() || defaultPath;
-      return result;
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : "Unknown error",
-      };
-    }
-  }
+  // Removed LLM-based evaluation helper
 }

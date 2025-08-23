@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
 
@@ -20,17 +20,17 @@ export async function GET(req) {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
       try {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        const { data: userData } = await getSupabaseAdmin().auth.getUser(token);
         if (userData?.user?.id) userId = userData.user.id;
       } catch {}
     }
 
     // If projects table has user_id, restrict by it; if not, this will be a no-op
     try {
-      await supabaseAdmin.from('projects').select('id').eq('id', projectId).eq('user_id', userId).maybeSingle();
+      await getSupabaseAdmin().from('projects').select('id').eq('id', projectId).eq('user_id', userId).maybeSingle();
     } catch {}
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('nodes')
       .select('*')
       .eq('project_id', projectId);
@@ -67,14 +67,14 @@ export async function PATCH(req) {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
       try {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        const { data: userData } = await getSupabaseAdmin().auth.getUser(token);
         if (userData?.user?.id) userId = userData.user.id;
       } catch {}
     }
 
     // Ownership check (no-op if project.user_id not present)
     try {
-      await supabaseAdmin.from('projects').select('id').eq('id', project_id).eq('user_id', userId).maybeSingle();
+      await getSupabaseAdmin().from('projects').select('id').eq('id', project_id).eq('user_id', userId).maybeSingle();
     } catch {}
 
     const update = {
@@ -87,7 +87,7 @@ export async function PATCH(req) {
       outputs: body.outputs,
     };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('nodes')
       .update(update)
       .eq('id', id)
@@ -127,17 +127,17 @@ export async function DELETE(req) {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
       try {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        const { data: userData } = await getSupabaseAdmin().auth.getUser(token);
         if (userData?.user?.id) userId = userData.user.id;
       } catch {}
     }
 
     try {
-      await supabaseAdmin.from('projects').select('id').eq('id', projectId).eq('user_id', userId).maybeSingle();
+      await getSupabaseAdmin().from('projects').select('id').eq('id', projectId).eq('user_id', userId).maybeSingle();
     } catch {}
 
     // Handle string IDs properly - the id column is text type
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('nodes')
       .delete()
       .eq('id', id)
@@ -176,14 +176,14 @@ export async function POST(req) {
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice('Bearer '.length);
       try {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        const { data: userData } = await getSupabaseAdmin().auth.getUser(token);
         if (userData?.user?.id) userId = userData.user.id;
       } catch {}
     }
 
     // Validate project ownership if column exists
     try {
-      await supabaseAdmin.from('projects').select('id').eq('id', body.project_id).eq('user_id', userId).maybeSingle();
+      await getSupabaseAdmin().from('projects').select('id').eq('id', body.project_id).eq('user_id', userId).maybeSingle();
     } catch {}
 
     // Allow string IDs like "prompt-node-1" - the database will handle them
@@ -200,7 +200,7 @@ export async function POST(req) {
       outputs: body.outputs ?? null,
     };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from('nodes')
       .insert(insert)
       .select()

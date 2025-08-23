@@ -1,6 +1,6 @@
 import express from 'express';
 import { exportToMcpFormat } from './export';
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { CanvasNode, Connection, ProjectFile } from '@/types';
 import getPort, { portNumbers } from 'get-port';
 import http from 'http';
@@ -22,23 +22,23 @@ export const startMcpServer = async (projectId: string): Promise<number> => {
   app.get('/get_agent_flow', async (req, res) => {
     try {
       // Your existing data fetching logic...
-      const { data: projectData, error: projectError } = await supabaseAdmin
+      const { data: projectData, error: projectError } = await getSupabaseAdmin()
         .from('projects')
         .select('id, name, start_node_id')
         .eq('id', projectId)
         .single();
       if (projectError) throw projectError;
-      const { data: nodesData, error: nodesError } = await supabaseAdmin
+      const { data: nodesData, error: nodesError } = await getSupabaseAdmin()
         .from('nodes')
         .select('*')
         .eq('project_id', projectId);
       if (nodesError) throw nodesError;
-      const { data: connectionsData, error: connectionsError } = await supabaseAdmin
+      const { data: connectionsData, error: connectionsError } = await getSupabaseAdmin()
         .from('connections')
         .select('*')
         .eq('project_id', projectId);
       if (connectionsError) throw connectionsError;
-      const { data: filesData, error: filesError } = await supabaseAdmin
+      const { data: filesData, error: filesError } = await getSupabaseAdmin()
         .from('project_files')
         .select('id, name, file_path, file_type, size_bytes, created_at, project_id')
         .eq('project_id', projectId);
@@ -84,7 +84,7 @@ export const startMcpServer = async (projectId: string): Promise<number> => {
   app.get('/files/:fileId/download', async (req, res) => {
     try {
       const fileId = req.params.fileId;
-      const { data: file, error } = await supabaseAdmin
+      const { data: file, error } = await getSupabaseAdmin()
         .from('project_files')
         .select('id, name, file_path, project_id')
         .eq('id', fileId)
@@ -93,7 +93,7 @@ export const startMcpServer = async (projectId: string): Promise<number> => {
       if (!file || file.project_id !== projectId) {
         return res.status(404).json({ error: 'File not found for this project' });
       }
-      const { data: signed, error: signedErr } = await supabaseAdmin.storage
+      const { data: signed, error: signedErr } = await getSupabaseAdmin().storage
         .from('project-files')
         .createSignedUrl(file.file_path, 60);
       if (signedErr || !signed?.signedUrl) {

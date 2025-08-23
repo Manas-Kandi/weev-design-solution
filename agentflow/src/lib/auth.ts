@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export interface AuthedUser {
   id: string;
@@ -10,7 +10,7 @@ export async function getAuthedUser(req: Request): Promise<AuthedUser | null> {
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice('Bearer '.length);
     try {
-      const { data, error } = await supabaseAdmin.auth.getUser(token);
+      const { data, error } = await getSupabaseAdmin().auth.getUser(token);
       if (!error && data?.user) {
         return { id: data.user.id, email: data.user.email ?? undefined };
       }
